@@ -1,3 +1,2 @@
 = Cubical Marching Squares Lookup Table Generator = 
-This tool generates lookup tables for all CMS cell cases ([[https://graphics.cmlab.csie.ntu.edu.tw/CMS/detail/table.html | ]]
-) and also the lookup tables to resolve cell ambiguities.
+This tool generates lookup tables for all CMS cell cases ([[https://graphics.cmlab.csie.ntu.edu.tw/CMS/detail/table.html | ]]) and also the lookup tables to resolve cell ambiguities.
