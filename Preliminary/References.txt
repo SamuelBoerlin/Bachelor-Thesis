@@ -1,0 +1,18 @@
+Voxels:
+- Cubical Marching Squares: Adaptive Feature Preserving Surface Extraction from Volume Data: https://graphics.cmlab.csie.ntu.edu.tw/CMS/download/cms-eg2005.pdf
+- Feature Sensitive Surface Extraction from Volume Data (sharp feature extraction): https://www.graphics.rwth-aachen.de/media/papers/feature1.pdf
+- A refined data addressing and processing scheme to accelerate volume raycasting (voxel storage): https://vis.uib.no/wp-content/papercite-data/pdfs/Grimm-2004-RDA.pdf
+- Volumetric Representation of Virtual Environments, Game Engine Gems Vol. 1 (voxel storage): https://books.google.ch/books?id=WNfD2u8nIlIC&lpg=PR1&dq=game+engine+gems&pg=PA39&redir_esc=y#v=onepage&q&f=false
+- Fast and Adaptive Polygon Conversion By Means Of Sparse Volumes (Hermite Data compression): http://liu.diva-portal.org/smash/get/diva2:624728/FULLTEXT01.pdf
+- Dual Contouring of Hermite Data (mostly for multi-material support): https://www.cse.wustl.edu/~taoju/research/dualContour.pdf
+- Feature Sensitive GPU-based Computation of Swept Volumes (interesting for mulitple intersections per edge): https://www.glk.uni-mainz.de/files/2018/08/FB08_Bachelorarbeit_JulianBrummer.pdf
+- Fast parallel surface and solid voxelization on GPUs (idea for tile based approach, not on GPU): https://dl.acm.org/doi/abs/10.1145/1882261.1866201
+- Hermite Data operations on voxel grid (original website unfortunately no longer available): https://web.archive.org/web/20160324095721/https://upvoid.com/devblog/2013/07/terrain-engine-part-2-volume-generation-and-the-csg-tree/
+- Fast QEF/SVD solver: https://github.com/nickgildea/qef
+- Parallel Prefix Sum (Scan) with CUDA (for potential CMS GPU implementation): http://developer.download.nvidia.com/compute/cuda/1_1/Website/projects/scan/doc/scan.pdf
+- Multiple choice algorithm for mesh decimation (potential candidate for mesh optimization): http://procworld.blogspot.com/search/label/Multiple%20Choice%20Algorithms
+
+Cineast:
+- Towards an All-Purpose, Content-Based Multimedia Information Retrieval System: http://archiv.cs.unibas.ch/2017/gasser_ralph/downloads/Thesis_print.pdf
+- On Visual Similarity Based 3D Model Retrieval: https://onlinelibrary.wiley.com/doi/epdf/10.1111/1467-8659.00669
+- Combining color and shape descriptors for 3D model retrieval: https://www.sciencedirect.com/science/article/pii/S092359651300012X
