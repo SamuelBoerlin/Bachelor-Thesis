@@ -1,0 +1,16 @@
+Usability:
+- How big should buttons be? Needs hands-on experimentation.
+
+Visuals:
+- Thumbnails could be retrieved directly from Cineast or be rendered
+  into a texture on client side.
+- Instead of thumbnails it could render a spinning 360° preview
+
+Interaction:
+- All Models/Objects can be grabbed in the GUI which will spawn them in
+  the world/user's hand.
+- Held object can be "put" into the top left query slot to search for similar
+  objects in cineast's database.
+- Similar to Vitrivr-NG's Query-by-Sketch, the user can grab a result from the GUI,
+  modify it using the program's CSG operations, and then use the modified object
+  for the new query.
