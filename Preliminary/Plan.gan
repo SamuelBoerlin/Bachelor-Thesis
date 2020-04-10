@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="Bachelor Thesis" company="" webLink="http://" view-date="2020-03-09" view-index="0" gantt-divider-location="575" resource-divider-location="300" version="2.8.10" locale="de">
+    <description/>
+    <view zooming-state="default:6" id="gantt-chart">
+        <field id="tpd3" name="Vorgang" width="321" order="0"/>
+        <field id="tpd4" name="Anfang" width="121" order="1"/>
+        <field id="tpd5" name="Ende" width="129" order="2"/>
+    </view>
+    <view id="resource-table">
+        <field id="0" name="Ressource" width="210" order="0"/>
+        <field id="1" name="Rolle" width="86" order="1"/>
+    </view>
+    <!-- -->
+    <calendars>
+        <day-types>
+            <day-type id="0"/>
+            <day-type id="1"/>
+            <default-week id="1" name="default" sun="1" mon="0" tue="0" wed="0" thu="0" fri="0" sat="1"/>
+            <only-show-weekends value="true"/>
+            <overriden-day-types/>
+            <days/>
+        </day-types>
+    </calendars>
+    <tasks empty-milestones="true">
+        <taskproperties>
+            <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+            <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+            <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+            <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+            <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+            <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+            <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+            <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+            <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+            <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+        </taskproperties>
+        <task id="22" name="Research &amp; Implementation" meeting="false" start="2020-03-30" duration="52" complete="0" expand="true">
+            <task id="139" name="Get semi-working CMS table generator to work properly" meeting="false" start="2020-03-30" duration="5" complete="0" expand="true"/>
+            <task id="29" name="Voxelizer" meeting="false" start="2020-03-30" duration="9" complete="0" expand="true">
+                <depend id="43" type="2" difference="0" hardness="Strong"/>
+                <depend id="104" type="2" difference="0" hardness="Rubber"/>
+                <task id="30" name="Optimize Voxelizer" meeting="false" start="2020-03-30" duration="5" complete="0" expand="true"/>
+                <task id="31" name="Improve Voxelizer Reliability" meeting="false" start="2020-04-01" duration="7" complete="0" expand="true"/>
+            </task>
+            <task id="37" name="Feature Extraction" meeting="false" start="2020-04-04" duration="16" complete="0" expand="true">
+                <depend id="74" type="2" difference="0" hardness="Strong"/>
+                <task id="38" name="Research Features" meeting="false" start="2020-04-04" duration="5" complete="0" expand="true"/>
+                <task id="39" name="Set up Cineast" meeting="false" start="2020-04-08" duration="1" complete="0" expand="true"/>
+                <task id="41" name="Create Test Database (e.g. Smithsonian)" meeting="false" start="2020-04-08" duration="12" complete="0" expand="true"/>
+                <task id="40" name="Create Feature Module" meeting="false" start="2020-04-09" duration="2" complete="0" expand="true"/>
+                <task id="42" name="Implement ClusterAngle+Color Feature" meeting="false" start="2020-04-09" duration="11" complete="0" expand="true"/>
+                <task id="47" name="Try Other Feature?" meeting="false" start="2020-04-11" duration="9" complete="0" expand="true"/>
+            </task>
+            <task id="74" name="OpenAPI" meeting="false" start="2020-04-20" duration="5" complete="0" expand="true">
+                <depend id="97" type="2" difference="0" hardness="Rubber"/>
+                <task id="77" name="Replace Spark With Javlin" meeting="false" start="2020-04-20" duration="3" complete="0" expand="true"/>
+                <task id="81" name="Check If Message Fields Can Be Automated" meeting="false" start="2020-04-22" duration="1" complete="0" expand="true"/>
+                <task id="80" name="Implement Documentation" meeting="false" start="2020-04-22" duration="2" complete="0" expand="true"/>
+                <task id="83" name="Update C# API, if necessary" meeting="false" start="2020-04-23" duration="2" complete="0" expand="true"/>
+            </task>
+            <task id="43" name="CSG" meeting="false" start="2020-04-25" duration="3" complete="0" expand="true">
+                <depend id="97" type="2" difference="0" hardness="Rubber"/>
+                <depend id="104" type="2" difference="0" hardness="Rubber"/>
+                <task id="49" name="Fix CSG Operations With Voxelized Models" meeting="false" start="2020-04-25" duration="1" complete="0" expand="true"/>
+                <task id="51" name="Implement Undo/Redo" meeting="false" start="2020-04-26" duration="2" complete="0" expand="true"/>
+            </task>
+            <task id="85" name="Polygonizer" meeting="false" start="2020-04-28" duration="7" complete="0" expand="true">
+                <depend id="97" type="2" difference="0" hardness="Rubber"/>
+                <depend id="104" type="2" difference="0" hardness="Rubber"/>
+                <task id="134" name="Arbitrary Color Support (quantize color, material id -&gt; color lookup table?)" meeting="false" start="2020-04-28" duration="2" complete="0" expand="true"/>
+                <task id="88" name="Optimize" meeting="false" start="2020-04-28" duration="7" complete="0" expand="true"/>
+                <task id="89" name="Check If Table Based CMS Is Faster" meeting="false" start="2020-04-28" duration="7" complete="0" expand="true"/>
+            </task>
+            <task id="107" name="Buffer (non-essential optimizations/features can be scrapped if necessary)" meeting="false" start="2020-04-25" duration="10" complete="0" expand="true">
+                <task id="160" name="Optimize CSG Operations? (Optional, likely already &quot;good enough&quot;)" meeting="false" start="2020-04-25" duration="3" complete="0" expand="true"/>
+                <task id="158" name="Check Other Algorithms (Optional)" meeting="false" start="2020-04-28" duration="3" complete="0" expand="true"/>
+                <task id="159" name="Texture Atlas Support? (Optional)" meeting="false" start="2020-05-01" duration="3" complete="0" expand="true"/>
+                <task id="161" name="Experiment With Different Brushes? (Optional)" meeting="false" start="2020-04-30" duration="5" complete="0" expand="true"/>
+            </task>
+            <task id="98" name="VR" meeting="false" start="2020-05-05" duration="16" complete="0" expand="true">
+                <depend id="115" type="2" difference="0" hardness="Strong"/>
+                <task id="102" name="Create VR Base Project" meeting="false" start="2020-05-05" duration="2" complete="0" expand="true"/>
+                <task id="104" name="Merge Voxel Sandbox/VR Base" color="#8cb6ce" meeting="false" start="2020-05-06" duration="3" complete="0" expand="true"/>
+                <task id="124" name="Implement VoxelWorld/VR Interactions (Sculpting, etc.)" meeting="false" start="2020-05-08" duration="4" complete="0" expand="true"/>
+                <task id="126" name="Integrate C# Cineast API" meeting="false" start="2020-05-10" duration="2" complete="0" expand="true"/>
+                <task id="128" name="Sculpting Refinements &amp; GUI" meeting="false" start="2020-05-10" duration="6" complete="0" expand="true"/>
+                <task id="130" name="Query GUI" meeting="false" start="2020-05-14" duration="7" complete="0" expand="true"/>
+                <task id="132" name="User-friendly Configuration (Cineast Address, etc.)" meeting="false" start="2020-05-19" duration="2" complete="0" expand="true"/>
+            </task>
+        </task>
+        <task id="53" name="Thesis" color="#000000" meeting="false" start="2020-04-01" duration="90" complete="0" thirdDate="2020-05-25" thirdDate-constraint="0" expand="true">
+            <task id="151" name="Continously Update Thesis Document" meeting="false" start="2020-04-01" duration="62" complete="0" expand="true"/>
+            <task id="141" name="Prepare User Evaluation (find participants, questionnaire, tasks, etc.)" meeting="false" start="2020-04-27" duration="28" complete="0" expand="true"/>
+            <task id="115" name="Conduct User Evaluation" meeting="false" start="2020-05-21" duration="13" complete="0" expand="true"/>
+            <task id="97" name="Evaluate Technicals (voxelizer, polygonizer, query time, before vs. after optimization, precision vs. recall, etc.)" color="#8cb6ce" meeting="false" start="2020-05-11" duration="23" complete="0" thirdDate="2020-05-05" thirdDate-constraint="0" expand="true"/>
+            <task id="157" name="Evaluate User Evaluation" meeting="false" start="2020-05-30" duration="6" complete="0" expand="true"/>
+            <task id="61" name="Final Writing, Graphics, etc." meeting="false" start="2020-06-01" duration="17" complete="0" expand="true"/>
+            <task id="68" name="Proof-read" meeting="false" start="2020-06-18" duration="6" complete="0" expand="true"/>
+            <task id="59" name="Buffer" meeting="false" start="2020-06-22" duration="8" complete="0" expand="true"/>
+        </task>
+    </tasks>
+    <resources/>
+    <allocations/>
+    <vacations/>
+    <previous/>
+    <roles roleset-name="Default"/>
+    <roles roleset-name="SoftwareDevelopment"/>
+</project>
