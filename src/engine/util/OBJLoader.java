@@ -120,6 +120,13 @@ public class OBJLoader extends Object {
     public Obj loadModel(InputStream stream) {
         return this.loadModel(new Scanner(stream));
     }
+    
+    private int convertIndex(int objIndex, int num) {
+    	if(objIndex < 0) {
+    		return num + objIndex + 1;
+    	}
+    	return objIndex;
+    }
 
     /**
      * @param sc the <code>Obj</code> to be loaded
@@ -127,56 +134,89 @@ public class OBJLoader extends Object {
      */
     public Obj loadModel(Scanner sc) {
         Obj model = new Obj();
+        int line = 0;
         while (sc.hasNextLine()) {
+        	line++;
+        	
             String ln = sc.nextLine();
             if (ln == null || ln.equals("") || ln.startsWith("#")) {
             } else {
-                String[] split = ln.split(" ");
-                switch (split[0]) {
-                    case "v":
-                        model.getVertices().add(new Vector3f(
-                                Float.parseFloat(split[1]),
-                                Float.parseFloat(split[2]),
-                                Float.parseFloat(split[3])
-                        ));
-                        break;
-                    case "vn":
-                        model.getNormals().add(new Vector3f(
-                                Float.parseFloat(split[1]),
-                                Float.parseFloat(split[2]),
-                                Float.parseFloat(split[3])
-                        ));
-                        break;
-                    case "vt":
-                        model.getTextureCoordinates().add(new Vector2f(
-                                Float.parseFloat(split[1]),
-                                Float.parseFloat(split[2])
-                        ));
-                        break;
-                    case "f":
-                        model.getFaces().add(new Obj.Face(
-                                new int[]{
-                                    Integer.parseInt(split[1].split("/")[0]),
-                                    Integer.parseInt(split[2].split("/")[0]),
-                                    Integer.parseInt(split[3].split("/")[0])
-                                },
-                                new int[]{
-                                    Integer.parseInt(split[1].split("/")[1]),
-                                    Integer.parseInt(split[2].split("/")[1]),
-                                    Integer.parseInt(split[3].split("/")[1])
-                                },
-                                new int[]{
-                                    Integer.parseInt(split[1].split("/")[2]),
-                                    Integer.parseInt(split[2].split("/")[2]),
-                                    Integer.parseInt(split[3].split("/")[2])
-                                }
-                        ));
-                        break;
-                    case "s":
-                        model.setSmoothShadingEnabled(!ln.contains("off"));
-                        break;
-                    default:
-                        System.err.println("[OBJ] Unknown Line: " + ln);
+                String[] split = ln.split("\\s+");
+                try {
+	                switch (split[0]) {
+	                    case "v":
+	                        model.getVertices().add(new Vector3f(
+	                                Float.parseFloat(split[1]),
+	                                Float.parseFloat(split[2]),
+	                                Float.parseFloat(split[3])
+	                        ));
+	                        break;
+	                    case "vn":
+	                        model.getNormals().add(new Vector3f(
+	                                Float.parseFloat(split[1]),
+	                                Float.parseFloat(split[2]),
+	                                Float.parseFloat(split[3])
+	                        ));
+	                        break;
+	                    case "vt":
+	                        model.getTextureCoordinates().add(new Vector2f(
+	                                Float.parseFloat(split[1]),
+	                                Float.parseFloat(split[2])
+	                        ));
+	                        break;
+	                    case "f":
+	                    	if(!split[1].contains("/")) {
+	                    		 model.getFaces().add(new Obj.Face(
+	 	                                new int[]{
+	 	                                    convertIndex(Integer.parseInt(split[1]), model.getVertices().size()),
+	 	                                    convertIndex(Integer.parseInt(split[2]), model.getVertices().size()),
+	 	                                    convertIndex(Integer.parseInt(split[3]), model.getVertices().size())
+	 	                                },
+	 	                                new int[]{ -1, -1, -1 },
+	 	                                new int[]{ -1, -1, -1 }
+	 	                        ));
+	                    	} else if(split[1].contains("//")) {
+	                    		 model.getFaces().add(new Obj.Face(
+	 	                                new int[]{
+	 	                                    convertIndex(Integer.parseInt(split[1].split("//")[0]), model.getVertices().size()),
+	 	                                    convertIndex(Integer.parseInt(split[2].split("//")[0]), model.getVertices().size()),
+	 	                                    convertIndex(Integer.parseInt(split[3].split("//")[0]), model.getVertices().size())
+	 	                                },
+	 	                                new int[]{ -1, -1, -1 },
+	 	                                new int[]{
+	 	                                    convertIndex(Integer.parseInt(split[1].split("//")[1]), model.getNormals().size()),
+	 	                                    convertIndex(Integer.parseInt(split[2].split("//")[1]), model.getNormals().size()),
+	 	                                    convertIndex(Integer.parseInt(split[3].split("//")[1]), model.getNormals().size())
+	 	                                }
+	 	                        ));
+	                    	} else {
+	                    		 model.getFaces().add(new Obj.Face(
+	 	                                new int[]{
+	 	                                    convertIndex(Integer.parseInt(split[1].split("/")[0]), model.getVertices().size()),
+	 	                                    convertIndex(Integer.parseInt(split[2].split("/")[0]), model.getVertices().size()),
+	 	                                    convertIndex(Integer.parseInt(split[3].split("/")[0]), model.getVertices().size())
+	 	                                },
+	 	                                new int[]{
+	 	                                    convertIndex(Integer.parseInt(split[1].split("/")[1]), model.getTextureCoordinates().size()),
+	 	                                    convertIndex(Integer.parseInt(split[2].split("/")[1]), model.getTextureCoordinates().size()),
+	 	                                    convertIndex(Integer.parseInt(split[3].split("/")[1]), model.getTextureCoordinates().size())
+	 	                                },
+	 	                                new int[]{
+	 	                                    convertIndex(Integer.parseInt(split[1].split("/")[2]), model.getNormals().size()),
+	 	                                    convertIndex(Integer.parseInt(split[2].split("/")[2]), model.getNormals().size()),
+	 	                                    convertIndex(Integer.parseInt(split[3].split("/")[2]), model.getNormals().size())
+	 	                                }
+	 	                        ));
+	                    	}
+	                        break;
+	                    case "s":
+	                        model.setSmoothShadingEnabled(!ln.contains("off"));
+	                        break;
+	                    default:
+	                        System.err.println("[OBJ] Unknown Line: " + ln + " (" + line + ")");
+	                }
+                } catch(NumberFormatException ex) {
+                	System.err.println("[OBJ] Invalid Line: " + ln + " (" + line + ")");
                 }
             }
         }

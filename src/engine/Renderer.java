@@ -148,6 +148,8 @@ public class Renderer {
 		GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, VIEW_MATRIX);
 		VIEW_MATRIX.rewind();
 
+		ARBShaderObjects.glUseProgramObjectARB(0);
+		
 		//Render coordinate axes
 		GL11.glPushMatrix();
 		GL11.glTranslated(-0.5, -0.5, -0.5);

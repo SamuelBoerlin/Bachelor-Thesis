@@ -3,6 +3,8 @@ package engine.saliency;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import org.lwjgl.util.vector.Matrix3f;
@@ -13,7 +15,93 @@ import engine.util.Obj;
 import engine.util.Obj.Face;
 
 public class MeshUtils {
-	public static void applyDiffusion(Obj model, float lambda) {
+	public static interface Score {
+		public float score(Face face, float u, float v, Vector3f position);
+	}
+
+	public static List<FeatureSample> sampleFeatures(Obj model, Score score, List<FeatureSample> samples, int numSamples, Random rng) {
+		float[] cumulativeAreas = new float[model.getFaces().size()];
+
+		int i = 0;
+		for(Face face : model.getFaces()) {
+			float area = faceCross(model, face).length() * 0.5f;
+			if(!Float.isFinite(area)) {
+				area = 0.0f;
+			}
+			if(i == 0) {
+				cumulativeAreas[i] = area;
+			} else {
+				cumulativeAreas[i] = cumulativeAreas[i - 1] + area;
+			}
+			i++;
+		}
+
+		for(int j = 0; j < numSamples; j++) {
+			float r = rng.nextFloat() * cumulativeAreas[cumulativeAreas.length - 1];
+
+			int index = -1;
+
+			//Binary search for first element > r
+			int start = 0;
+			int end = cumulativeAreas.length - 1;
+			while(start <= end) {
+				int mid = (start + end) / 2;
+				if(cumulativeAreas[mid] <= r) {
+					start = mid + 1;
+				} else {
+					index = mid;
+					end = mid - 1;
+				}
+			}
+
+			if(index >= 0) {
+				Face face = model.getFaces().get(index);
+
+				float u = rng.nextFloat();
+				float v = rng.nextFloat();
+
+				if(u + v >= 1.0f) {
+					u = 1.0f - u;
+					v = 1.0f - v;
+				}
+
+				Vector3f a = model.getVertices().get(face.getVertices()[0] - 1);
+				Vector3f b = model.getVertices().get(face.getVertices()[1] - 1);
+				Vector3f c = model.getVertices().get(face.getVertices()[2] - 1);
+
+				Vector3f d1 = Vector3f.sub(b, a, new Vector3f());
+				Vector3f d2 = Vector3f.sub(c, a, new Vector3f());
+
+				Vector3f position = new Vector3f(
+						a.x + d1.x * u + d2.x * v,
+						a.y + d1.y * u + d2.y * v,
+						a.z + d1.z * u + d2.z * v
+						);
+
+				samples.add(new FeatureSample(position, score.score(face, u, v, position)));
+			}
+		}
+
+		return samples;
+	}
+
+	public static Map<Integer, List<Face>> mapFaces(Obj model, Map<Integer, List<Face>> faceMap) {
+		for(Face face : model.getFaces()) {
+			for(int i = 0; i < 3; i++) {
+				int vertexIndex = face.getVertices()[i] - 1;
+
+				List<Face> faceList = faceMap.get(vertexIndex);
+				if(faceList == null) {
+					faceMap.put(vertexIndex, faceList = new ArrayList<>());
+				}
+
+				faceList.add(face);
+			}
+		}
+		return faceMap;
+	}
+
+	public static void applyDiffusion(Obj model, Map<Integer, List<Face>> faceMap, float lambda) {
 		List<Vector3f> vertices = model.getVertices();
 
 		List<Vector3f> newVertices = new ArrayList<>(vertices.size());
@@ -27,15 +115,17 @@ public class MeshUtils {
 
 			int neighbors = 0;
 
-			List<Face> sharedFaces = findFacesWithVertex(model, vertexIndex);
+			List<Face> sharedFaces = faceMap.get(vertexIndex);
 
 			Set<Integer> sharedVertices = new HashSet<>();
-			for(Face face : sharedFaces) {
-				for(int i = 0; i < 3; i++) {
-					int otherVertexIndex = face.getVertices()[i] - 1;
+			if(sharedFaces != null) {
+				for(Face face : sharedFaces) {
+					for(int i = 0; i < 3; i++) {
+						int otherVertexIndex = face.getVertices()[i] - 1;
 
-					if(otherVertexIndex != vertexIndex) {
-						sharedVertices.add(otherVertexIndex);
+						if(otherVertexIndex != vertexIndex) {
+							sharedVertices.add(otherVertexIndex);
+						}
 					}
 				}
 			}
@@ -66,10 +156,14 @@ public class MeshUtils {
 		}
 	}
 
-	public static Vector2f principalCurvatures(Obj model, int vertexIndex) {
+	public static Vector2f principalCurvatures(Obj model, Map<Integer, List<Face>> faceMap, int vertexIndex) {
 		Vector3f vertex = model.getVertices().get(vertexIndex);
 
-		List<Face> sharedFaces = findFacesWithVertex(model, vertexIndex);
+		List<Face> sharedFaces = faceMap.get(vertexIndex);
+
+		if(sharedFaces == null) {
+			return new Vector2f(0, 0);
+		}
 
 		Vector3f vertexNormal = weightedNormal(model, sharedFaces);
 
@@ -83,7 +177,6 @@ public class MeshUtils {
 				}
 			}
 		}
-
 
 		//Count faces that are indicent to both vertex and sharedVertex
 		int[] weights = new int[sharedVertices.size()];
@@ -187,20 +280,5 @@ public class MeshUtils {
 		Vector3f b = model.getVertices().get(face.getVertices()[1] - 1);
 		Vector3f c = model.getVertices().get(face.getVertices()[2] - 1);
 		return Vector3f.cross(Vector3f.sub(b, a, new Vector3f()), Vector3f.sub(c, a, new Vector3f()), new Vector3f());
-	}
-
-	public static List<Face> findFacesWithVertex(Obj model, int vertexIndex) {
-		List<Face> faces = new ArrayList<>();
-
-		for(Face face : model.getFaces()) {
-			for(int i = 0; i < 3; i++) {
-				if(face.getVertices()[i] - 1 == vertexIndex) {
-					faces.add(face);
-					break;
-				}
-			}
-		}
-
-		return faces;
 	}
 }
