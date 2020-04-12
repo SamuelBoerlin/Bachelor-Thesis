@@ -1,6 +1,7 @@
 package engine.saliency;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -101,7 +102,7 @@ public class MeshUtils {
 		return faceMap;
 	}
 
-	public static void applyDiffusion(Obj model, Map<Integer, List<Face>> faceMap, float lambda) {
+	public static void applyVertexDiffusion(Obj model, Map<Integer, List<Face>> faceMap, float lambda) {
 		List<Vector3f> vertices = model.getVertices();
 
 		List<Vector3f> newVertices = new ArrayList<>(vertices.size());
@@ -154,6 +155,48 @@ public class MeshUtils {
 		for(int index = 0; index < vertices.size(); index++) {
 			vertices.set(index, newVertices.get(index));
 		}
+	}
+
+	public static void applyScalarDiffusion(Obj model, Map<Integer, List<Face>> faceMap, float lambda, Map<Integer, Float> vertexScalars) {
+		List<Vector3f> vertices = model.getVertices();
+
+		Map<Integer, Float> newScalars = new HashMap<>();
+
+		for(int vertexIndex = 0; vertexIndex < vertices.size(); vertexIndex++) {
+			float scalar = vertexScalars.get(vertexIndex);
+
+			float d = 0;
+
+			int neighbors = 0;
+
+			List<Face> sharedFaces = faceMap.get(vertexIndex);
+
+			Set<Integer> sharedVertices = new HashSet<>();
+			if(sharedFaces != null) {
+				for(Face face : sharedFaces) {
+					for(int i = 0; i < 3; i++) {
+						int otherVertexIndex = face.getVertices()[i] - 1;
+
+						if(otherVertexIndex != vertexIndex) {
+							sharedVertices.add(otherVertexIndex);
+						}
+					}
+				}
+			}
+
+			for(int sharedVertexIndex : sharedVertices) {
+				d += vertexScalars.get(sharedVertexIndex) - scalar;
+				neighbors++;
+			}
+
+			if(neighbors > 0) {
+				newScalars.put(vertexIndex, scalar + lambda * d / neighbors);
+			} else {
+				newScalars.put(vertexIndex, scalar);
+			}
+		}
+
+		vertexScalars.putAll(newScalars);
 	}
 
 	public static Vector2f principalCurvatures(Obj model, Map<Integer, List<Face>> faceMap, int vertexIndex) {
