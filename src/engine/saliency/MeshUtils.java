@@ -1,10 +1,8 @@
 package engine.saliency;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -16,6 +14,10 @@ import engine.util.Obj;
 import engine.util.Obj.Face;
 
 public class MeshUtils {
+	public static class FaceList extends ArrayList<Face> {
+		private static final long serialVersionUID = 5667034252287440718L;
+	}
+
 	public static interface Score {
 		public float score(Face face, float u, float v, Vector3f position);
 	}
@@ -86,14 +88,15 @@ public class MeshUtils {
 		return samples;
 	}
 
-	public static Map<Integer, List<Face>> mapFaces(Obj model, Map<Integer, List<Face>> faceMap) {
+	public static FaceList[] mapFaces(Obj model) {
+		FaceList[] faceMap = new FaceList[model.getVertices().size()];
 		for(Face face : model.getFaces()) {
 			for(int i = 0; i < 3; i++) {
 				int vertexIndex = face.getVertices()[i] - 1;
 
-				List<Face> faceList = faceMap.get(vertexIndex);
+				FaceList faceList = faceMap[vertexIndex];
 				if(faceList == null) {
-					faceMap.put(vertexIndex, faceList = new ArrayList<>());
+					faceMap[vertexIndex] = faceList = new FaceList();
 				}
 
 				faceList.add(face);
@@ -102,7 +105,7 @@ public class MeshUtils {
 		return faceMap;
 	}
 
-	public static void applyVertexDiffusion(Obj model, Map<Integer, List<Face>> faceMap, float lambda) {
+	public static void applyVertexDiffusion(Obj model, FaceList[] faceMap, float lambda) {
 		List<Vector3f> vertices = model.getVertices();
 
 		List<Vector3f> newVertices = new ArrayList<>(vertices.size());
@@ -116,7 +119,7 @@ public class MeshUtils {
 
 			int neighbors = 0;
 
-			List<Face> sharedFaces = faceMap.get(vertexIndex);
+			FaceList sharedFaces = faceMap[vertexIndex];
 
 			Set<Integer> sharedVertices = new HashSet<>();
 			if(sharedFaces != null) {
@@ -157,19 +160,19 @@ public class MeshUtils {
 		}
 	}
 
-	public static void applyScalarDiffusion(Obj model, Map<Integer, List<Face>> faceMap, float lambda, Map<Integer, Float> vertexScalars) {
-		List<Vector3f> vertices = model.getVertices();
+	public static void applyScalarDiffusion(Obj model, FaceList[] faceMap, float lambda, float[] vertexScalars) {
+		int numVertices = model.getVertices().size();
 
-		Map<Integer, Float> newScalars = new HashMap<>();
+		float[] newScalars = new float[numVertices];
 
-		for(int vertexIndex = 0; vertexIndex < vertices.size(); vertexIndex++) {
-			float scalar = vertexScalars.get(vertexIndex);
+		for(int vertexIndex = 0; vertexIndex < numVertices; vertexIndex++) {
+			float scalar = vertexScalars[vertexIndex];
 
 			float d = 0;
 
 			int neighbors = 0;
 
-			List<Face> sharedFaces = faceMap.get(vertexIndex);
+			FaceList sharedFaces = faceMap[vertexIndex];
 
 			Set<Integer> sharedVertices = new HashSet<>();
 			if(sharedFaces != null) {
@@ -185,24 +188,24 @@ public class MeshUtils {
 			}
 
 			for(int sharedVertexIndex : sharedVertices) {
-				d += vertexScalars.get(sharedVertexIndex) - scalar;
+				d += vertexScalars[sharedVertexIndex] - scalar;
 				neighbors++;
 			}
 
 			if(neighbors > 0) {
-				newScalars.put(vertexIndex, scalar + lambda * d / neighbors);
+				newScalars[vertexIndex] = scalar + lambda * d / neighbors;
 			} else {
-				newScalars.put(vertexIndex, scalar);
+				newScalars[vertexIndex] = scalar;
 			}
 		}
 
-		vertexScalars.putAll(newScalars);
+		System.arraycopy(newScalars, 0, vertexScalars, 0, numVertices);
 	}
 
-	public static Vector2f principalCurvatures(Obj model, Map<Integer, List<Face>> faceMap, int vertexIndex) {
+	public static Vector2f principalCurvatures(Obj model, FaceList[] faceMap, int vertexIndex) {
 		Vector3f vertex = model.getVertices().get(vertexIndex);
 
-		List<Face> sharedFaces = faceMap.get(vertexIndex);
+		FaceList sharedFaces = faceMap[vertexIndex];
 
 		if(sharedFaces == null) {
 			return new Vector2f(0, 0);

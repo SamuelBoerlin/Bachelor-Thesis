@@ -8,9 +8,7 @@ import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import org.lwjgl.input.Keyboard;
@@ -22,7 +20,10 @@ import org.lwjgl.util.vector.Vector3f;
 import edu.mines.jtk.awt.ColorMap;
 import engine.saliency.DifferenceOfLaplacianScore;
 import engine.saliency.FeatureSample;
+import engine.saliency.IsodataClustering;
+import engine.saliency.IsodataClustering.Cluster;
 import engine.saliency.MeshUtils;
+import engine.saliency.MeshUtils.FaceList;
 import engine.saliency.MeshUtils.Score;
 import engine.util.OBJLoader;
 import engine.util.Obj;
@@ -32,9 +33,9 @@ public class Scene {
 	private final Engine engine;
 
 	private final OBJLoader modelLoader;
-	private List<Obj> models;
-	private List<Map<Integer, Float>> scores;
-	private Map<Integer, List<Face>> faceMap;
+	private Obj[] models;
+	private float[][] scores;
+	private FaceList[] faceMap;
 
 	private boolean wasUpDown = false;
 	private boolean wasDownDown = false;
@@ -43,7 +44,7 @@ public class Scene {
 
 	private boolean wasKDown = false;
 
-	private float lambda = 1.0f;
+	private float lambda = 8.0f;
 	private int smoothSteps = 0;
 
 	private int displayListId = -1;
@@ -60,33 +61,34 @@ public class Scene {
 		}
 		this.displayListId = -1;
 
-		String modelFile = "/models/cat.obj";
+		String modelFile = "/models/penguin.obj";
 
-		this.models = new ArrayList<>(3);
-		this.scores = new ArrayList<>(3);
+		this.models = new Obj[3];
+		this.scores = new float[3][];
 		for(int i = 0; i < 3; i++) {
 			long time = System.currentTimeMillis();
 
 			Obj model = this.modelLoader.loadModel(Scene.class.getResourceAsStream(modelFile));
 
 			if(i == 0) {
-				this.faceMap = MeshUtils.mapFaces(model, new HashMap<>());
+				this.faceMap = MeshUtils.mapFaces(model);
 			}
 
 			int subdivs = (int)Math.ceil(this.lambda);
 
 			//TODO Reuse vertices and scores from previous smoothing stage
-			
+
 			//Apply laplacian smoothing to vertices
 			for(int j = 0; j < i * subdivs; j++) {
 				MeshUtils.applyVertexDiffusion(model, this.faceMap, this.lambda / subdivs);
 			}
 
 			//Calculate mean curvatures
-			Map<Integer, Float> scores = new HashMap<>();
-			for(int numVertices = model.getVertices().size(), vertexIndex = 0; vertexIndex < numVertices; vertexIndex++) {
+			int numVertices = model.getVertices().size();
+			float[] scores = new float[numVertices];
+			for(int vertexIndex = 0; vertexIndex < numVertices; vertexIndex++) {
 				Vector2f principalCurvatures = MeshUtils.principalCurvatures(model, this.faceMap, vertexIndex);
-				scores.put(vertexIndex, 0.5f * (principalCurvatures.x + principalCurvatures.y));
+				scores[vertexIndex] = 0.5f * (principalCurvatures.x + principalCurvatures.y);
 			}
 
 			//Apply laplacian smoothing to curvatures
@@ -108,15 +110,15 @@ public class Scene {
 
 			System.out.println("Loaded model with " + i + " smoothing steps in " + (System.currentTimeMillis() - time) + "ms");
 
-			this.models.add(model);
-			this.scores.add(scores);
+			this.models[i] = model;
+			this.scores[i] = scores;
 		}
 	}
 
 	public void render() {
 		if(Keyboard.isKeyDown(Keyboard.KEY_UP)) {
 			if(!this.wasUpDown) {
-				this.smoothSteps = Math.min(this.models.size() - 1, this.smoothSteps + 1);
+				this.smoothSteps = Math.min(this.models.length- 1, this.smoothSteps + 1);
 				System.out.println("Smooth steps: " + this.smoothSteps);
 			}
 			this.wasUpDown = true;
@@ -186,15 +188,15 @@ public class Scene {
 
 		float totalCurvature = 0.0f;
 
-		for(int i = 0; i < this.models.get(0).getVertices().size(); i++) {
-			Vector2f principalCurvatures = MeshUtils.principalCurvatures(this.models.get(0), this.faceMap, i);
+		for(int i = 0; i < this.models[0].getVertices().size(); i++) {
+			Vector2f principalCurvatures = MeshUtils.principalCurvatures(this.models[0], this.faceMap, i);
 
-			List<Obj.Face> sharedFaces = faceMap.get(i);
+			FaceList sharedFaces = this.faceMap[i];
 
 			if(sharedFaces != null) {
 				float area = 0.0f;
 				for(Obj.Face face : sharedFaces) {
-					area += MeshUtils.faceCross(this.models.get(0), face).length() * 0.5f;
+					area += MeshUtils.faceCross(this.models[0], face).length() * 0.5f;
 				}
 
 				float gaussianCurvature = principalCurvatures.x * principalCurvatures.y;
@@ -216,7 +218,7 @@ public class Scene {
 
 		Score score = new DifferenceOfLaplacianScore(this.scores);
 
-		List<FeatureSample> samples = MeshUtils.sampleFeatures(this.models.get(this.smoothSteps), score, new ArrayList<>(), numSamples, new Random());
+		List<FeatureSample> samples = MeshUtils.sampleFeatures(this.models[this.smoothSteps], score, new ArrayList<>(), numSamples, new Random());
 
 		Collections.sort(samples, (s1, s2) -> -Float.compare(s1.score, s2.score));
 
@@ -224,6 +226,9 @@ public class Scene {
 		for(int i = samples.size() - 1; i > numSamples / 10; i--) {
 			samples.remove(i);
 		}
+
+		IsodataClustering clustering = new IsodataClustering(samples.size() / 20, 0.35f, 1.5f, 10, 100, 200);
+		List<Cluster> clusters = clustering.cluster(samples, new Random());
 
 		float colorStrength = 0.1f;
 
@@ -233,21 +238,21 @@ public class Scene {
 		GL11.glMaterialf(GL_FRONT, GL_SHININESS, 120);
 		GL11.glBegin(GL_TRIANGLES);
 		{
-			for (Obj.Face face : this.models.get(this.smoothSteps).getFaces()) {
-				/*Vector3f[] normals = {
+			for (Obj.Face face : this.models[this.smoothSteps].getFaces()) {
+				Vector3f[] normals = {
 						this.models[this.smoothSteps].getNormals().get(face.getNormals()[0] - 1),
 						this.models[this.smoothSteps].getNormals().get(face.getNormals()[1] - 1),
 						this.models[this.smoothSteps].getNormals().get(face.getNormals()[2] - 1)
-				};*/
+				};
 				/*Vector2f[] texCoords = {
-						this.model.getTextureCoordinates().get(face.getTextureCoords()[0] - 1),
-						this.model.getTextureCoordinates().get(face.getTextureCoords()[1] - 1),
-						this.model.getTextureCoordinates().get(face.getTextureCoords()[2] - 1)
+						this.models[this.smoothSteps].getTextureCoordinates().get(face.getTextureCoords()[0] - 1),
+						this.models[this.smoothSteps].getTextureCoordinates().get(face.getTextureCoords()[1] - 1),
+						this.models[this.smoothSteps].getTextureCoordinates().get(face.getTextureCoords()[2] - 1)
 				};*/
 				Vector3f[] vertices = {
-						this.models.get(this.smoothSteps).getVertices().get(face.getVertices()[0] - 1),
-						this.models.get(this.smoothSteps).getVertices().get(face.getVertices()[1] - 1),
-						this.models.get(this.smoothSteps).getVertices().get(face.getVertices()[2] - 1)
+						this.models[this.smoothSteps].getVertices().get(face.getVertices()[0] - 1),
+						this.models[this.smoothSteps].getVertices().get(face.getVertices()[1] - 1),
+						this.models[this.smoothSteps].getVertices().get(face.getVertices()[2] - 1)
 				};
 
 				/*float[] meanCurvatures = {
@@ -260,35 +265,35 @@ public class Scene {
 
 				float[] vertexScores = {
 						DifferenceOfLaplacianScore.scoreCurvatures(
-								this.scores.get(2).get(face.getVertices()[0] - 1),
-								this.scores.get(1).get(face.getVertices()[0] - 1),
-								this.scores.get(0).get(face.getVertices()[0] - 1)
+								this.scores[2][face.getVertices()[0] - 1],
+								this.scores[1][face.getVertices()[0] - 1],
+								this.scores[0][face.getVertices()[0] - 1]
 								),
 						DifferenceOfLaplacianScore.scoreCurvatures(
-								this.scores.get(2).get(face.getVertices()[1] - 1),
-								this.scores.get(1).get(face.getVertices()[1] - 1),
-								this.scores.get(0).get(face.getVertices()[1] - 1)
+								this.scores[2][face.getVertices()[1] - 1],
+								this.scores[1][face.getVertices()[1] - 1],
+								this.scores[0][face.getVertices()[1] - 1]
 								),
 						DifferenceOfLaplacianScore.scoreCurvatures(
-								this.scores.get(2).get(face.getVertices()[2] - 1),
-								this.scores.get(1).get(face.getVertices()[2] - 1),
-								this.scores.get(0).get(face.getVertices()[2] - 1)
+								this.scores[2][face.getVertices()[2] - 1],
+								this.scores[1][face.getVertices()[2] - 1],
+								this.scores[0][face.getVertices()[2] - 1]
 								)
 				};
 
 				{
 					colorByValue(colorMap, Math.abs(vertexScores[0]) * colorStrength);
-					//GL11.glNormal3f(normals[0].getX(), normals[0].getY(), normals[0].getZ());
+					GL11.glNormal3f(normals[0].getX(), normals[0].getY(), normals[0].getZ());
 					//GL11.glTexCoord2f(texCoords[0].getX(), texCoords[0].getY());
 					GL11.glVertex3f(vertices[0].getX(), vertices[0].getY(), vertices[0].getZ());
 
 					colorByValue(colorMap, Math.abs(vertexScores[1]) * colorStrength);
-					//GL11.glNormal3f(normals[1].getX(), normals[1].getY(), normals[1].getZ());
+					GL11.glNormal3f(normals[1].getX(), normals[1].getY(), normals[1].getZ());
 					//GL11.glTexCoord2f(texCoords[1].getX(), texCoords[1].getY());
 					GL11.glVertex3f(vertices[1].getX(), vertices[1].getY(), vertices[1].getZ());
 
 					colorByValue(colorMap, Math.abs(vertexScores[2]) * colorStrength);
-					//GL11.glNormal3f(normals[2].getX(), normals[2].getY(), normals[2].getZ());
+					GL11.glNormal3f(normals[2].getX(), normals[2].getY(), normals[2].getZ());
 					//GL11.glTexCoord2f(texCoords[2].getX(), texCoords[2].getY());
 					GL11.glVertex3f(vertices[2].getX(), vertices[2].getY(), vertices[2].getZ());
 				}
@@ -321,6 +326,44 @@ public class Scene {
 			}
 		}	
 		GL11.glEnd();
+
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+
+		GL11.glLineWidth(1.5f);
+		GL11.glBegin(GL11.GL_LINES);
+		{
+			for(Cluster cluster : clusters) {
+				GL11.glColor3f(1, 1, 1);
+
+				for(FeatureSample sample : cluster.samples) {
+					GL11.glVertex3f(cluster.center.x, cluster.center.y, cluster.center.z);
+					GL11.glVertex3f(sample.position.x, sample.position.y, sample.position.z);
+				}
+			}
+		}	
+		GL11.glEnd();
+
+		GL11.glPointSize(11.0f);
+		GL11.glBegin(GL11.GL_POINTS);
+		{
+			for(Cluster cluster : clusters) {
+				GL11.glColor3f(0, 0, 0);
+				GL11.glVertex3f(cluster.center.x, cluster.center.y, cluster.center.z);
+			}
+		}	
+		GL11.glEnd();
+
+		GL11.glPointSize(9.0f);
+		GL11.glBegin(GL11.GL_POINTS);
+		{
+			for(Cluster cluster : clusters) {
+				GL11.glColor3f(1, 1, 1);
+				GL11.glVertex3f(cluster.center.x, cluster.center.y, cluster.center.z);
+			}
+		}	
+		GL11.glEnd();
+
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 
 	private static void colorByValue(ColorMap colorMap, float value) {

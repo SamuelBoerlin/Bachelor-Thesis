@@ -54,7 +54,7 @@ public class Renderer {
 		this.engine = engine;
 		this.scene = new Scene(engine);
 	}
-	
+
 	public void render() {
 		//Clear color and buffers
 		GL11.glClearColor(0, 0.1f, 0.2f, 1.0f);
@@ -142,14 +142,14 @@ public class Renderer {
 		GL11.glAlphaFunc(GL11.GL_GEQUAL, 0.1F);
 		GL11.glCullFace(GL11.GL_BACK);
 		GL11.glFrontFace(GL11.GL_CCW);
-		
+
 		GL11.glTranslated(-this.camX, -this.camY, -this.camZ);
 
 		GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, VIEW_MATRIX);
 		VIEW_MATRIX.rewind();
 
 		ARBShaderObjects.glUseProgramObjectARB(0);
-		
+
 		//Render coordinate axes
 		GL11.glPushMatrix();
 		GL11.glTranslated(-0.5, -0.5, -0.5);
@@ -167,7 +167,7 @@ public class Renderer {
 		GL11.glPopMatrix();
 
 		GL11.glLineWidth(1.0f);
-		
+
 		GL11.glColor3f(1, 1, 1);
 
 
@@ -214,36 +214,36 @@ public class Renderer {
 
 		if(this.lighting) {
 			ARBShaderObjects.glUseProgramObjectARB(this.engine.getShader());
-		}
 
-		int eyeUniform = GL20.glGetUniformLocation(this.engine.getShader(), "u_eyePos");
-		if(eyeUniform >= 0) {
-			FLOAT_4_BUF.put(new float[] { this.camX, this.camY, this.camZ, 1 });
-			FLOAT_4_BUF.flip();
-			GL20.glUniform4(eyeUniform, FLOAT_4_BUF);
-		}
+			int eyeUniform = GL20.glGetUniformLocation(this.engine.getShader(), "u_eyePos");
+			if(eyeUniform >= 0) {
+				FLOAT_4_BUF.put(new float[] { this.camX, this.camY, this.camZ, 1 });
+				FLOAT_4_BUF.flip();
+				GL20.glUniform4(eyeUniform, FLOAT_4_BUF);
+			}
 
-		int lightUniform = GL20.glGetUniformLocation(this.engine.getShader(), "u_lightPos");
-		if(lightUniform >= 0) {
-			FLOAT_4_BUF.put(new float[] { this.lightPosX, this.lightPosY, this.lightPosZ, 1 });
-			FLOAT_4_BUF.flip();
-			GL20.glUniform4(lightUniform, FLOAT_4_BUF);
-		}
+			int lightUniform = GL20.glGetUniformLocation(this.engine.getShader(), "u_lightPos");
+			if(lightUniform >= 0) {
+				FLOAT_4_BUF.put(new float[] { this.lightPosX, this.lightPosY, this.lightPosZ, 1 });
+				FLOAT_4_BUF.flip();
+				GL20.glUniform4(lightUniform, FLOAT_4_BUF);
+			}
 
-		int viewUniform = GL20.glGetUniformLocation(this.engine.getShader(), "u_viewMatrix");
-		if(viewUniform >= 0) {
-			GL20.glUniformMatrix4(viewUniform, false, VIEW_MATRIX);
-		}
+			int viewUniform = GL20.glGetUniformLocation(this.engine.getShader(), "u_viewMatrix");
+			if(viewUniform >= 0) {
+				GL20.glUniformMatrix4(viewUniform, false, VIEW_MATRIX);
+			}
 
-		int inverseViewUniform = GL20.glGetUniformLocation(this.engine.getShader(), "u_inverseViewMatrix");
-		if(inverseViewUniform >= 0) {
-			Matrix4f viewMatrix = new Matrix4f();
-			viewMatrix.load(VIEW_MATRIX);
-			VIEW_MATRIX.rewind();
-			viewMatrix.invert();
-			viewMatrix.store(INVERSE_VIEW_MATRIX);
-			INVERSE_VIEW_MATRIX.rewind();
-			GL20.glUniformMatrix4(inverseViewUniform, false, INVERSE_VIEW_MATRIX);
+			int inverseViewUniform = GL20.glGetUniformLocation(this.engine.getShader(), "u_inverseViewMatrix");
+			if(inverseViewUniform >= 0) {
+				Matrix4f viewMatrix = new Matrix4f();
+				viewMatrix.load(VIEW_MATRIX);
+				VIEW_MATRIX.rewind();
+				viewMatrix.invert();
+				viewMatrix.store(INVERSE_VIEW_MATRIX);
+				INVERSE_VIEW_MATRIX.rewind();
+				GL20.glUniformMatrix4(inverseViewUniform, false, INVERSE_VIEW_MATRIX);
+			}
 		}
 
 
