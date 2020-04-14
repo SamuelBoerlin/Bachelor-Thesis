@@ -12,6 +12,7 @@ import org.lwjgl.util.vector.Matrix3f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
+import engine.saliency.IsodataClustering.Cluster;
 import engine.util.Obj;
 import engine.util.Obj.Face;
 
@@ -38,6 +39,74 @@ public class MeshUtils {
 		public ColorCode map(Face face, float u, float v, Vector3f position);
 	}
 
+	public static int[] computeFeature(List<Cluster> clusters, int numBins) {
+		List<Float> values = new ArrayList<>();
+
+		float min = Float.MAX_VALUE;
+		float max = 0.0f;
+
+		/*for(int i = 0; i < clusters.size(); i++) {
+			for(int j = i + 1; j < clusters.size(); j++) {
+				for(int k = j + 1; k < clusters.size(); k++) {
+
+					Cluster c1 = clusters.get(i);
+					Cluster c2 = clusters.get(j);
+					Cluster c3 = clusters.get(k);
+
+					for(FeatureSample s1 : c1.samples) {
+						for(FeatureSample s2 : c2.samples) {
+							for(FeatureSample s3 : c3.samples) {
+
+								Vector3f d12 = Vector3f.sub(s1.position, s2.position, new Vector3f());
+								Vector3f d32 = Vector3f.sub(s3.position, s2.position, new Vector3f());
+
+								float angle = (float)Math.acos(Vector3f.dot(d12, d32) / d12.length() / d32.length());
+
+								min = Math.min(min, angle);
+								max = Math.max(max, angle);
+
+								values.add(angle);
+
+							}
+						}
+					}
+
+				}
+			}
+		}*/
+		
+		for(int i = 0; i < clusters.size(); i++) {
+			for(int j = i + 1; j < clusters.size(); j++) {
+
+					Cluster c1 = clusters.get(i);
+					Cluster c2 = clusters.get(j);
+
+					for(FeatureSample s1 : c1.samples) {
+						for(FeatureSample s2 : c2.samples) {
+
+							float distance = Vector3f.sub(s1.position, s2.position, new Vector3f()).length();
+
+							min = Math.min(min, distance);
+							max = Math.max(max, distance);
+
+							values.add(distance);
+
+						}
+					}
+
+			}
+		}
+
+		int[] histogram = new int[numBins];
+
+		for(float angle : values) {
+			float normalized = (angle - min) / (max - min);
+			histogram[Math.min((int)Math.floor(normalized * histogram.length), histogram.length - 1)]++;
+		}
+
+		return histogram;
+	}
+
 	public static List<FeatureSample> selectColorSamples(Obj model, List<FeatureSample> samples, int numNeighbors, float maxNeighborDistance, float minSampleDistance, float thresholdPercentage) {
 		class Neighbor {
 			FeatureSample sample;
@@ -59,14 +128,14 @@ public class MeshUtils {
 			//Find neighbors
 			for(FeatureSample otherSample : samples) {
 				float dstSq = Vector3f.sub(sample.position, otherSample.position, new Vector3f()).lengthSquared();
-				
+
 				if(dstSq < maxNeighborDistance * maxNeighborDistance) {
 					Neighbor neighbor = new Neighbor();
 					neighbor.sample = otherSample;
 					neighbor.dstSq = dstSq;
-	
+
 					neighbors.add(neighbor);
-	
+
 					//Keep queue small
 					if(neighbors.size() > numNeighbors) {
 						neighbors.poll();

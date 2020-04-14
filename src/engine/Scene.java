@@ -66,6 +66,8 @@ public class Scene {
 	private SaliencyMapper saliencyMapper;
 	private ColorMapper colorMapper;
 
+	private int[] feature = null;
+	
 	public Scene(Engine engine) {
 		this.engine = engine;
 		this.modelLoader = new OBJLoader();
@@ -73,6 +75,8 @@ public class Scene {
 	}
 
 	private void reloadModel() {
+		this.feature = null;
+		
 		if(this.displayListId >= 0) {
 			GL11.glDeleteLists(this.displayListId, 1);
 		}
@@ -234,6 +238,42 @@ public class Scene {
 			GL11.glCallList(this.displayListId);
 		}
 
+		GL11.glFrontFace(GL11.GL_CCW);
+		
+		GL11.glMatrixMode(GL11.GL_PROJECTION);
+		GL11.glLoadIdentity();
+		GL11.glOrtho(0, 100, 0, 100, -100, 100);
+		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+		GL11.glLoadIdentity();
+		
+		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glColor4f(1, 1, 1, 1);
+		
+		GL11.glBegin(GL11.GL_QUADS);
+		
+		if(this.feature != null) {
+			int max = 0;
+			for(int value : this.feature) {
+				max = Math.max(value, max);
+			}
+			
+			for(int i = 0; i < this.feature.length; i++) {
+				int value = this.feature[i];
+				
+				float height = value / (float)max * 30.0f;
+				
+				float x = i + 10;
+				float y = 10;
+				
+				GL11.glVertex2f(x, y);
+				GL11.glVertex2f(x + 1, y);
+				GL11.glVertex2f(x + 1, y + height);
+				GL11.glVertex2f(x, y + height);
+			}
+		}
+		
+		GL11.glEnd();
+		
 		GL11.glPopMatrix();
 	}
 
@@ -269,16 +309,21 @@ public class Scene {
 		clusterSamples.addAll(saliencySamples);
 		clusterSamples.addAll(colorSamples);
 
+		System.out.println("Number of clustered samples: " + clusterSamples.size());
+		
 		//Cluster samples
 		IsodataClustering clustering = new IsodataClustering(clusterSamples.size() / 20, meanEdgeLength * 2.0f, meanEdgeLength * 10.0f, 10, 100, 200);
 		List<Cluster> clusters = clustering.cluster(clusterSamples, new Random());
 
+		//Compute ClusterAngle + Color feature
+		this.feature = MeshUtils.computeFeature(clusters, 20);
+		
 		float colorStrength = 0.01f;
 
 		if(this.texture != null) GL11.glEnable(GL11.GL_TEXTURE_2D);
 
 		GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
-		GL11.glPolygonOffset(10, 1000);
+		GL11.glPolygonOffset(100, 1);
 
 		GL11.glMaterialf(GL_FRONT, GL_SHININESS, 120);
 		GL11.glBegin(GL_TRIANGLES);
@@ -381,7 +426,7 @@ public class Scene {
 		{
 			GL11.glDisable(GL11.GL_POINT_SMOOTH);
 
-			GL11.glPointSize(11.0f);
+			GL11.glPointSize(9.0f);
 			GL11.glBegin(GL11.GL_POINTS);
 			{
 				for(FeatureSample sample : colorSamples) {
@@ -391,7 +436,7 @@ public class Scene {
 			}	
 			GL11.glEnd();
 
-			GL11.glPointSize(8.0f);
+			GL11.glPointSize(7.0f);
 			GL11.glBegin(GL11.GL_POINTS);
 			{
 				for(FeatureSample sample : colorSamples) {
@@ -407,7 +452,7 @@ public class Scene {
 		{
 			GL11.glEnable(GL11.GL_POINT_SMOOTH);
 
-			GL11.glPointSize(11.0f);
+			GL11.glPointSize(9.0f);
 			GL11.glBegin(GL11.GL_POINTS);
 			{
 				for(FeatureSample sample : saliencySamples) {
@@ -417,7 +462,7 @@ public class Scene {
 			}	
 			GL11.glEnd();
 
-			GL11.glPointSize(8.0f);
+			GL11.glPointSize(7.0f);
 			GL11.glBegin(GL11.GL_POINTS);
 			{
 				for(FeatureSample sample : saliencySamples) {
@@ -447,7 +492,7 @@ public class Scene {
 			}	
 			GL11.glEnd();
 
-			GL11.glPointSize(11.0f);
+			GL11.glPointSize(9.0f);
 			GL11.glBegin(GL11.GL_POINTS);
 			{
 				for(Cluster cluster : clusters) {
@@ -457,7 +502,7 @@ public class Scene {
 			}	
 			GL11.glEnd();
 
-			GL11.glPointSize(9.0f);
+			GL11.glPointSize(7.0f);
 			GL11.glBegin(GL11.GL_POINTS);
 			{
 				for(Cluster cluster : clusters) {
