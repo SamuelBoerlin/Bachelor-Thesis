@@ -127,16 +127,7 @@ public class Scene {
 			}
 
 			//Scale model to have a surface area of 100
-			float surfaceArea = 0.0f;
-			for(Face face : model.getFaces()) {
-				surfaceArea += MeshUtils.faceCross(model, face).length() * 0.5f;
-			}
-			float scale = (float)Math.pow(100.0f / surfaceArea, 0.5f);
-			for(Vector3f vertex : model.getVertices()) {
-				vertex.x *= scale;
-				vertex.y *= scale;
-				vertex.z *= scale;
-			}
+			MeshUtils.scaleSurface(model, 100.0f);
 
 			System.out.println("Loaded model with " + i + " smoothing steps in " + (System.currentTimeMillis() - time) + "ms");
 
@@ -150,8 +141,8 @@ public class Scene {
 		} else {
 			this.colorMapper = new MeshUtils.ColorMapper() {
 				@Override
-				public Color map(Face face, float u, float v, Vector3f position) {
-					return Color.WHITE;
+				public ColorCode map(Face face, float u, float v, Vector3f position) {
+					return new ColorCode(Color.WHITE, 0);
 				}
 			};
 		}
@@ -261,18 +252,26 @@ public class Scene {
 
 		System.out.println("Number of samples: " + numSamples);
 
-
-
 		List<FeatureSample> samples = MeshUtils.sampleFeatures(this.models[this.smoothSteps], this.saliencyMapper, this.colorMapper, new ArrayList<>(), numSamples, new Random());
 
 		//Collect saliency samples
 		Collections.sort(samples, (s1, s2) -> -Float.compare(s1.saliency, s2.saliency));
 		List<FeatureSample> saliencySamples = new ArrayList<>(samples.subList(0, numSamples / 10));
 
-		//Cluster saliency samples
-		//TODO Adjust standardDeviation and mergeDistance based on average edge length
-		IsodataClustering clustering = new IsodataClustering(saliencySamples.size() / 20, 0.35f, 1.5f, 10, 100, 200);
-		List<Cluster> clusters = clustering.cluster(saliencySamples, new Random());
+		float meanEdgeLength = MeshUtils.meanEdgeLength(this.models[0]);
+
+		//Collect color samples
+		samples = MeshUtils.sampleFeatures(this.models[this.smoothSteps], this.saliencyMapper, this.colorMapper, new ArrayList<>(), numSamples * 2, new Random());
+		Collections.shuffle(samples);
+		List<FeatureSample> colorSamples = MeshUtils.selectColorSamples(this.models[0], samples, 6, meanEdgeLength * 2.0f, meanEdgeLength * 1.5f, 0.8f);
+
+		List<FeatureSample> clusterSamples = new ArrayList<>(saliencySamples.size() + colorSamples.size());
+		clusterSamples.addAll(saliencySamples);
+		clusterSamples.addAll(colorSamples);
+
+		//Cluster samples
+		IsodataClustering clustering = new IsodataClustering(clusterSamples.size() / 20, meanEdgeLength * 2.0f, meanEdgeLength * 10.0f, 10, 100, 200);
+		List<Cluster> clusters = clustering.cluster(clusterSamples, new Random());
 
 		float colorStrength = 0.01f;
 
@@ -285,11 +284,18 @@ public class Scene {
 		GL11.glBegin(GL_TRIANGLES);
 		{
 			for (Obj.Face face : this.models[this.smoothSteps].getFaces()) {
-				Vector3f[] normals = {
-						this.models[this.smoothSteps].getNormals().get(face.getNormals()[0] - 1),
-						this.models[this.smoothSteps].getNormals().get(face.getNormals()[1] - 1),
-						this.models[this.smoothSteps].getNormals().get(face.getNormals()[2] - 1)
-				};
+				Vector3f[] normals = null;
+				if(Math.max(Math.max(face.getNormals()[2], face.getNormals()[1]), face.getNormals()[0]) - 1 < this.models[this.smoothSteps].getNormals().size()) {
+					normals = new Vector3f[] {
+							this.models[this.smoothSteps].getNormals().get(face.getNormals()[0] - 1),
+							this.models[this.smoothSteps].getNormals().get(face.getNormals()[1] - 1),
+							this.models[this.smoothSteps].getNormals().get(face.getNormals()[2] - 1)
+					};
+				} else {
+					Vector3f normal = MeshUtils.faceCross(this.models[this.smoothSteps], face).normalise(new Vector3f());
+					normals = new Vector3f[] { normal, normal, normal };
+				}
+
 				Vector2f[] texCoords = null;
 				if(this.texture != null) {
 					texCoords = new Vector2f[] {
@@ -298,21 +304,14 @@ public class Scene {
 							this.models[this.smoothSteps].getTextureCoordinates().get(face.getTextureCoords()[2] - 1)
 					};
 				}
+
 				Vector3f[] vertices = {
 						this.models[this.smoothSteps].getVertices().get(face.getVertices()[0] - 1),
 						this.models[this.smoothSteps].getVertices().get(face.getVertices()[1] - 1),
 						this.models[this.smoothSteps].getVertices().get(face.getVertices()[2] - 1)
 				};
 
-				/*float[] meanCurvatures = {
-						this.scores.get(this.smoothSteps).get(face.getVertices()[0] - 1),
-						this.scores.get(this.smoothSteps).get(face.getVertices()[1] - 1),
-						this.scores.get(this.smoothSteps).get(face.getVertices()[2] - 1)
-				};*/
-
-				//Math.abs(meanCurvatures[0]) * colorStrength)
-
-				float[] vertexScores = {
+				float[] vertexSaliency = {
 						DifferenceOfLaplacian.scoreCurvatures(
 								this.scores[2][face.getVertices()[0] - 1],
 								this.scores[1][face.getVertices()[0] - 1],
@@ -330,24 +329,20 @@ public class Scene {
 								)
 				};
 
-				{
-					GL11.glColor3f(1, 1, 1);
+				colorByValue(colorMap, Math.abs(vertexSaliency[0]) * colorStrength);
+				GL11.glNormal3f(normals[0].getX(), normals[0].getY(), normals[0].getZ());
+				if(this.texture != null) GL11.glTexCoord2f(texCoords[0].getX(), 1-texCoords[0].getY());
+				GL11.glVertex3f(vertices[0].getX(), vertices[0].getY(), vertices[0].getZ());
 
-					colorByValue(colorMap, Math.abs(vertexScores[0]) * colorStrength);
-					GL11.glNormal3f(normals[0].getX(), normals[0].getY(), normals[0].getZ());
-					if(this.texture != null) GL11.glTexCoord2f(texCoords[0].getX(), 1-texCoords[0].getY());
-					GL11.glVertex3f(vertices[0].getX(), vertices[0].getY(), vertices[0].getZ());
+				colorByValue(colorMap, Math.abs(vertexSaliency[1]) * colorStrength);
+				GL11.glNormal3f(normals[1].getX(), normals[1].getY(), normals[1].getZ());
+				if(this.texture != null) GL11.glTexCoord2f(texCoords[1].getX(), 1-texCoords[1].getY());
+				GL11.glVertex3f(vertices[1].getX(), vertices[1].getY(), vertices[1].getZ());
 
-					colorByValue(colorMap, Math.abs(vertexScores[1]) * colorStrength);
-					GL11.glNormal3f(normals[1].getX(), normals[1].getY(), normals[1].getZ());
-					if(this.texture != null) GL11.glTexCoord2f(texCoords[1].getX(), 1-texCoords[1].getY());
-					GL11.glVertex3f(vertices[1].getX(), vertices[1].getY(), vertices[1].getZ());
-
-					colorByValue(colorMap, Math.abs(vertexScores[2]) * colorStrength);
-					GL11.glNormal3f(normals[2].getX(), normals[2].getY(), normals[2].getZ());
-					if(this.texture != null) GL11.glTexCoord2f(texCoords[2].getX(), 1-texCoords[2].getY());
-					GL11.glVertex3f(vertices[2].getX(), vertices[2].getY(), vertices[2].getZ());
-				}
+				colorByValue(colorMap, Math.abs(vertexSaliency[2]) * colorStrength);
+				GL11.glNormal3f(normals[2].getX(), normals[2].getY(), normals[2].getZ());
+				if(this.texture != null) GL11.glTexCoord2f(texCoords[2].getX(), 1-texCoords[2].getY());
+				GL11.glVertex3f(vertices[2].getX(), vertices[2].getY(), vertices[2].getZ());
 			}
 		}
 		GL11.glEnd();
@@ -357,6 +352,7 @@ public class Scene {
 		ARBShaderObjects.glUseProgramObjectARB(0);
 
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
+
 
 		//Weighted normals
 		/*GL11.glLineWidth(1.5f);
@@ -380,65 +376,99 @@ public class Scene {
 		}	
 		GL11.glEnd();*/
 
-		GL11.glEnable(GL11.GL_POINT_SMOOTH);
 
-		GL11.glPointSize(11.0f);
-		GL11.glBegin(GL11.GL_POINTS);
+		//Render color samples
 		{
-			for(FeatureSample sample : saliencySamples) {
-				GL11.glColor3f(0, 0, 0);
-				GL11.glVertex3f(sample.position.x, sample.position.y, sample.position.z);
-			}
-		}	
-		GL11.glEnd();
+			GL11.glDisable(GL11.GL_POINT_SMOOTH);
 
-		GL11.glPointSize(8.0f);
-		GL11.glBegin(GL11.GL_POINTS);
-		{
-			for(FeatureSample sample : saliencySamples) {
-				colorByValue(colorMap, Math.abs(sample.saliency) * colorStrength);
-				GL11.glVertex3f(sample.position.x, sample.position.y, sample.position.z);
-			}
-		}	
-		GL11.glEnd();
-
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
-
-		GL11.glLineWidth(1.5f);
-		GL11.glBegin(GL11.GL_LINES);
-		{
-			for(Cluster cluster : clusters) {
-				GL11.glColor3f(1, 1, 1);
-
-				for(FeatureSample sample : cluster.samples) {
-					GL11.glVertex3f(cluster.center.x, cluster.center.y, cluster.center.z);
+			GL11.glPointSize(11.0f);
+			GL11.glBegin(GL11.GL_POINTS);
+			{
+				for(FeatureSample sample : colorSamples) {
+					GL11.glColor3f(0, 0, 0);
 					GL11.glVertex3f(sample.position.x, sample.position.y, sample.position.z);
 				}
-			}
-		}	
-		GL11.glEnd();
+			}	
+			GL11.glEnd();
 
-		GL11.glPointSize(11.0f);
-		GL11.glBegin(GL11.GL_POINTS);
+			GL11.glPointSize(8.0f);
+			GL11.glBegin(GL11.GL_POINTS);
+			{
+				for(FeatureSample sample : colorSamples) {
+					GL11.glColor3f(sample.color.color.getRed() / 255.0f, sample.color.color.getGreen() / 255.0f, sample.color.color.getBlue() / 255.0f);
+					GL11.glVertex3f(sample.position.x, sample.position.y, sample.position.z);
+				}
+			}	
+			GL11.glEnd();
+		}
+
+
+		//Render saliency samples
 		{
-			for(Cluster cluster : clusters) {
-				GL11.glColor3f(0, 0, 0);
-				GL11.glVertex3f(cluster.center.x, cluster.center.y, cluster.center.z);
-			}
-		}	
-		GL11.glEnd();
+			GL11.glEnable(GL11.GL_POINT_SMOOTH);
 
-		GL11.glPointSize(9.0f);
-		GL11.glBegin(GL11.GL_POINTS);
+			GL11.glPointSize(11.0f);
+			GL11.glBegin(GL11.GL_POINTS);
+			{
+				for(FeatureSample sample : saliencySamples) {
+					GL11.glColor3f(0, 0, 0);
+					GL11.glVertex3f(sample.position.x, sample.position.y, sample.position.z);
+				}
+			}	
+			GL11.glEnd();
+
+			GL11.glPointSize(8.0f);
+			GL11.glBegin(GL11.GL_POINTS);
+			{
+				for(FeatureSample sample : saliencySamples) {
+					colorByValue(colorMap, Math.abs(sample.saliency) * colorStrength);
+					GL11.glVertex3f(sample.position.x, sample.position.y, sample.position.z);
+				}
+			}	
+			GL11.glEnd();
+		}
+
+
+		//Render clusters
 		{
-			for(Cluster cluster : clusters) {
-				GL11.glColor3f(1, 1, 1);
-				GL11.glVertex3f(cluster.center.x, cluster.center.y, cluster.center.z);
-			}
-		}	
-		GL11.glEnd();
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
 
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
+			GL11.glLineWidth(0.5f);
+			GL11.glBegin(GL11.GL_LINES);
+			{
+				for(Cluster cluster : clusters) {
+					GL11.glColor3f(1, 1, 1);
+
+					for(FeatureSample sample : cluster.samples) {
+						GL11.glVertex3f(cluster.center.x, cluster.center.y, cluster.center.z);
+						GL11.glVertex3f(sample.position.x, sample.position.y, sample.position.z);
+					}
+				}
+			}	
+			GL11.glEnd();
+
+			GL11.glPointSize(11.0f);
+			GL11.glBegin(GL11.GL_POINTS);
+			{
+				for(Cluster cluster : clusters) {
+					GL11.glColor3f(0, 0, 0);
+					GL11.glVertex3f(cluster.center.x, cluster.center.y, cluster.center.z);
+				}
+			}	
+			GL11.glEnd();
+
+			GL11.glPointSize(9.0f);
+			GL11.glBegin(GL11.GL_POINTS);
+			{
+				for(Cluster cluster : clusters) {
+					GL11.glColor3f(1, 1, 1);
+					GL11.glVertex3f(cluster.center.x, cluster.center.y, cluster.center.z);
+				}
+			}	
+			GL11.glEnd();
+
+			GL11.glEnable(GL11.GL_DEPTH_TEST);
+		}
 	}
 
 	private static void colorByValue(ColorMap colorMap, float value) {

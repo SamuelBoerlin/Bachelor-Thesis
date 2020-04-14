@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Set;
 
@@ -24,7 +25,69 @@ public class MeshUtils {
 	}
 
 	public static interface ColorMapper {
-		public Color map(Face face, float u, float v, Vector3f position);
+		public static class ColorCode {
+			public final Color color;
+			public final int code;
+
+			public ColorCode(Color color, int code) {
+				this.color = color;
+				this.code = code;
+			}
+		}
+
+		public ColorCode map(Face face, float u, float v, Vector3f position);
+	}
+
+	public static List<FeatureSample> selectColorSamples(Obj model, List<FeatureSample> samples, int numNeighbors, float maxNeighborDistance, float minSampleDistance, float thresholdPercentage) {
+		class Neighbor {
+			FeatureSample sample;
+			float dstSq;
+		}
+
+		List<FeatureSample> selectedSamples = new ArrayList<>();
+
+		sampleLoop: for(FeatureSample sample : samples) {
+			//Check if nearby samples have already been selected
+			for(FeatureSample otherSample : selectedSamples) {
+				if(Vector3f.sub(sample.position, otherSample.position, new Vector3f()).lengthSquared() < minSampleDistance * minSampleDistance) {
+					continue sampleLoop;
+				}
+			}
+
+			PriorityQueue<Neighbor> neighbors = new PriorityQueue<>((s1, s2) -> -Float.compare(s1.dstSq, s2.dstSq));
+
+			//Find neighbors
+			for(FeatureSample otherSample : samples) {
+				float dstSq = Vector3f.sub(sample.position, otherSample.position, new Vector3f()).lengthSquared();
+				
+				if(dstSq < maxNeighborDistance * maxNeighborDistance) {
+					Neighbor neighbor = new Neighbor();
+					neighbor.sample = otherSample;
+					neighbor.dstSq = dstSq;
+	
+					neighbors.add(neighbor);
+	
+					//Keep queue small
+					if(neighbors.size() > numNeighbors) {
+						neighbors.poll();
+					}
+				}
+			}
+
+			//Check how many neighbors have the same code
+			int sameCodes = 0;
+			for(Neighbor neighbor : neighbors) {
+				if(neighbor.sample.color.code == sample.color.code) {
+					sameCodes++;
+				}
+			}
+
+			if((float)sameCodes / neighbors.size() < thresholdPercentage) {
+				selectedSamples.add(sample);
+			}
+		}
+
+		return selectedSamples;
 	}
 
 	public static List<FeatureSample> sampleFeatures(Obj model, SaliencyMapper saliencyMapper, ColorMapper colorMapper, List<FeatureSample> samples, int numSamples, Random rng) {
@@ -108,6 +171,31 @@ public class MeshUtils {
 			}
 		}
 		return faceMap;
+	}
+
+	public static float meanEdgeLength(Obj model) {
+		int edges = 0;
+		float sum = 0.0f;
+		for(Face face : model.getFaces()) {
+			sum += Vector3f.sub(model.getVertices().get(face.getVertices()[0] - 1), model.getVertices().get(face.getVertices()[1] - 1), new Vector3f()).length();
+			sum += Vector3f.sub(model.getVertices().get(face.getVertices()[1] - 1), model.getVertices().get(face.getVertices()[2] - 1), new Vector3f()).length();
+			sum += Vector3f.sub(model.getVertices().get(face.getVertices()[2] - 1), model.getVertices().get(face.getVertices()[0] - 1), new Vector3f()).length();
+			edges += 3;
+		}
+		return sum / edges;
+	}
+
+	public static void scaleSurface(Obj model, float surface) {
+		float surfaceArea = 0.0f;
+		for(Face face : model.getFaces()) {
+			surfaceArea += MeshUtils.faceCross(model, face).length() * 0.5f;
+		}
+		float scale = (float)Math.pow(surface / surfaceArea, 0.5f);
+		for(Vector3f vertex : model.getVertices()) {
+			vertex.x *= scale;
+			vertex.y *= scale;
+			vertex.z *= scale;
+		}
 	}
 
 	public static void applyVertexDiffusion(Obj model, FaceList[] faceMap, float lambda) {

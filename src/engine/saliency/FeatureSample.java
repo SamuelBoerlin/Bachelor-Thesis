@@ -1,19 +1,18 @@
 package engine.saliency;
 
-import java.awt.Color;
-
 import org.lwjgl.util.vector.Vector3f;
 
 import engine.saliency.IsodataClustering.Cluster;
+import engine.saliency.MeshUtils.ColorMapper.ColorCode;
 
 public class FeatureSample {
 	public final Vector3f position;
 	public final float saliency;
-	public final Color color;
+	public final ColorCode color;
 
 	private Cluster cluster;
 	
-	public FeatureSample(Vector3f position, float saliency, Color color) {
+	public FeatureSample(Vector3f position, float saliency, ColorCode color) {
 		this.position = position;
 		this.saliency = saliency;
 		this.color = color;
