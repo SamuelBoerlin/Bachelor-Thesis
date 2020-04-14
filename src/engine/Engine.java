@@ -103,6 +103,10 @@ public class Engine {
 	public int getShader() {
 		return this.shader;
 	}
+	
+	public Renderer getRenderer() {
+		return this.renderer;
+	}
 
 	private int createShader(String filename, int shaderType) throws Exception {
 		int shader = 0;

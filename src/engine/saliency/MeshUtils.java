@@ -1,5 +1,6 @@
 package engine.saliency;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,11 +19,15 @@ public class MeshUtils {
 		private static final long serialVersionUID = 5667034252287440718L;
 	}
 
-	public static interface Score {
-		public float score(Face face, float u, float v, Vector3f position);
+	public static interface SaliencyMapper {
+		public float map(Face face, float u, float v, Vector3f position);
 	}
 
-	public static List<FeatureSample> sampleFeatures(Obj model, Score score, List<FeatureSample> samples, int numSamples, Random rng) {
+	public static interface ColorMapper {
+		public Color map(Face face, float u, float v, Vector3f position);
+	}
+
+	public static List<FeatureSample> sampleFeatures(Obj model, SaliencyMapper saliencyMapper, ColorMapper colorMapper, List<FeatureSample> samples, int numSamples, Random rng) {
 		float[] cumulativeAreas = new float[model.getFaces().size()];
 
 		int i = 0;
@@ -81,7 +86,7 @@ public class MeshUtils {
 						a.z + d1.z * u + d2.z * v
 						);
 
-				samples.add(new FeatureSample(position, score.score(face, u, v, position)));
+				samples.add(new FeatureSample(position, saliencyMapper.map(face, u, v, position), colorMapper.map(face, u, v, position)));
 			}
 		}
 
@@ -202,6 +207,30 @@ public class MeshUtils {
 		System.arraycopy(newScalars, 0, vertexScalars, 0, numVertices);
 	}
 
+	public static float totalAbsoluteGaussianCurvature(Obj model, FaceList[] faceMap) {
+		float totalCurvature = 0.0f;
+
+		for(int i = 0; i < model.getVertices().size(); i++) {
+			Vector2f principalCurvatures = MeshUtils.principalCurvatures(model, faceMap, i);
+
+			FaceList sharedFaces = faceMap[i];
+
+			if(sharedFaces != null) {
+				float area = 0.0f;
+				for(Obj.Face face : sharedFaces) {
+					area += MeshUtils.faceCross(model, face).length() * 0.5f;
+				}
+
+				float gaussianCurvature = principalCurvatures.x * principalCurvatures.y;
+				if(Float.isFinite(gaussianCurvature) && Float.isFinite(area)) {
+					totalCurvature += area / 3.0f * Math.abs(gaussianCurvature);
+				}
+			}
+		}
+
+		return totalCurvature;
+	}
+
 	public static Vector2f principalCurvatures(Obj model, FaceList[] faceMap, int vertexIndex) {
 		Vector3f vertex = model.getVertices().get(vertexIndex);
 
@@ -250,10 +279,10 @@ public class MeshUtils {
 		for(int sharedVertexIndex : sharedVertices) {
 			Vector3f sharedVertex = model.getVertices().get(sharedVertexIndex);
 
-			Vector3f Tij = projectOnPlane(Vector3f.sub(sharedVertex, vertex, new Vector3f()), vertexNormal).normalise(new Vector3f());
-
 			//vj - vi
 			Vector3f diff = Vector3f.sub(sharedVertex, vertex, new Vector3f());
+
+			Vector3f Tij = projectOnPlane(diff, vertexNormal).normalise(new Vector3f());
 
 			//kappa i,j
 			float kappa = 2.0f * Vector3f.dot(vertexNormal, diff) / diff.lengthSquared();

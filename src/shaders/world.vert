@@ -21,5 +21,6 @@ void main()
 	v_vertexWorldPosition = vec3(u_inverseViewMatrix * gl_ModelViewMatrix * gl_Vertex);
 	v_lightPos = vec3(u_viewMatrix * u_lightPos);
 	
+	gl_TexCoord[0] = gl_MultiTexCoord0;
 	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 }

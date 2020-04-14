@@ -26,7 +26,7 @@ public class Renderer {
 	private boolean viewLock = false;
 
 	private boolean wasODown = false;
-	private boolean lighting = true;
+	private boolean shaded = true;
 
 	private boolean wasMDown = false;
 	private boolean meshOnly = false;
@@ -55,6 +55,10 @@ public class Renderer {
 		this.scene = new Scene(engine);
 	}
 
+	public boolean isShaded() {
+		return this.shaded;
+	}
+	
 	public void render() {
 		//Clear color and buffers
 		GL11.glClearColor(0, 0.1f, 0.2f, 1.0f);
@@ -185,7 +189,7 @@ public class Renderer {
 
 		boolean oDown = Keyboard.isKeyDown(Keyboard.KEY_O);
 		if(this.wasODown != oDown && oDown) {
-			this.lighting = !this.lighting;
+			this.shaded = !this.shaded;
 		}
 		this.wasODown = oDown;
 
@@ -212,7 +216,7 @@ public class Renderer {
 			this.lightPosZ = (float)Math.sin((System.currentTimeMillis() % 1000000L) / 1000.0f) * 20;
 		}
 
-		if(this.lighting) {
+		if(this.shaded) {
 			ARBShaderObjects.glUseProgramObjectARB(this.engine.getShader());
 
 			int eyeUniform = GL20.glGetUniformLocation(this.engine.getShader(), "u_eyePos");
