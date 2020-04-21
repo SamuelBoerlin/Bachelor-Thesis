@@ -28,7 +28,7 @@ public class Engine {
 	public void run() {
 		try {
 			Display.setDisplayMode(new DisplayMode(DISPLAY_WIDTH, DISPLAY_HEIGHT));
-			Display.setTitle("CMS");
+			Display.setTitle("Mesh Feature Extraction");
 			Display.create((new PixelFormat()).withDepthBits(24));
 		} catch(Exception ex) {
 			ex.printStackTrace();

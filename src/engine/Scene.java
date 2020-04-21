@@ -9,6 +9,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -242,7 +243,7 @@ public class Scene {
 		
 		GL11.glMatrixMode(GL11.GL_PROJECTION);
 		GL11.glLoadIdentity();
-		GL11.glOrtho(0, 100, 0, 100, -100, 100);
+		GL11.glOrtho(0, 1000, 0, 1000, -100, 100);
 		GL11.glMatrixMode(GL11.GL_MODELVIEW);
 		GL11.glLoadIdentity();
 		
@@ -260,14 +261,14 @@ public class Scene {
 			for(int i = 0; i < this.feature.length; i++) {
 				int value = this.feature[i];
 				
-				float height = value / (float)max * 30.0f;
+				float height = value / (float)max * 300.0f;
 				
-				float x = i + 10;
-				float y = 10;
+				float x = i * 11 + 100;
+				float y = 100;
 				
 				GL11.glVertex2f(x, y);
-				GL11.glVertex2f(x + 1, y);
-				GL11.glVertex2f(x + 1, y + height);
+				GL11.glVertex2f(x + 10, y);
+				GL11.glVertex2f(x + 10, y + height);
 				GL11.glVertex2f(x, y + height);
 			}
 		}
@@ -318,6 +319,8 @@ public class Scene {
 		//Compute ClusterAngle + Color feature
 		this.feature = MeshUtils.computeFeature(clusters, 20);
 		
+		System.out.println("Histogram: " + Arrays.toString(this.feature));
+		
 		float colorStrength = 0.01f;
 
 		if(this.texture != null) GL11.glEnable(GL11.GL_TEXTURE_2D);
@@ -330,7 +333,7 @@ public class Scene {
 		{
 			for (Obj.Face face : this.models[this.smoothSteps].getFaces()) {
 				Vector3f[] normals = null;
-				if(Math.max(Math.max(face.getNormals()[2], face.getNormals()[1]), face.getNormals()[0]) - 1 < this.models[this.smoothSteps].getNormals().size()) {
+				if(Math.min(Math.min(face.getNormals()[2], face.getNormals()[1]), face.getNormals()[0]) >= 1 && Math.max(Math.max(face.getNormals()[2], face.getNormals()[1]), face.getNormals()[0]) - 1 < this.models[this.smoothSteps].getNormals().size()) {
 					normals = new Vector3f[] {
 							this.models[this.smoothSteps].getNormals().get(face.getNormals()[0] - 1),
 							this.models[this.smoothSteps].getNormals().get(face.getNormals()[1] - 1),
