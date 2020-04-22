@@ -51,7 +51,7 @@ public class Engine {
 		}
 		try {
 			if(this.frameCounter != 0 && System.currentTimeMillis() - this.frameTimer > 1000) {
-				System.out.println("Frame time: " + (System.nanoTime() - this.frameStartTime) / 1000000.0f / this.frameCounter + "ms");
+				//System.out.println("Frame time: " + (System.nanoTime() - this.frameStartTime) / 1000000.0f / this.frameCounter + "ms");
 				this.frameStartTime = System.nanoTime();
 				this.frameCounter = 0;
 				this.frameTimer = System.currentTimeMillis();

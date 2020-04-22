@@ -45,37 +45,41 @@ public class MeshUtils {
 		float min = Float.MAX_VALUE;
 		float max = 0.0f;
 
-		/*for(int i = 0; i < clusters.size(); i++) {
-			for(int j = i + 1; j < clusters.size(); j++) {
-				for(int k = j + 1; k < clusters.size(); k++) {
+		for(int i = 0; i < clusters.size(); i++) {
+			for(int j = 0; j < clusters.size(); j++) {
+				for(int k = 0; k < clusters.size(); k++) {
 
-					Cluster c1 = clusters.get(i);
-					Cluster c2 = clusters.get(j);
-					Cluster c3 = clusters.get(k);
+					if(i != j && j != k && k != i) {
+						Cluster c1 = clusters.get(i);
+						Cluster c2 = clusters.get(j);
+						Cluster c3 = clusters.get(k);
 
-					for(FeatureSample s1 : c1.samples) {
-						for(FeatureSample s2 : c2.samples) {
-							for(FeatureSample s3 : c3.samples) {
+						for(FeatureSample s1 : c1.samples) {
+							for(FeatureSample s2 : c2.samples) {
+								for(FeatureSample s3 : c3.samples) {
 
-								Vector3f d12 = Vector3f.sub(s1.position, s2.position, new Vector3f());
-								Vector3f d32 = Vector3f.sub(s3.position, s2.position, new Vector3f());
+									Vector3f d12 = Vector3f.sub(s1.position, s2.position, new Vector3f());
+									Vector3f d32 = Vector3f.sub(s3.position, s2.position, new Vector3f());
 
-								float angle = (float)Math.acos(Vector3f.dot(d12, d32) / d12.length() / d32.length());
+									float angle = (float)Math.acos(Vector3f.dot(d12, d32) / d12.length() / d32.length());
 
-								min = Math.min(min, angle);
-								max = Math.max(max, angle);
+									if(angle >= 0 && angle <= Math.PI) {
+										min = Math.min(min, angle);
+										max = Math.max(max, angle);
+	
+										values.add(angle);
+									}
 
-								values.add(angle);
-
+								}
 							}
 						}
 					}
 
 				}
 			}
-		}*/
+		}
 		
-		for(int i = 0; i < clusters.size(); i++) {
+		/*for(int i = 0; i < clusters.size(); i++) {
 			for(int j = i + 1; j < clusters.size(); j++) {
 
 					Cluster c1 = clusters.get(i);
@@ -95,7 +99,7 @@ public class MeshUtils {
 					}
 
 			}
-		}
+		}*/
 
 		int[] histogram = new int[numBins];
 

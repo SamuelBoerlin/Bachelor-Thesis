@@ -16,6 +16,8 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
+import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.ARBShaderObjects;
 import org.lwjgl.opengl.GL11;
@@ -67,8 +69,9 @@ public class Scene {
 	private SaliencyMapper saliencyMapper;
 	private ColorMapper colorMapper;
 
+	private int[] prevFeature = null;
 	private int[] feature = null;
-	
+
 	public Scene(Engine engine) {
 		this.engine = engine;
 		this.modelLoader = new OBJLoader();
@@ -76,8 +79,11 @@ public class Scene {
 	}
 
 	private void reloadModel() {
+		if(this.feature != null) {
+			this.prevFeature = this.feature.clone();
+		}
 		this.feature = null;
-		
+
 		if(this.displayListId >= 0) {
 			GL11.glDeleteLists(this.displayListId, 1);
 		}
@@ -98,9 +104,9 @@ public class Scene {
 			}
 		}
 
-		this.models = new Obj[3];
-		this.scores = new float[3][];
-		for(int i = 0; i < 3; i++) {
+		this.models = new Obj[4];
+		this.scores = new float[4][];
+		for(int i = 0; i < 4; i++) {
 			long time = System.currentTimeMillis();
 
 			Obj model = this.modelLoader.loadModel(Scene.class.getResourceAsStream(this.modelFile));
@@ -118,6 +124,9 @@ public class Scene {
 				MeshUtils.applyVertexDiffusion(model, this.faceMap, this.lambda / subdivs);
 			}
 
+			//Scale model to have a surface area of 100
+			MeshUtils.scaleSurface(model, 100.0f);
+
 			//Calculate mean curvatures
 			int numVertices = model.getVertices().size();
 			float[] scores = new float[numVertices];
@@ -130,9 +139,6 @@ public class Scene {
 			for(int j = 0; j < i * subdivs; j++) {
 				MeshUtils.applyScalarDiffusion(model, this.faceMap, this.lambda / subdivs, scores);
 			}
-
-			//Scale model to have a surface area of 100
-			MeshUtils.scaleSurface(model, 100.0f);
 
 			System.out.println("Loaded model with " + i + " smoothing steps in " + (System.currentTimeMillis() - time) + "ms");
 
@@ -240,42 +246,267 @@ public class Scene {
 		}
 
 		GL11.glFrontFace(GL11.GL_CCW);
-		
-		GL11.glMatrixMode(GL11.GL_PROJECTION);
-		GL11.glLoadIdentity();
-		GL11.glOrtho(0, 1000, 0, 1000, -100, 100);
-		GL11.glMatrixMode(GL11.GL_MODELVIEW);
-		GL11.glLoadIdentity();
-		
-		GL11.glDisable(GL11.GL_TEXTURE_2D);
-		GL11.glColor4f(1, 1, 1, 1);
-		
-		GL11.glBegin(GL11.GL_QUADS);
-		
+
 		if(this.feature != null) {
 			int max = 0;
 			for(int value : this.feature) {
 				max = Math.max(value, max);
 			}
-			
+
+			float sum = 0;
+			for(int value : this.feature) {
+				sum += value;
+			}
+
+			GL11.glMatrixMode(GL11.GL_PROJECTION);
+			GL11.glLoadIdentity();
+			GL11.glOrtho(0, 1000, 0, 1000, -100, 100);
+			GL11.glMatrixMode(GL11.GL_MODELVIEW);
+			GL11.glLoadIdentity();
+
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
+			GL11.glColor4f(1, 1, 1, 1);
+
+			GL11.glBegin(GL11.GL_QUADS);
 			for(int i = 0; i < this.feature.length; i++) {
 				int value = this.feature[i];
-				
+
 				float height = value / (float)max * 300.0f;
-				
+
 				float x = i * 11 + 100;
 				float y = 100;
-				
+
 				GL11.glVertex2f(x, y);
 				GL11.glVertex2f(x + 10, y);
 				GL11.glVertex2f(x + 10, y + height);
 				GL11.glVertex2f(x, y + height);
 			}
+			GL11.glEnd();
+
+			SplineInterpolator interpolator = new SplineInterpolator();
+
+			double[] splineX = new double[this.feature.length];
+			double[] splineY = new double[this.feature.length];
+			for(int i = 0; i < this.feature.length; i++) {
+				splineX[i] = i / (float)(this.feature.length - 1);
+				splineY[i] = this.feature[i] / (float)max;
+			}
+
+			GL11.glLineWidth(2.0f);
+			GL11.glColor4f(1, 0, 0, 1);
+
+			PolynomialSplineFunction spline = interpolator.interpolate(splineX, splineY);
+			PolynomialSplineFunction splined1 = spline.polynomialSplineDerivative();
+			PolynomialSplineFunction splined2 = splined1.polynomialSplineDerivative();
+
+			double[] spline2knots = splined2.getKnots();
+
+			int subdivs = 20;
+
+			GL11.glBegin(GL11.GL_LINE_STRIP);
+			for(int i = 0; i < (this.feature.length - 1) * subdivs; i++) {
+				float ix = (i) / (float)((this.feature.length - 1) * subdivs - 1);
+				float iy = (float)spline.value(ix);
+
+				float height = iy * 300.0f;
+
+				float x = (i / (float)subdivs + 0.5f) * 11 + 100;
+				float y = 100;
+
+				GL11.glVertex2f(x, y + height);
+			}
+			GL11.glEnd();
+
+			GL11.glBegin(GL11.GL_LINE_STRIP);
+			for(int i = 0; i < (this.feature.length - 1) * subdivs; i++) {
+				float ix = i / (float)((this.feature.length - 1) * subdivs - 1);
+				float iy = (float)splined1.value(ix);
+
+				float height = iy;
+
+				float x = (i / (float)subdivs + 0.5f) * 11 + 100;
+				float y = 100;
+
+				GL11.glVertex2f(x, y + height);
+			}
+			GL11.glEnd();
+
+			GL11.glBegin(GL11.GL_LINE_STRIP);
+			for(int i = 0; i < (this.feature.length - 1) * subdivs; i++) {
+				float ix = i / (float)((this.feature.length - 1) * subdivs - 1);
+				float iy = (float)(splined2.value(ix));
+
+				float height = iy;
+
+				float x = (i / (float)subdivs + 0.5f) * 11 + 100;
+				float y = 100;
+
+				GL11.glVertex2f(x, y + height);
+			}
+			GL11.glEnd();
+
+			GL11.glColor4f(0, 1, 0, 1);
+
+			GL11.glBegin(GL11.GL_LINE_STRIP);
+			for(int i = 0; i < (this.feature.length - 1) * subdivs; i++) {
+				float ix = i / (float)((this.feature.length - 1) * subdivs - 1);
+
+				float height = (float)this.estimateDensity(this.feature, 1.0f / sum, this.estimateBandwidth(this.splineDeriv2(this.feature, 1.0f / sum)), ix) * 150.0f;
+
+				float x = (i / (float)subdivs + 0.5f) * 11 + 100;
+				float y = 100;
+
+				GL11.glVertex2f(x, y + height);
+			}
+			GL11.glEnd();
+
+			GL11.glLineWidth(1.0f);
+			GL11.glColor4f(0, 0, 0, 1);
+
+			GL11.glBegin(GL11.GL_LINES);
+			for(int i = 0; i < spline2knots.length; i++) {
+				float x = ((float)(spline2knots[i]) * (this.feature.length - 1) + 0.5f) * 11 + 100;
+				float y = 100;
+
+				GL11.glVertex2f(x, y + 300);
+				GL11.glVertex2f(x, y);
+			}
+			GL11.glEnd();
+
+			GL11.glColor4f(1, 1, 1, 1);
 		}
-		
-		GL11.glEnd();
-		
+
+
 		GL11.glPopMatrix();
+	}
+
+	private float calculateSimilarity(int[] feature1, int[] feature2) {
+		int sum1 = 0;
+		for(int value : feature1) {
+			sum1 += value;
+		}
+
+		int sum2 = 0;
+		for(int value : feature2) {
+			sum2 += value;
+		}
+
+		int sum3 = (int) Math.ceil(0.5f * (sum1 + sum2));
+		int[] feature3 = new int[feature1.length];
+		for(int i = 0; i < feature1.length; i++) {
+			feature3[i] = (int) Math.ceil(0.5f * (feature1[i] + feature2[i]));
+		}
+
+		PolynomialSplineFunction s1 = this.splineDeriv2(feature1, 1.0f / sum1);
+		PolynomialSplineFunction s2 = this.splineDeriv2(feature2, 1.0f / sum2);
+		PolynomialSplineFunction s3 = this.splineDeriv2(feature3, 1.0f / sum3);
+
+		float bw1 = this.estimateBandwidth(s1);
+		float bw2 = this.estimateBandwidth(s2);
+		float bw3 = this.estimateBandwidth(s3);
+
+		int samples = 1000;
+
+		double dkl13 = 0.0;
+		for(int i = 0; i < samples; i++) {
+			float x1 = i / (float)(samples - 1);
+			float x2 = (i + 1) / (float)(samples - 1);
+
+			float dx = x2 - x1;
+			float mid = 0.5f * (x1 + x2);
+
+			double px = this.estimateDensity(feature1, 1.0f / sum1, bw1, mid);
+			double qx = this.estimateDensity(feature3, 1.0f / sum3, bw3, mid);
+
+			dkl13 -= px * Math.log(px / qx) * dx;
+		}
+
+		double dkl23 = 0.0;
+		for(int i = 0; i < samples; i++) {
+			float x1 = i / (float)(samples - 1);
+			float x2 = (i + 1) / (float)(samples - 1);
+
+			float dx = x2 - x1;
+			float mid = 0.5f * (x1 + x2);
+
+			double px = this.estimateDensity(feature2, 1.0f / sum2, bw2, mid);
+			double qx = this.estimateDensity(feature3, 1.0f / sum3, bw3, mid);
+
+			dkl23 -= px * Math.log(px / qx) * dx;
+		}
+
+		return 1 + (float)(0.5f * dkl13 + 0.5f * dkl23);
+	}
+
+	private double estimateDensity(int[] feature, float scale, double bandwidth, float x) {
+		double density = 0.0;
+		float numSamples = 0;
+
+		for(int i = 0; i < feature.length; i++) {
+			float sx = i / (float)(feature.length - 1);
+			float samplesForValue = feature[i] * scale;
+
+			double arg = (x - sx) / (double)bandwidth;
+			density += 1 / Math.sqrt(2 * Math.PI) * Math.exp(-0.5D * arg * arg) * samplesForValue;
+			numSamples += samplesForValue;
+		}
+
+		return density / (numSamples * bandwidth);
+	}
+
+	private PolynomialSplineFunction splineDeriv2(int[] feature, float scale) {
+		SplineInterpolator interpolator = new SplineInterpolator();
+
+		double[] sx = new double[feature.length];
+		double[] sy = new double[feature.length];
+		for(int i = 0; i < feature.length; i++) {
+			sx[i] = i / (float)(feature.length - 1);
+			sy[i] = feature[i] * scale;
+		}
+
+		return interpolator.interpolate(sx, sy).polynomialSplineDerivative().polynomialSplineDerivative();
+	}
+
+	private float estimateBandwidth(PolynomialSplineFunction c) {
+		double[] knots = c.getKnots();
+
+		//Second derivative of cubic polynomial is linear,
+		//so only the end points of the linear segments need to be sampled and the integrals
+		//between can be calculated analytically
+		double integralcsq = 0.0;
+		for(int i = 0;  i < knots.length - 1; i++) {
+			float x1 = (float)knots[i];
+			float x2 = (float)knots[i + 1];
+			float y1 = (float)c.value(x1);
+			float y2 = (float)c.value(x2);
+
+			//Calculate linear segment parameters
+			float dx = x2 - x1;
+			float a = (y2 - y1) / dx;
+			float b = y1;
+
+			if(a < 0.000000001f) {
+				integralcsq += dx * b * b;
+			} else {
+				//Integral of linear segment squared (a*x + b)^2
+				float n1 = b;
+				float n2 = a * dx + b;
+				float piece = (n2 * n2 * n2 - n1 * n1 * n1) / (3.0f * a);
+
+				//Add to total integral
+				integralcsq += piece;
+			}
+		}
+
+		double rk = 0.282095; //Integral of gaussian with variance=1, mean=0, from -inf to +inf = 1 / (2 * sqrt(pi))
+		double mu22 = 1.0; //Integral of c * x^2 * exp(-a*x^2), from -inf to +inf = c * sqrt(pi) / (2 * a^(3/2)). With c=1/sqrt(pi), a=1/2 --> integral = 1
+
+		int n = 20;
+		
+		//Bandwidth estimation
+		float h = (float)(Math.pow(rk / (mu22 * integralcsq), 1 / 5.0) * Math.pow(n, -1 / 5.0));
+
+		return h;
 	}
 
 	private void renderImmediate() {
@@ -311,17 +542,21 @@ public class Scene {
 		clusterSamples.addAll(colorSamples);
 
 		System.out.println("Number of clustered samples: " + clusterSamples.size());
-		
+
 		//Cluster samples
 		IsodataClustering clustering = new IsodataClustering(clusterSamples.size() / 20, meanEdgeLength * 2.0f, meanEdgeLength * 10.0f, 10, 100, 200);
 		List<Cluster> clusters = clustering.cluster(clusterSamples, new Random());
 
 		//Compute ClusterAngle + Color feature
 		this.feature = MeshUtils.computeFeature(clusters, 20);
-		
+
 		System.out.println("Histogram: " + Arrays.toString(this.feature));
+
+		if(this.prevFeature != null) {
+			System.out.println("Similarity to previous: " + this.calculateSimilarity(this.feature, this.prevFeature));
+		}
 		
-		float colorStrength = 0.01f;
+		float colorStrength = 10.0f;
 
 		if(this.texture != null) GL11.glEnable(GL11.GL_TEXTURE_2D);
 
@@ -361,16 +596,19 @@ public class Scene {
 
 				float[] vertexSaliency = {
 						DifferenceOfLaplacian.scoreCurvatures(
+								this.scores[3][face.getVertices()[0] - 1],
 								this.scores[2][face.getVertices()[0] - 1],
 								this.scores[1][face.getVertices()[0] - 1],
 								this.scores[0][face.getVertices()[0] - 1]
 								),
 						DifferenceOfLaplacian.scoreCurvatures(
+								this.scores[3][face.getVertices()[1] - 1],
 								this.scores[2][face.getVertices()[1] - 1],
 								this.scores[1][face.getVertices()[1] - 1],
 								this.scores[0][face.getVertices()[1] - 1]
 								),
 						DifferenceOfLaplacian.scoreCurvatures(
+								this.scores[3][face.getVertices()[2] - 1],
 								this.scores[2][face.getVertices()[2] - 1],
 								this.scores[1][face.getVertices()[2] - 1],
 								this.scores[0][face.getVertices()[2] - 1]
