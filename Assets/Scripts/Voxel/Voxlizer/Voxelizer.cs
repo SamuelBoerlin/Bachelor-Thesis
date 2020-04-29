@@ -94,7 +94,7 @@ namespace Voxel.Voxelizer
         /// <param name="material"></param>
         /// <param name="properties"></param>
         /// <returns>The voxelization job containing its job handle. The voxelization job must be disposed once the job has completed.</returns>
-        public static VoxelizationJob Voxelize(NativeArray<float3> vertices, NativeArray<float3> normals, NativeArray3D<Voxel> grid, byte material, VoxelizationProperties properties)
+        public static VoxelizationJob Voxelize(NativeArray<float3> vertices, NativeArray<float3> normals, NativeArray3D<Voxel> grid, int material, VoxelizationProperties properties)
         {
             var triangles = vertices.Length / 3;
 

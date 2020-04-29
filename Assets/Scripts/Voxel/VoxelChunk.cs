@@ -23,6 +23,13 @@ namespace Voxel
         }
 
         private NativeArray3D<Voxel> voxels;
+        public NativeArray3D<Voxel> Voxels
+        {
+            get
+            {
+                return voxels;
+            }
+        }
 
         //TODO Cleanup, separate mesh from chunk
         public Mesh mesh = null;
@@ -71,12 +78,12 @@ namespace Voxel
             }
         }
 
-        public Change ScheduleGrid(int sx, int sy, int sz, int gx, int gy, int gz, NativeArray3D<Voxel> grid)
+        public Change ScheduleGrid(int sx, int sy, int sz, int gx, int gy, int gz, NativeArray3D<Voxel> grid, bool propagatePadding, bool includePadding)
         {
             var gridJob = new ChunkGridJob
             {
                 source = grid,
-                chunkSize = chunkSize,
+                chunkSize = chunkSize + (includePadding ? 1 : 0),
                 sx = sx,
                 sy = sy,
                 sz = sz,
@@ -90,14 +97,17 @@ namespace Voxel
                 {
                     NeedsRebuild = true;
 
-                    //Update the padding of all -X/-Y/-Z adjacent chunks
-                    //TODO Only propagate those sides that have changed
-                    PropagatePadding();
+                    if (propagatePadding)
+                    {
+                        //Update the padding of all -X/-Y/-Z adjacent chunks
+                        //TODO Only propagate those sides that have changed
+                        PropagatePadding();
+                    }
                 }
             );
         }
 
-        public Change ScheduleSdf<TSdf>(float ox, float oy, float oz, TSdf sdf, byte material, bool replace)
+        public Change ScheduleSdf<TSdf>(float ox, float oy, float oz, TSdf sdf, int material, bool replace)
             where TSdf : struct, ISdf
         {
             var changed = new NativeArray<bool>(1, Allocator.TempJob);
@@ -266,6 +276,32 @@ namespace Voxel
         public void Dispose()
         {
             voxels.Dispose();
+        }
+
+        public readonly struct Snapshot
+        {
+            public readonly JobHandle handle;
+            public readonly VoxelChunk chunk;
+
+            public Snapshot(JobHandle handle, VoxelChunk chunk)
+            {
+                this.handle = handle;
+                this.chunk = chunk;
+            }
+        }
+
+        public Snapshot ScheduleSnapshot()
+        {
+            var snapshotChunk = new VoxelChunk(world, Pos, ChunkSize);
+
+            var cloneJob = new ChunkCloneJob
+            {
+                source = voxels,
+                chunkSize = chunkSize + 1, //Include padding when cloning
+                target = snapshotChunk.voxels
+            };
+
+            return new Snapshot(cloneJob.Schedule(), snapshotChunk);
         }
     }
 }

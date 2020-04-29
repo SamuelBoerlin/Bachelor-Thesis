@@ -7,21 +7,21 @@ namespace Voxel
     public struct Voxel
     {
         public readonly QuantizedHermiteData Data;
-        public readonly byte Material;
+        public readonly int Material;
 
-        public Voxel(byte material, float3 intersections, float3x3 normals)
+        public Voxel(int material, float3 intersections, float3x3 normals)
         {
             Material = material;
             Data = new QuantizedHermiteData(intersections, normals);
         }
 
-        public Voxel(byte material, QuantizedHermiteData data)
+        public Voxel(int material, QuantizedHermiteData data)
         {
             Material = material;
             Data = data;
         }
 
-        public Voxel ModifyMaterial(byte material)
+        public Voxel ModifyMaterial(int material)
         {
             return new Voxel(material, Data);
         }

@@ -13,7 +13,7 @@ namespace Voxel
 
         [ReadOnly] public TSdf sdf;
 
-        [ReadOnly] public byte material;
+        [ReadOnly] public int material;
 
         [ReadOnly] public bool replace;
 
@@ -28,7 +28,7 @@ namespace Voxel
             changed[0] = ApplySdf(snapshot, origin, sdf, material, replace, outVoxels, Allocator.Temp);
         }
 
-        public static bool ApplySdf(NativeArray3D<Voxel> snapshot, float3 origin, TSdf sdf, byte material, bool replace, NativeArray3D<Voxel> outVoxels, Allocator allocator)
+        public static bool ApplySdf(NativeArray3D<Voxel> snapshot, float3 origin, TSdf sdf, int material, bool replace, NativeArray3D<Voxel> outVoxels, Allocator allocator)
         {
             int chunkSize = snapshot.Length(0) - 1;
 

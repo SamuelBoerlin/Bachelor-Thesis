@@ -13,7 +13,7 @@ namespace Voxel.Voxelizer
     {
         [ReadOnly] public NativeList<VoxelizerCollectBinsJob.Column> colsX, colsY, colsZ;
         [ReadOnly] public NativeList<float4> intersectionsX, intersectionsY, intersectionsZ;
-        [ReadOnly] public byte material;
+        [ReadOnly] public int material;
         [ReadOnly] public float angleThreshold;
         [ReadOnly] public float snapThreshold;
 

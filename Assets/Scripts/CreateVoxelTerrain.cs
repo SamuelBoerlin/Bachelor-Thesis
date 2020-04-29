@@ -13,17 +13,24 @@ public struct MaterialColors : VoxelMeshTessellation.IMaterialColorMap
 { 
     public Color32 GetColor(int material)
     {
-        switch (material)
-        {
-            default:
-                return Color.white;
-            case 1:
-                return Color.white;
-            case 2:
-                return Color.green;
-            case 3:
-                return Color.blue;
-        }
+        return FromInteger(material);
+    }
+
+    public static Color32 FromInteger(int i)
+    {
+        int red = (i >> 16) & 0xFF;
+        int green = (i >> 8) & 0xFF;
+        int blue = (i) & 0xFF;
+        return new Color32((byte)red, (byte)green, (byte)blue, 255);
+    }
+
+    public static int ToInteger(int red, int green, int blue)
+    {
+        int code = 0;
+        code |= (red & 0xFF) << 16;
+        code |= (green & 0xFF) << 8;
+        code |= (blue & 0xFF);
+        return code;
     }
 }
 
@@ -58,7 +65,6 @@ public struct PolygonizeJob : IJob
         var solver = new SvdQefSolver<RawArrayVoxelCell>();
         solver.Clamp = false;
         var polygonizer = new CMSVoxelPolygonizer<RawArrayVoxelCell, CMSStandardProperties, SvdQefSolver<RawArrayVoxelCell>, IntersectionSharpFeatureSolver<RawArrayVoxelCell>>(new CMSStandardProperties(), solver, new IntersectionSharpFeatureSolver<RawArrayVoxelCell>(), MemoryCache);
-        //var polygonizer = new CMSVoxelPolygonizer<TestArrayVoxelCell, CMSStandardProperties, MeanQefSolver<TestArrayVoxelCell>>(new CMSStandardProperties(), new MeanQefSolver<TestArrayVoxelCell>(), MemoryCache);
 
         for (int i = 0; i < Cells.Length; i++)
         {
@@ -89,9 +95,6 @@ public class CreateVoxelTerrain : MonoBehaviour
 {
     [SerializeField] private MeshCollider meshCollider = null;
 
-    //private readonly CMSVoxelPolygonizer<TestArrayVoxelCell> polygonizer = new CMSVoxelPolygonizer<TestArrayVoxelCell>();
-    //private readonly SvdQefSolver qefSolver = new SvdQefSolver();
-
     private Mesh voxelMesh = null;
 
     [SerializeField] private float scale = 1.0f;
@@ -114,7 +117,9 @@ public class CreateVoxelTerrain : MonoBehaviour
 
     [SerializeField] private bool replaceSdfMaterial = false;
 
-    [SerializeField] [Range(0, 3)] private byte sdfMaterial = 1;
+    [SerializeField] [Range(0, 255)] private byte materialRed = 255;
+    [SerializeField] [Range(0, 255)] private byte materialGreen = 255;
+    [SerializeField] [Range(0, 255)] private byte materialBlue = 255;
 
     [SerializeField] private bool generateEachFrame = false;
     private int run = 0;
@@ -146,8 +151,6 @@ public class CreateVoxelTerrain : MonoBehaviour
 
     const int fieldSize = 16;
 
-    //private TestVoxelField field;
-
     private class PlacedSdf
     {
         internal readonly ISdf sdf;
@@ -164,51 +167,9 @@ public class CreateVoxelTerrain : MonoBehaviour
 
     private List<PlacedSdf> placedSdfs = new List<PlacedSdf>();
 
+    [SerializeField] private bool undo = false;
+    [SerializeField] private bool redo = false;
 
-    /*private void ApplySdfWithScale<TSdf>(TestVoxelField field, float scale, float x, float y, float z, TSdf sdf, int material, bool replace)
-        where TSdf : struct, ISdf
-    {
-        field.ApplySdf(x * scale, y * scale, z * scale, new ScaleSDF<TSdf>(scale, sdf), material, replace);
-    }*/
-
-    /*private void GenerateScene(TestVoxelField field)
-    {
-        //ApplySdfWithScale(field, scale, 8, 8, 8, new OffsetSDF(new Vector3(0.5f, 0.5f, 0.5f + 8), new SphereSDF(8.5f)), 1, false);
-        // ApplySdfWithScale(field, scale, 8, 8, 8, new OffsetSDF(new Vector3(0.5f, 0.5f, 0.5f + 3), new SphereSDF(4f)), 0, false);
-
-        //ApplySdfWithScale(field, scale, 8, 4, 10, new BoxSDF(8.5f), 3, false);
-        //ApplySdfWithScale(field, scale, 8, 8, 8, new OffsetSDF(new Vector3(0.5f, 0.5f, 0.5f + 3), new SphereSDF(4.5f)), 0, false);
-        //ApplySdfWithScale(field, scale, 8, 8, 8, new OffsetSDF(new Vector3(0.5f, 0.5f, 8.5f), new SphereSDF(5.6f)), 1, true);
-        
-
-        //ApplySdfWithScale(field, scale, 8, 4, 10, new BoxSDF(8.5f), 3, false);
-        //ApplySdfWithScale(field, scale, 8, 8, 8, new OffsetSDF(new Vector3(0.5f, 0.5f, 0.5f), new BoxSDF(6)), 1, false);
-        //ApplySdfWithScale(field, scale, 8, 8, 8, new OffsetSDF(new Vector3(0.5f, 0.5f, 0.5f + 3), new SphereSDF(4.5f)), 0, false);
-        //ApplySdfWithScale(field, scale, 8, 8, 9, new OffsetSDF(new Vector3(0.5f, 0.5f, 8.5f), new BoxSDF(4.75f)), 3, true);
-        //ApplySdfWithScale(field, scale, 8, 8, 8, new OffsetSDF(new Vector3(0.5f, 0.5f, 8.5f), new SphereSDF(5.6f)), 1, true);
-        //ApplySdfWithScale(field, scale, 8, 8, 8, new OffsetSDF(new Vector3(0.5f, 0.5f, 0.5f), new BoxSDF(2.4f)), 2, false);
-
-        
-        float time = fixedTime;// Time.time;
-
-        //ApplySdfWithScale(field, scale, 8, 8, 8, new PerlinSDF(new Vector3(-8, -8, -8), new Vector3(8, 8, 8), new Vector2(time, time * 0.5f), new Vector2(1, 1) * 0.1f, 6f, 4, 2.0f, 0.25f), 1, false);
-        //ApplySdfWithScale(field, scale, 8, 10, 8, new TransformSDF(Matrix4x4.Rotate(Quaternion.Euler(time * 12, time * 45, time * 60)), new BoxSDF(4.8f)), 3, false);
-        //ApplySdfWithScale(field, scale, 8, 12, 8, new SphereSDF(3.75f), 0, false);
-        //ApplySdfWithScale(field, scale, 8, 10, 8, new OffsetSDF(new Vector3(0.5f, 0.5f, 0.5f), new BoxSDF(1.4f)), 0, false);
-
-        //ApplySdfWithScale(field, scale, 8, 8, 8, new PerlinSDF(new Vector3(-8, -8, -8), new Vector3(8, 8, 8), new Vector2(time, time * 0.5f), new Vector2(1, 1) * 0.1f, 6f, 4, 2.0f, 0.25f), 1, false);
-        //ApplySdfWithScale(field, scale, 8, 10, 8, new TransformSDF(Matrix4x4.Rotate(Quaternion.Euler(0, time * 45, 0)), new BoxSDF(4.8f)), 3, true);
-        //ApplySdfWithScale(field, scale, 8, 12, 8, new SphereSDF(3.75f), 2, true);
-        //ApplySdfWithScale(field, scale, 8, 10, 8, new OffsetSDF(new Vector3(0.5f, 0.5f, 0.5f), new BoxSDF(2)), 0, false);
-
-        ApplySdfWithScale(field, scale, 8, 11, 8, new TransformSDF(Matrix4x4.Rotate(Quaternion.Euler(Time.time * 15, -Time.time * 45, Time.time * 18)), new BoxSDF(4.1f)), 3, false);
-        ApplySdfWithScale(field, scale, 8, 11, 8, new TransformSDF(Matrix4x4.Rotate(Quaternion.Euler(-Time.time * 15, Time.time * 45, Time.time * 18)), new BoxSDF(1.8f)), 0, false);
-
-        foreach (PlacedSdf placedSdf in placedSdfs)
-        {
-            //ApplySdfWithScale(field, scale, 0, 0, 0, placedSdf.sdf, placedSdf.material, placedSdf.replace);
-        }
-    }*/
 
     private void GenerateMesh()
     {
@@ -299,13 +260,6 @@ public class CreateVoxelTerrain : MonoBehaviour
             }
         }
 
-        /* for (int i = 0; i < cellPositions.Count; i++)
-         {
-             //VoxelMeshComponentRenderer.Tessellate(components[i], componentIndices, componentVertices, Matrix4x4.Translate(cellPositions[i]), vertices, indices.Count, indices, normals, materials, colors, mat => GetColorForMaterial(mat), dedupedTable);
-             VoxelMeshComponentRenderer.Tessellate(components[i], componentIndices, componentVertices, Matrix4x4.Translate(cellPositions[i]), vertices, indices.Count, indices, normals, materials, dedupedTable);
-         }*/
-        //VoxelMeshRenderer.Tessellate(components, componentIndices, componentVertices, Matrix4x4.Translate(Vector3.zero), vertices, indices, normals, materials, colors, mat => GetColorForMaterial(mat), dedupedTable);
-
         var vertices = new List<Vector3>(meshVertices.Length);
         var indices = new List<int>(meshTriangles.Length);
         var materials = new List<int>(meshMaterials.Length);
@@ -380,34 +334,6 @@ public class CreateVoxelTerrain : MonoBehaviour
 
         voxelMesh = new Mesh();
         GetComponent<MeshFilter>().sharedMesh = voxelMesh;
-
-        //polygonizer.QefSolver = qefSolver;
-
-        int size = (int)Mathf.Ceil(fieldSize * scale);
-
-        /*field = new TestVoxelField(size, size, size);
-        GenerateScene(field);*/
-
-        //GenerateMesh();
-
-        /*var sphereSdf = new SphereSDF(2.1f + 8);
-        gameObject.GetComponent<Sculpture>().ApplySdf(new Vector3(8, 8, 8), Quaternion.identity, sphereSdf, 1, false);
-        gameObject.GetComponent<Sculpture>().ApplySdf(new Vector3(16, 8, 6), Quaternion.identity, sphereSdf, 0, false);
-        gameObject.GetComponent<Sculpture>().ApplySdf(new Vector3(8, 8, 16), Quaternion.identity, sphereSdf, 0, false);
-        gameObject.GetComponent<Sculpture>().ApplySdf(new Vector3(4, 14, 4), Quaternion.identity, sphereSdf, 0, false);*/
-
-
-        /*int chunkSize = gameObject.GetComponent<Sculpture>().ChunkSize;
-        float time = 0.5f;
-        int range = 2;
-        int halfSize = chunkSize / 2;
-        for (int zo = -range; zo <= range; zo++)
-        {
-            for (int xo = -range; xo <= range; xo++)
-            {
-                gameObject.GetComponent<Sculpture>().ApplySdf(new Vector3(halfSize + xo * chunkSize, 8, halfSize + zo * chunkSize), Quaternion.identity, new PerlinSDF(new Vector3(-halfSize - 1, -8, -halfSize - 1), new Vector3(halfSize, 40, halfSize), new Vector2(time + xo * chunkSize + 1000, time * 0.5f + zo * chunkSize + 1000), new Vector2(1, 1) * 0.025f, 34f, 4, 2.0f, 0.25f), 1, false);
-            }
-        }*/
     }
 
     private void OnApplicationQuit()
@@ -419,6 +345,28 @@ public class CreateVoxelTerrain : MonoBehaviour
 
     private void Update()
     {
+        if(undo)
+        {
+            undo = false;
+
+            var editManager = GetComponent<VoxelEditManager>();
+            if(editManager != null)
+            {
+                editManager.Undo();
+            }
+        }
+
+        if (redo)
+        {
+            redo = false;
+
+            var editManager = GetComponent<VoxelEditManager>();
+            if (editManager != null)
+            {
+                editManager.Redo();
+            }
+        }
+
         if (!lockSelection)
         {
             Camera camera = Camera.current;
@@ -518,19 +466,21 @@ public class CreateVoxelTerrain : MonoBehaviour
             placeSdf = false;
             regenerate = true;
 
+            var editManager = GetComponent<VoxelEditManager>();
+
             switch (brushType)
             {
                 case BrushType.Sphere:
-                    gameObject.GetComponent<VoxelWorld>().ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new SphereSDF(brushSize), sdfMaterial, replaceSdfMaterial);
+                    gameObject.GetComponent<VoxelWorld>().ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new SphereSDF(brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Box:
-                    gameObject.GetComponent<VoxelWorld>().ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new BoxSDF(brushSize), sdfMaterial, replaceSdfMaterial);
+                    gameObject.GetComponent<VoxelWorld>().ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new BoxSDF(brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Cylinder:
-                    gameObject.GetComponent<VoxelWorld>().ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new CylinderSDF(brushSize, brushSize), sdfMaterial, replaceSdfMaterial);
+                    gameObject.GetComponent<VoxelWorld>().ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new CylinderSDF(brushSize, brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Pyramid:
-                    gameObject.GetComponent<VoxelWorld>().ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y - brushSize / 2, gizmoPosition.z), Quaternion.Euler(sdfRotation), new PyramidSDF(brushSize * 2, brushSize * 2), sdfMaterial, replaceSdfMaterial);
+                    gameObject.GetComponent<VoxelWorld>().ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y - brushSize / 2, gizmoPosition.z), Quaternion.Euler(sdfRotation), new PyramidSDF(brushSize * 2, brushSize * 2), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Mesh:
                     var mesh = voxelizeMesh.mesh;
@@ -559,7 +509,7 @@ public class CreateVoxelTerrain : MonoBehaviour
                     var watch = new System.Diagnostics.Stopwatch();
                     watch.Start();
 
-                    using (var job = Voxelizer.Voxelize(inVertices, inNormals, outVoxels, sdfMaterial, voxelizationProperties))
+                    using (var job = Voxelizer.Voxelize(inVertices, inNormals, outVoxels, MaterialColors.ToInteger(materialRed, materialGreen, materialBlue), voxelizationProperties))
                     {
                         job.Handle.Complete();
                     }
@@ -569,7 +519,8 @@ public class CreateVoxelTerrain : MonoBehaviour
                     watch.Reset();
                     watch.Start();
 
-                    gameObject.GetComponent<VoxelWorld>().ApplyGrid((int)gizmoPosition.x, (int)gizmoPosition.y, (int)gizmoPosition.z, outVoxels);
+                    //TODO Make voxelizer also undoable?
+                    gameObject.GetComponent<VoxelWorld>().ApplyGrid((int)gizmoPosition.x, (int)gizmoPosition.y, (int)gizmoPosition.z, outVoxels, true, false, null);
 
                     watch.Stop();
                     Debug.Log("Applied to grid: " + watch.ElapsedMilliseconds + "ms");
@@ -580,20 +531,6 @@ public class CreateVoxelTerrain : MonoBehaviour
 
                     break;
             }
-
-            /*ISdf newSdf;
-            if (sphereSdf)
-            {
-                newSdf = new SphereSDF(2.1f + 8);
-            }
-            else
-            {
-                newSdf = new BoxSDF(2.1f + 8);
-            }
-            placedSdfs.Add(new PlacedSdf(new OffsetSDF(new Vector3(-gizmoPosition.x, -gizmoPosition.y, -gizmoPosition.z), newSdf), sdfMaterial, replaceSdfMaterial));
-            Debug.Log("Placed SDF at " + gizmoPosition + " " + placedSdfs.Count);
-
-            gameObject.GetComponent<Sculpture>().ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.identity, newSdf, sdfMaterial, replaceSdfMaterial);*/
         }
 
         if (gizmoPosition != null)
@@ -624,11 +561,6 @@ public class CreateVoxelTerrain : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        //ApplySdfWithScale(field, scale, 8, 8, 8, new OffsetSDF(new Vector3(0.5f, 0.5f, 8.5f), new SphereSDF(5.6f)), 1, true);
-        /*Gizmos.color = Color.white;
-        Gizmos.matrix = Matrix4x4.TRS(new Vector3(8 - 0.5f, 8 - 0.5f + 1, 8 - 8.5f + 3), Quaternion.Euler(0, 0, Time.time * 50), Vector3.one);
-        Gizmos.DrawWireSphere(Vector3.zero, 5.6f);*/
-
         if (gizmoComponents != null && gizmoComponentIndices != null && gizmoComponentVertices != null)
         {
             VoxelMeshTessellation.DrawDebugGizmos(gizmoPosition, gizmoTransform, gizmoComponents, gizmoComponentIndices, gizmoComponentVertices, ref gizmoCell, new MaterialColors());

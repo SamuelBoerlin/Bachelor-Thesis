@@ -8,9 +8,9 @@ namespace Voxel
     public struct ChunkGridJob : IJob
     {
         [ReadOnly] public NativeArray3D<Voxel> source;
-        [ReadOnly] public int chunkSize;
         [ReadOnly] public int sx, sy, sz, gx, gy, gz;
 
+        [ReadOnly] public int chunkSize;
         [WriteOnly] public NativeArray3D<Voxel> target;
 
         public void Execute()
