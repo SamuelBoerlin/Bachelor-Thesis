@@ -4,23 +4,28 @@ using UnityEngine;
 
 namespace Voxel
 {
-    [RequireComponent(typeof(VoxelWorld))]
-    public class VoxelEditManager : MonoBehaviour, IDisposable
+    public class VoxelEditManager<TIndexer> : IDisposable
+        where TIndexer : struct, IIndexer
     {
-        [SerializeField] private int queueSize = 5;
+        public int QueueSize
+        {
+            get;
+            set;
+        }
 
-        private VoxelWorld world;
+        private readonly VoxelWorld<TIndexer> world;
 
-        private List<VoxelEdit> edits;
-        private List<VoxelEdit> undone;
+        private List<VoxelEdit<TIndexer>> edits;
+        private List<VoxelEdit<TIndexer>> undone;
 
         private bool firstRedo = false;
 
-        public void Start()
+        public VoxelEditManager(VoxelWorld<TIndexer> world, int queueSize)
         {
-            world = GetComponent<VoxelWorld>();
-            edits = new List<VoxelEdit>();
-            undone = new List<VoxelEdit>();
+            this.world = world;
+            QueueSize = queueSize;
+            edits = new List<VoxelEdit<TIndexer>>();
+            undone = new List<VoxelEdit<TIndexer>>();
         }
 
         public bool Undo()
@@ -33,12 +38,12 @@ namespace Voxel
                 {
                     //We need a snapshot of the current state so that the latest edit can be undone as well
 
-                    var latestSnapshots = new List<VoxelEdit>();
+                    var latestSnapshots = new List<VoxelEdit<TIndexer>>();
 
                     var edit = edits[edits.Count - 1];
                     edit.Restore((latest) => latestSnapshots.Add(latest));
 
-                    undone.Add(new VoxelEdit(world, latestSnapshots));
+                    undone.Add(new VoxelEdit<TIndexer>(world, latestSnapshots));
 
                     edits.Remove(edit);
                     undone.Add(edit);
@@ -93,15 +98,15 @@ namespace Voxel
             return false;
         }
 
-        private void RemoveEdit(VoxelEdit edit)
+        private void RemoveEdit(VoxelEdit<TIndexer> edit)
         {
             edits.Remove(edit);
             edit.Dispose();
         }
 
-        private void QueueEdit(VoxelEdit edit)
+        private void QueueEdit(VoxelEdit<TIndexer> edit)
         {
-            if (edits.Count >= queueSize)
+            if (edits.Count >= QueueSize)
             {
                 RemoveEdit(edits[0]);
             }
@@ -110,36 +115,31 @@ namespace Voxel
 
             //Remove all undone edits because they cannot be redone anymore
             firstRedo = true;
-            foreach (VoxelEdit undoneEdit in undone)
+            foreach (VoxelEdit<TIndexer> undoneEdit in undone)
             {
                 undoneEdit.Dispose();
             }
             undone.Clear();
         }
 
-        public VoxelWorld.VoxelEditConsumer Consumer()
+        public VoxelWorld<TIndexer>.VoxelEditConsumer<TIndexer> Consumer()
         {
             return QueueEdit;
         }
 
         public void Dispose()
         {
-            foreach (VoxelEdit edit in edits)
+            foreach (VoxelEdit<TIndexer> edit in edits)
             {
                 edit.Dispose();
             }
             edits.Clear();
 
-            foreach (VoxelEdit edit in undone)
+            foreach (VoxelEdit<TIndexer> edit in undone)
             {
                 edit.Dispose();
             }
             undone.Clear();
-        }
-
-        void OnApplicationQuit()
-        {
-            Dispose();
         }
     }
 }

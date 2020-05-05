@@ -6,11 +6,12 @@ using Unity.Mathematics;
 namespace Voxel.Voxelizer
 {
     [BurstCompile]
-    public struct VoxelizerFindPatchesJob : IJobParallelForDefer
+    public struct VoxelizerFindPatchesJob<TIndexer> : IJobParallelForDefer
+        where TIndexer : struct, IIndexer
     {
         [ReadOnly] public NativeArray<float3> vertices;
         [ReadOnly] public NativeArray<float3> normals;
-        [ReadOnly] public NativeArray<VoxelizerFillJob.Hole> holes;
+        [ReadOnly] public NativeArray<VoxelizerFillJob<TIndexer>.Hole> holes;
         [ReadOnly] public float angleThreshold;
         [ReadOnly] public bool smoothNormals;
 

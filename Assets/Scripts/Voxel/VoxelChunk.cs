@@ -10,7 +10,8 @@ namespace Voxel
     //TODO Give one voxel padding in +X/+Y/+Z that mirrors the voxels of the adjacent chunks.
     //This will be necessary to make chunk mesh building independent and to jobify SDF modifications because applying an intersection change requires
     //both materials of each edge.
-    public class VoxelChunk : IDisposable
+    public class VoxelChunk<TIndexer> : IDisposable
+        where TIndexer : struct, IIndexer
     {
         private readonly int chunkSize;
         private readonly int chunkSizeSq;
@@ -22,8 +23,8 @@ namespace Voxel
             }
         }
 
-        private NativeArray3D<Voxel> voxels;
-        public NativeArray3D<Voxel> Voxels
+        private NativeArray3D<Voxel, TIndexer> voxels;
+        public NativeArray3D<Voxel, TIndexer> Voxels
         {
             get
             {
@@ -45,16 +46,18 @@ namespace Voxel
             private set;
         }
 
-        private readonly VoxelWorld world;
+        private readonly VoxelWorld<TIndexer> world;
+        private readonly IndexerFactory<TIndexer> indexerFactory;
 
-        public VoxelChunk(VoxelWorld world, ChunkPos pos, int chunkSize)
+        public VoxelChunk(VoxelWorld<TIndexer> world, ChunkPos pos, int chunkSize, IndexerFactory<TIndexer> indexerFactory)
         {
             this.world = world;
             this.chunkSize = chunkSize;
             this.chunkSizeSq = chunkSize * chunkSize;
             this.Pos = pos;
+            this.indexerFactory = indexerFactory;
 
-            voxels = new NativeArray3D<Voxel>(chunkSize + 1, chunkSize + 1, chunkSize + 1, Allocator.Persistent);
+            voxels = new NativeArray3D<Voxel, TIndexer>(indexerFactory(chunkSize + 1, chunkSize + 1, chunkSize + 1), chunkSize + 1, chunkSize + 1, chunkSize + 1, Allocator.Persistent);
             //voxels = new Voxel[chunkSize * chunkSize * chunkSize];
             //voxels = new NativeArray<Voxel>(chunkSize * chunkSize * chunkSize, Allocator.Persistent); //TODO Dispose
         }
@@ -78,15 +81,16 @@ namespace Voxel
             }
         }
 
-        public Change ScheduleGrid(int sx, int sy, int sz, int gx, int gy, int gz, NativeArray3D<Voxel> grid, bool propagatePadding, bool includePadding)
+        public Change ScheduleGrid<TGridIndexer>(int tx, int ty, int tz, int gx, int gy, int gz, NativeArray3D<Voxel, TGridIndexer> grid, bool propagatePadding, bool includePadding)
+            where TGridIndexer : struct, IIndexer
         {
-            var gridJob = new ChunkGridJob
+            var gridJob = new ChunkGridJob<TGridIndexer, TIndexer>
             {
                 source = grid,
                 chunkSize = chunkSize + (includePadding ? 1 : 0),
-                sx = sx,
-                sy = sy,
-                sz = sz,
+                tx = tx,
+                ty = ty,
+                tz = tz,
                 gx = gx,
                 gy = gy,
                 gz = gz,
@@ -111,9 +115,9 @@ namespace Voxel
             where TSdf : struct, ISdf
         {
             var changed = new NativeArray<bool>(1, Allocator.TempJob);
-            var outVoxels = new NativeArray3D<Voxel>(voxels.Length(0), voxels.Length(1), voxels.Length(2), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            var outVoxels = new NativeArray3D<Voxel, TIndexer>(indexerFactory(voxels.Length(0), voxels.Length(1), voxels.Length(2)), voxels.Length(0), voxels.Length(1), voxels.Length(2), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 
-            var sdfJob = new ChunkSdfJob<TSdf>
+            var sdfJob = new ChunkSdfJob<TSdf, TIndexer>
             {
                 origin = new float3(ox, oy, oz),
                 sdf = sdf,
@@ -169,7 +173,7 @@ namespace Voxel
         /// Updates the padding of this chunk to the -X/-Y/-Z border voxels of the specified neighbor chunk
         /// </summary>
         /// <param name="neighbor"></param>    
-        private void ScheduleUpdatePadding(VoxelChunk neighbor, List<JobHandle> jobs)
+        private void ScheduleUpdatePadding(VoxelChunk<TIndexer> neighbor, List<JobHandle> jobs)
         {
             var xOff = neighbor.Pos.x - Pos.x;
             var yOff = neighbor.Pos.y - Pos.y;
@@ -180,7 +184,7 @@ namespace Voxel
                 throw new ArgumentException("Chunk is not a -X/-Y/-Z neighbor!");
             }
 
-            jobs.Add(new ChunkPaddingJob
+            jobs.Add(new ChunkPaddingJob<TIndexer, TIndexer>
             {
                 source = neighbor.voxels,
                 chunkSize = chunkSize,
@@ -193,7 +197,7 @@ namespace Voxel
 
         public void FillCell(int x, int y, int z, int cellIndex, NativeArray<int> materials, NativeArray<float> intersections, NativeArray<float3> normals)
         {
-            ChunkBuildJob.FillCell(voxels, x, y, z, cellIndex, materials, intersections, normals);
+            ChunkBuildJob<TIndexer>.FillCell(voxels, x, y, z, cellIndex, materials, intersections, normals);
         }
 
         public delegate void FinalizeBuild();
@@ -207,7 +211,7 @@ namespace Voxel
             var meshColors = new NativeList<Color32>(Allocator.TempJob);
             var meshMaterials = new NativeList<int>(Allocator.TempJob);
 
-            ChunkBuildJob polygonizerJob = new ChunkBuildJob
+            ChunkBuildJob<TIndexer> polygonizerJob = new ChunkBuildJob<TIndexer>
             {
                 Voxels = voxels,
                 PolygonizationProperties = world.CMSProperties.Data,
@@ -281,9 +285,9 @@ namespace Voxel
         public readonly struct Snapshot
         {
             public readonly JobHandle handle;
-            public readonly VoxelChunk chunk;
+            public readonly VoxelChunk<TIndexer> chunk;
 
-            public Snapshot(JobHandle handle, VoxelChunk chunk)
+            public Snapshot(JobHandle handle, VoxelChunk<TIndexer> chunk)
             {
                 this.handle = handle;
                 this.chunk = chunk;
@@ -292,9 +296,9 @@ namespace Voxel
 
         public Snapshot ScheduleSnapshot()
         {
-            var snapshotChunk = new VoxelChunk(world, Pos, ChunkSize);
+            var snapshotChunk = new VoxelChunk<TIndexer>(world, Pos, ChunkSize, indexerFactory);
 
-            var cloneJob = new ChunkCloneJob
+            var cloneJob = new ChunkCloneJob<TIndexer, TIndexer>
             {
                 source = voxels,
                 chunkSize = chunkSize + 1, //Include padding when cloning

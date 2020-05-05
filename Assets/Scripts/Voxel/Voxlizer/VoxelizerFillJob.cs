@@ -9,7 +9,8 @@ using Unity.Mathematics;
 namespace Voxel.Voxelizer
 {
     [BurstCompile]
-    public struct VoxelizerFillJob : IJob
+    public struct VoxelizerFillJob<TIndexer> : IJob
+        where TIndexer : struct, IIndexer
     {
         [ReadOnly] public NativeList<VoxelizerCollectBinsJob.Column> colsX, colsY, colsZ;
         [ReadOnly] public NativeList<float4> intersectionsX, intersectionsY, intersectionsZ;
@@ -17,13 +18,13 @@ namespace Voxel.Voxelizer
         [ReadOnly] public float angleThreshold;
         [ReadOnly] public float snapThreshold;
 
-        public NativeArray3D<Voxel> grid;
+        public NativeArray3D<Voxel, TIndexer> grid;
 
         /// <summary>
         /// Found "holes", i.e. missing intersections & normals. These
         /// need to be patched in a second pass.
         /// </summary>
-        [WriteOnly] public NativeList<VoxelizerFillJob.Hole> holes;
+        [WriteOnly] public NativeList<VoxelizerFillJob<TIndexer>.Hole> holes;
 
         public readonly struct Hole
         {
@@ -74,7 +75,7 @@ namespace Voxel.Voxelizer
                         //Fill voxel materials
                         for (int x = pix + 1; x <= ix; x++)
                         {
-                            grid[x, y, z] = grid[x, y, z].ModifyMaterial(material);
+                            grid[x, y, z] = grid[x, y, z].ModifyMaterial(true, material);
                         }
                     }
 
@@ -103,7 +104,7 @@ namespace Voxel.Voxelizer
                         //Fill voxel materials
                         for (int y = piy + 1; y <= iy; y++)
                         {
-                            grid[x, y, z] = grid[x, y, z].ModifyMaterial(material);
+                            grid[x, y, z] = grid[x, y, z].ModifyMaterial(true, material);
                         }
                     }
 
@@ -132,7 +133,7 @@ namespace Voxel.Voxelizer
                         //Fill voxel materials
                         for (int z = piz + 1; z <= iz; z++)
                         {
-                            grid[x, y, z] = grid[x, y, z].ModifyMaterial(material);
+                            grid[x, y, z] = grid[x, y, z].ModifyMaterial(true, material);
                         }
                     }
 
@@ -169,11 +170,11 @@ namespace Voxel.Voxelizer
 
                         if (math.abs(closestIntersection.w - x + 0.5f) < snapThreshold)
                         {
-                            grid[x - 1, y, z] = grid[x - 1, y, z].ModifyEdge(0, math.clamp(closestIntersection.w - x + 1, 0, 1), closestIntersection.xyz);
+                            grid[x - 1, y, z] = grid[x - 1, y, z].ModifyEdge(true, 0, math.clamp(closestIntersection.w - x + 1, 0, 1), closestIntersection.xyz);
                         }
                         else
                         {
-                            holes.Add(new VoxelizerFillJob.Hole(x - 1, y, z, 0, prevSolid));
+                            holes.Add(new VoxelizerFillJob<TIndexer>.Hole(x - 1, y, z, 0, prevSolid));
                         }
                     }
 
@@ -209,11 +210,11 @@ namespace Voxel.Voxelizer
 
                         if (math.abs(closestIntersection.w - y + 0.5f) < snapThreshold)
                         {
-                            grid[x, y - 1, z] = grid[x, y - 1, z].ModifyEdge(1, math.clamp(closestIntersection.w - y + 1, 0, 1), closestIntersection.xyz);
+                            grid[x, y - 1, z] = grid[x, y - 1, z].ModifyEdge(true, 1, math.clamp(closestIntersection.w - y + 1, 0, 1), closestIntersection.xyz);
                         }
                         else
                         {
-                            holes.Add(new VoxelizerFillJob.Hole(x, y - 1, z, 1, prevSolid));
+                            holes.Add(new VoxelizerFillJob<TIndexer>.Hole(x, y - 1, z, 1, prevSolid));
                         }
                     }
 
@@ -249,11 +250,11 @@ namespace Voxel.Voxelizer
 
                         if (math.abs(closestIntersection.w - z + 0.5f) < snapThreshold)
                         {
-                            grid[x, y, z - 1] = grid[x, y, z - 1].ModifyEdge(2, math.clamp(closestIntersection.w - z + 1, 0, 1), closestIntersection.xyz);
+                            grid[x, y, z - 1] = grid[x, y, z - 1].ModifyEdge(true, 2, math.clamp(closestIntersection.w - z + 1, 0, 1), closestIntersection.xyz);
                         }
                         else
                         {
-                            holes.Add(new VoxelizerFillJob.Hole(x, y, z - 1, 2, prevSolid));
+                            holes.Add(new VoxelizerFillJob<TIndexer>.Hole(x, y, z - 1, 2, prevSolid));
                         }
                     }
 

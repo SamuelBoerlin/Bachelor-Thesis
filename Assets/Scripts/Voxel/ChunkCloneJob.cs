@@ -10,12 +10,14 @@ using Unity.Jobs;
 namespace Voxel
 {
     [BurstCompile]
-    public struct ChunkCloneJob : IJob
+    public struct ChunkCloneJob<TSourceIndexer, TTargetIndexer> : IJob
+        where TSourceIndexer : struct, IIndexer
+        where TTargetIndexer : struct, IIndexer
     {
-        [ReadOnly] public NativeArray3D<Voxel> source;
+        [ReadOnly] public NativeArray3D<Voxel, TSourceIndexer> source;
         [ReadOnly] public int chunkSize;
 
-        [WriteOnly] public NativeArray3D<Voxel> target;
+        [WriteOnly] public NativeArray3D<Voxel, TTargetIndexer> target;
 
         public void Execute()
         {

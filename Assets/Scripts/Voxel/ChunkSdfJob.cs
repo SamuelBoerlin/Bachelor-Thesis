@@ -6,8 +6,9 @@ using Unity.Mathematics;
 namespace Voxel
 {
     [BurstCompile]
-    public struct ChunkSdfJob<TSdf> : IJob
+    public struct ChunkSdfJob<TSdf, TIndexer> : IJob
         where TSdf : struct, ISdf
+        where TIndexer : struct, IIndexer
     {
         [ReadOnly] public float3 origin;
 
@@ -17,18 +18,18 @@ namespace Voxel
 
         [ReadOnly] public bool replace;
 
-        [ReadOnly] public NativeArray3D<Voxel> snapshot;
+        [ReadOnly] public NativeArray3D<Voxel, TIndexer> snapshot;
 
         public NativeArray<bool> changed; //Using array so that result can be read even when job is copied
 
-        public NativeArray3D<Voxel> outVoxels;
+        public NativeArray3D<Voxel, TIndexer> outVoxels;
 
         public void Execute()
         {
             changed[0] = ApplySdf(snapshot, origin, sdf, material, replace, outVoxels, Allocator.Temp);
         }
 
-        public static bool ApplySdf(NativeArray3D<Voxel> snapshot, float3 origin, TSdf sdf, int material, bool replace, NativeArray3D<Voxel> outVoxels, Allocator allocator)
+        public static bool ApplySdf(NativeArray3D<Voxel, TIndexer> snapshot, float3 origin, TSdf sdf, int material, bool replace, NativeArray3D<Voxel, TIndexer> outVoxels, Allocator allocator)
         {
             int chunkSize = snapshot.Length(0) - 1;
 
@@ -37,7 +38,7 @@ namespace Voxel
 
             snapshot.CopyTo(outVoxels);
 
-            var evaluatedSdf = new NativeArray3D<float>(chunkSize + 1, chunkSize + 1, chunkSize + 1, allocator);
+            var evaluatedSdf = new NativeArray3D<float, LinearIndexer>(new LinearIndexer(chunkSize + 1, chunkSize + 1, chunkSize + 1), chunkSize + 1, chunkSize + 1, chunkSize + 1, allocator);
 
             bool changed = false;
 
@@ -57,12 +58,12 @@ namespace Voxel
                                 if (replace && outVoxels[x, y, z].Material != 0)
                                 {
                                     //TODO Does this need intersection value checks?
-                                    outVoxels[x, y, z] = outVoxels[x, y, z].ModifyMaterial(material);
+                                    outVoxels[x, y, z] = outVoxels[x, y, z].ModifyMaterial(true, material);
                                     changed = true;
                                 }
                                 else if (!replace && outVoxels[x, y, z].Material != material)
                                 {
-                                    outVoxels[x, y, z] = outVoxels[x, y, z].ModifyMaterial(material);
+                                    outVoxels[x, y, z] = outVoxels[x, y, z].ModifyMaterial(true, material);
                                     changed = true;
                                 }
                             }
@@ -94,7 +95,7 @@ namespace Voxel
             return changed;
         }
 
-        private static void ApplySdfIntersection(NativeArray3D<Voxel> snapshot, float3 origin, int x, int y, int z, int chunkSize, int edge, int xo, int yo, int zo, TSdf sdf, NativeArray3D<float> evaluatedSdf, int material, bool replace, NativeArray3D<Voxel> outVoxels)
+        private static void ApplySdfIntersection(NativeArray3D<Voxel, TIndexer> snapshot, float3 origin, int x, int y, int z, int chunkSize, int edge, int xo, int yo, int zo, TSdf sdf, NativeArray3D<float, LinearIndexer> evaluatedSdf, int material, bool replace, NativeArray3D<Voxel, TIndexer> outVoxels)
         {
             if (x < 0 || y < 0 || z < 0 || x >= chunkSize || y >= chunkSize || z >= chunkSize)
             {
@@ -130,7 +131,7 @@ namespace Voxel
                     if (snapshot[x, y, z].Material == snapshot[x + xo, y + yo, z + zo].Material)
                     {
                         //Currently no existing intersection, can just set
-                        outVoxels[x, y, z] = outVoxels[x, y, z].ModifyEdge(edge, newIntersection, normalFacing * SdfDerivative.FirstOrderCentralFiniteDifferenceNormalized(newIntersectionPoint, epsilon, sdf));
+                        outVoxels[x, y, z] = outVoxels[x, y, z].ModifyEdge(true, edge, newIntersection, normalFacing * SdfDerivative.FirstOrderCentralFiniteDifferenceNormalized(newIntersectionPoint, epsilon, sdf));
                     }
                     else
                     {
@@ -167,13 +168,13 @@ namespace Voxel
 
                         if (overwrite)
                         {
-                            outVoxels[x, y, z] = outVoxels[x, y, z].ModifyEdge(edge, newIntersection, normalFacing * SdfDerivative.FirstOrderCentralFiniteDifferenceNormalized(newIntersectionPoint, epsilon, sdf));
+                            outVoxels[x, y, z] = outVoxels[x, y, z].ModifyEdge(true, edge, newIntersection, normalFacing * SdfDerivative.FirstOrderCentralFiniteDifferenceNormalized(newIntersectionPoint, epsilon, sdf));
                         }
                     }
                 }
                 else if (d1 < 0 && d2 < 0)
                 {
-                    outVoxels[x, y, z] = outVoxels[x, y, z].ModifyEdge(edge, 0, 0);
+                    outVoxels[x, y, z] = outVoxels[x, y, z].ModifyEdge(true, edge, 0, 0);
                 }
             }
             else if ((d1 < 0) != (d2 < 0))
@@ -185,7 +186,7 @@ namespace Voxel
                 //TODO Use inVoxels for comparison?
                 if (outVoxels[x, y, z].Material == outVoxels[x + xo, y + yo, z + zo].Material)
                 {
-                    outVoxels[x, y, z] = outVoxels[x, y, z].ModifyEdge(edge, math.length(intersection - new float3(x, y, z) + origin), normalFacing * SdfDerivative.FirstOrderCentralFiniteDifferenceNormalized(intersection, epsilon, sdf));
+                    outVoxels[x, y, z] = outVoxels[x, y, z].ModifyEdge(true, edge, math.length(intersection - new float3(x, y, z) + origin), normalFacing * SdfDerivative.FirstOrderCentralFiniteDifferenceNormalized(intersection, epsilon, sdf));
                 }
             }
         }

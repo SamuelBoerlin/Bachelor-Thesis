@@ -9,28 +9,28 @@ namespace Voxel
         public readonly QuantizedHermiteData Data;
         public readonly int Material;
 
-        public Voxel(int material, float3 intersections, float3x3 normals)
+        public Voxel(bool isVoxelSet, int material, float3 intersections, float3x3 normals)
         {
             Material = material;
-            Data = new QuantizedHermiteData(intersections, normals);
+            Data = new QuantizedHermiteData(isVoxelSet, intersections, normals);
         }
 
-        public Voxel(int material, QuantizedHermiteData data)
+        public Voxel(bool isVoxelSet, int material, QuantizedHermiteData data)
         {
             Material = material;
-            Data = data;
+            Data = new QuantizedHermiteData(isVoxelSet, data);
         }
 
-        public Voxel ModifyMaterial(int material)
+        public Voxel ModifyMaterial(bool isVoxelSet, int material)
         {
-            return new Voxel(material, Data);
+            return new Voxel(isVoxelSet, material, Data);
         }
 
-        public Voxel ModifyEdge(int edge, float intersection, float3 normal)
+        public Voxel ModifyEdge(bool isVoxelSet, int edge, float intersection, float3 normal)
         {
             float4x3 newData = (float4x3)Data;
             newData[edge] = new float4(normal, intersection);
-            return new Voxel(Material, new float3(newData[0].w, newData[1].w, newData[2].w), new float3x3(newData[0].xyz, newData[1].xyz, newData[2].xyz));
+            return new Voxel(isVoxelSet, Material, new float3(newData[0].w, newData[1].w, newData[2].w), new float3x3(newData[0].xyz, newData[1].xyz, newData[2].xyz));
         }
     }
 

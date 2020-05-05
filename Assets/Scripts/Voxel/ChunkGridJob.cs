@@ -5,13 +5,15 @@ using Unity.Jobs;
 namespace Voxel
 {
     [BurstCompile]
-    public struct ChunkGridJob : IJob
+    public struct ChunkGridJob<TSourceIndexer, TTargetIndexer> : IJob
+        where TSourceIndexer : struct, IIndexer
+        where TTargetIndexer : struct, IIndexer
     {
-        [ReadOnly] public NativeArray3D<Voxel> source;
-        [ReadOnly] public int sx, sy, sz, gx, gy, gz;
-
+        [ReadOnly] public NativeArray3D<Voxel, TSourceIndexer> source;
+        [ReadOnly] public int tx, ty, tz, gx, gy, gz;
         [ReadOnly] public int chunkSize;
-        [WriteOnly] public NativeArray3D<Voxel> target;
+
+        [WriteOnly] public NativeArray3D<Voxel, TTargetIndexer> target;
 
         public void Execute()
         {
@@ -25,9 +27,9 @@ namespace Voxel
                 {
                     for (int x = 0; x < chunkSize; x++)
                     {
-                        var cvx = x + sx;
-                        var cvy = y + sy;
-                        var cvz = z + sz;
+                        var cvx = x + tx;
+                        var cvy = y + ty;
+                        var cvz = z + tz;
 
                         var gvx = x + gx;
                         var gvy = y + gy;
@@ -36,7 +38,11 @@ namespace Voxel
                         if (cvx >= 0 && cvx < chunkSize && cvy >= 0 && cvy < chunkSize && cvz >= 0 && cvz < chunkSize &&
                             gvx >= 0 && gvx < width && gvy >= 0 && gvy < height && gvz >= 0 && gvz < depth)
                         {
-                            target[cvx, cvy, cvz] = source[gvx, gvy, gvz];
+                            Voxel sourceVoxel = source[gvx, gvy, gvz];
+                            if(sourceVoxel.Data.IsVoxelSet)
+                            {
+                                target[cvx, cvy, cvz] = sourceVoxel;
+                            }
                         }
                     }
                 }

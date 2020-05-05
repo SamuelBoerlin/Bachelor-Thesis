@@ -9,11 +9,12 @@ using VoxelPolygonizer.CMS;
 namespace Voxel
 {
     [BurstCompile]
-    public struct ChunkBuildJob : IJob
+    public struct ChunkBuildJob<TIndexer> : IJob
+        where TIndexer : struct, IIndexer
     {
         [ReadOnly] public CMSProperties.DataStruct PolygonizationProperties;
 
-        [ReadOnly] public NativeArray3D<Voxel> Voxels;
+        [ReadOnly] public NativeArray3D<Voxel, TIndexer> Voxels;
 
         public NativeList<float3> MeshVertices;
         public NativeList<float3> MeshNormals;
@@ -43,20 +44,22 @@ namespace Voxel
             };
             var polygonizer = new CMSVoxelPolygonizer<RawArrayVoxelCell, CMSProperties.DataStruct, SvdQefSolver<RawArrayVoxelCell>, IntersectionSharpFeatureSolver<RawArrayVoxelCell>>(PolygonizationProperties, solver, new IntersectionSharpFeatureSolver<RawArrayVoxelCell>(), MemoryCache);
 
-            for (int z = 0; z < Voxels.Length(2) - 1; z++)
-            {
-                for (int y = 0; y < Voxels.Length(1) - 1; y++)
-                {
-                    for (int x = 0; x < Voxels.Length(0) - 1; x++)
-                    {
-                        if (FillCell(Voxels, x, y, z, 0, Materials, Intersections, Normals))
-                        {
-                            //TODO Directly operate on voxel array
-                            RawArrayVoxelCell cell = new RawArrayVoxelCell(0, new float3(x, y, z), Materials, Intersections, Normals);
+            int xSize = Voxels.Length(0);
+            int ySize = Voxels.Length(1);
+            int zSize = Voxels.Length(2);
 
-                            polygonizer.Polygonize(cell, Components, Indices, Vertices);
-                        }
-                    }
+            TIndexer indexer = Voxels.Indexer;
+            for (int index = 0; index < nVoxels; ++index)
+            {
+                int x = 0, y = 0, z = 0;
+                indexer.FromIndex(index, ref x, ref y, ref z);
+
+                if(x < xSize - 1 && y < ySize - 1 && z < zSize - 1 && FillCell(Voxels, x, y, z, 0, Materials, Intersections, Normals))
+                {
+                    //TODO Directly operate on voxel array
+                    RawArrayVoxelCell cell = new RawArrayVoxelCell(0, new float3(x, y, z), Materials, Intersections, Normals);
+
+                    polygonizer.Polygonize(cell, Components, Indices, Vertices);
                 }
             }
 
@@ -76,7 +79,7 @@ namespace Voxel
             //Cells.Dispose();
         }
 
-        public static bool FillCell(NativeArray3D<Voxel> voxels, int x, int y, int z, int cellIndex, NativeArray<int> materials, NativeArray<float> intersections, NativeArray<float3> normals)
+        public static bool FillCell(NativeArray3D<Voxel, TIndexer> voxels, int x, int y, int z, int cellIndex, NativeArray<int> materials, NativeArray<float> intersections, NativeArray<float3> normals)
         {
             var v000 = voxels[x, y, z];
             var v100 = voxels[x + 1, y, z];

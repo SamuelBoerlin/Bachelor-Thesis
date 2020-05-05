@@ -5,17 +5,18 @@ using Unity.Jobs;
 namespace Voxel.Voxelizer
 {
     [BurstCompile]
-    public struct VoxelizerApplyPatchesJob : IJob
+    public struct VoxelizerApplyPatchesJob<TIndexer> : IJob
+        where TIndexer : struct, IIndexer
     {
-        public NativeQueue<VoxelizerFindPatchesJob.PatchedHole> queue;
+        public NativeQueue<VoxelizerFindPatchesJob<TIndexer>.PatchedHole> queue;
 
-        public NativeArray3D<Voxel> grid;
+        public NativeArray3D<Voxel, TIndexer> grid;
 
         public void Execute()
         {
-            while (queue.TryDequeue(out VoxelizerFindPatchesJob.PatchedHole patch))
+            while (queue.TryDequeue(out VoxelizerFindPatchesJob<TIndexer>.PatchedHole patch))
             {
-                grid[patch.x, patch.y, patch.z] = grid[patch.x, patch.y, patch.z].ModifyEdge(patch.edge, patch.intersection.w, patch.intersection.xyz);
+                grid[patch.x, patch.y, patch.z] = grid[patch.x, patch.y, patch.z].ModifyEdge(true, patch.edge, patch.intersection.w, patch.intersection.xyz);
             }
         }
     }

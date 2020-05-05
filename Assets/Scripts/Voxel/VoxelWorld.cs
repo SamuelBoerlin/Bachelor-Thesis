@@ -4,81 +4,94 @@ using UnityEngine;
 
 namespace Voxel
 {
-    [RequireComponent(typeof(Transform))]
-    [RequireComponent(typeof(MeshRenderer))]
-    public class VoxelWorld : MonoBehaviour, IDisposable
+    public class VoxelWorld<TIndexer> : IDisposable
+        where TIndexer : struct, IIndexer
     {
-        [SerializeField] private int chunkSize = 16;
+        private readonly Dictionary<ChunkPos, VoxelChunk<TIndexer>> chunks = new Dictionary<ChunkPos, VoxelChunk<TIndexer>>();
+
+        public Transform Transform
+        {
+            get;
+            set;
+        }
+
         public int ChunkSize
         {
-            get
-            {
-                return chunkSize;
-            }
+            private set;
+            get;
         }
 
-        [SerializeField] private CMSProperties cmsProperties = null;
         public CMSProperties CMSProperties
         {
-            get
-            {
-                return cmsProperties;
-            }
+            private set;
+            get;
         }
 
-        private readonly Dictionary<ChunkPos, VoxelChunk> chunks = new Dictionary<ChunkPos, VoxelChunk>();
+        public IndexerFactory<TIndexer> IndexerFactory
+        {
+            private set;
+            get;
+        }
 
-        private MeshRenderer meshRenderer;
+
+        public VoxelWorld(int chunkSize, CMSProperties cmsProperties, Transform transform, IndexerFactory<TIndexer> indexerFactory)
+        {
+            ChunkSize = chunkSize;
+            CMSProperties = cmsProperties;
+            Transform = transform;
+            IndexerFactory = indexerFactory;
+        }
 
         private Vector3 TransformPointToLocalSpace(Vector3 vec)
         {
-            return transform.InverseTransformPoint(vec);
+            return Transform.InverseTransformPoint(vec);
         }
 
         private Vector3 TransformDirToLocalSpace(Vector3 vec)
         {
-            return transform.InverseTransformDirection(vec);
+            return Transform.InverseTransformDirection(vec);
         }
 
         private Quaternion TransformQuatToLocalSpace(Quaternion rot)
         {
-            return Quaternion.Inverse(transform.rotation) * rot;
+            return Quaternion.Inverse(Transform.rotation) * rot;
         }
 
-        public VoxelChunk GetChunk(ChunkPos pos)
+        public VoxelChunk<TIndexer> GetChunk(ChunkPos pos)
         {
-            chunks.TryGetValue(pos, out VoxelChunk chunk);
+            chunks.TryGetValue(pos, out VoxelChunk<TIndexer> chunk);
             return chunk;
         }
 
-        public delegate void VoxelEditConsumer(VoxelEdit edit);
+        public delegate void VoxelEditConsumer<TEditIndexer>(VoxelEdit<TEditIndexer> edit) where TEditIndexer : struct, IIndexer;
 
-        public void ApplyGrid(int x, int y, int z, NativeArray3D<Voxel> grid, bool propagatePadding, bool includePadding, VoxelEditConsumer edits, bool writeToChunks = true)
+        public void ApplyGrid<TGridIndexer>(int x, int y, int z, NativeArray3D<Voxel, TGridIndexer> grid, bool propagatePadding, bool includePadding, VoxelEditConsumer<TIndexer> edits, bool writeToChunks = true)
+            where TGridIndexer : struct, IIndexer
         {
-            int minX = Mathf.FloorToInt(x / chunkSize);
-            int minY = Mathf.FloorToInt(y / chunkSize);
-            int minZ = Mathf.FloorToInt(z / chunkSize);
+            int minX = Mathf.FloorToInt(x / ChunkSize);
+            int minY = Mathf.FloorToInt(y / ChunkSize);
+            int minZ = Mathf.FloorToInt(z / ChunkSize);
 
-            int maxX = Mathf.FloorToInt((x + grid.Length(0)) / chunkSize);
-            int maxY = Mathf.FloorToInt((y + grid.Length(1)) / chunkSize);
-            int maxZ = Mathf.FloorToInt((z + grid.Length(2)) / chunkSize);
+            int maxX = Mathf.FloorToInt((x + grid.Length(0)) / ChunkSize);
+            int maxY = Mathf.FloorToInt((y + grid.Length(1)) / ChunkSize);
+            int maxZ = Mathf.FloorToInt((z + grid.Length(2)) / ChunkSize);
 
-            var handles = new List<VoxelChunk.FinalizeChange>();
+            var handles = new List<VoxelChunk<TIndexer>.FinalizeChange>();
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
 
             if (edits != null)
             {
-                var snapshots = new List<VoxelChunk.Snapshot>();
+                var snapshots = new List<VoxelChunk<TIndexer>.Snapshot>();
 
                 //Include padding
-                int minX2 = Mathf.FloorToInt((x + 1) / chunkSize);
-                int minY2 = Mathf.FloorToInt((y + 1) / chunkSize);
-                int minZ2 = Mathf.FloorToInt((z + 1) / chunkSize);
+                int minX2 = Mathf.FloorToInt((x + 1) / ChunkSize);
+                int minY2 = Mathf.FloorToInt((y + 1) / ChunkSize);
+                int minZ2 = Mathf.FloorToInt((z + 1) / ChunkSize);
 
-                int maxX2 = Mathf.FloorToInt((x + grid.Length(0) + 1) / chunkSize);
-                int maxY2 = Mathf.FloorToInt((y + grid.Length(1) + 1) / chunkSize);
-                int maxZ2 = Mathf.FloorToInt((z + grid.Length(2) + 1) / chunkSize);
+                int maxX2 = Mathf.FloorToInt((x + grid.Length(0) + 1) / ChunkSize);
+                int maxY2 = Mathf.FloorToInt((y + grid.Length(1) + 1) / ChunkSize);
+                int maxZ2 = Mathf.FloorToInt((z + grid.Length(2) + 1) / ChunkSize);
 
                 for (int cx = minX2; cx <= maxX2; cx++)
                 {
@@ -88,7 +101,7 @@ namespace Voxel
                         {
                             ChunkPos chunkPos = ChunkPos.FromChunk(cx, cy, cz);
 
-                            chunks.TryGetValue(chunkPos, out VoxelChunk chunk);
+                            chunks.TryGetValue(chunkPos, out VoxelChunk<TIndexer> chunk);
                             if (chunk != null)
                             {
                                 snapshots.Add(chunk.ScheduleSnapshot());
@@ -97,22 +110,22 @@ namespace Voxel
                     }
                 }
 
-                var snapshotChunks = new List<VoxelChunk>();
+                var snapshotChunks = new List<VoxelChunk<TIndexer>>();
 
                 //Finalize clone jobs
-                foreach (VoxelChunk.Snapshot snapshot in snapshots)
+                foreach (VoxelChunk<TIndexer>.Snapshot snapshot in snapshots)
                 {
                     snapshot.handle.Complete();
                     snapshotChunks.Add(snapshot.chunk);
                 }
 
                 //Produce edit
-                edits(new VoxelEdit(this, snapshotChunks));
+                edits(new VoxelEdit<TIndexer>(this, snapshotChunks));
             }
 
             if (writeToChunks)
             {
-                var changes = new List<VoxelChunk.Change>();
+                var changes = new List<VoxelChunk<TIndexer>.Change>();
 
                 //Schedule all jobs
                 for (int cx = minX; cx <= maxX; cx++)
@@ -123,21 +136,17 @@ namespace Voxel
                         {
                             ChunkPos chunkPos = ChunkPos.FromChunk(cx, cy, cz);
 
-                            chunks.TryGetValue(chunkPos, out VoxelChunk chunk);
+                            chunks.TryGetValue(chunkPos, out VoxelChunk<TIndexer> chunk);
                             if (chunk == null)
                             {
-                                chunks[chunkPos] = chunk = new VoxelChunk(this, chunkPos, chunkSize);
+                                chunks[chunkPos] = chunk = new VoxelChunk<TIndexer>(this, chunkPos, ChunkSize, IndexerFactory);
                             }
 
-                            var sx = Mathf.Max(0, x - cx * chunkSize);
-                            var sy = Mathf.Max(0, y - cy * chunkSize);
-                            var sz = Mathf.Max(0, z - cz * chunkSize);
+                            var gx = (cx - minX) * ChunkSize;
+                            var gy = (cy - minY) * ChunkSize;
+                            var gz = (cz - minZ) * ChunkSize;
 
-                            var gx = cx * chunkSize - x;
-                            var gy = cy * chunkSize - y;
-                            var gz = cz * chunkSize - z;
-
-                            changes.Add(chunk.ScheduleGrid(sx, sy, sz, gx, gy, gz, grid, propagatePadding, includePadding));
+                            changes.Add(chunk.ScheduleGrid(0, 0, 0, gx, gy, gz, grid, propagatePadding, includePadding));
                         }
                     }
                 }
@@ -166,7 +175,7 @@ namespace Voxel
         /// <param name="material">Material to be added</param>
         /// <param name="replace">Whether only solid material should be replaced</param>
         /// <param name="edits">Consumes the voxel edit. Can be null if no voxel edits should be stored</param>
-        public void ApplySdf<TSdf>(Vector3 pos, Quaternion rot, TSdf sdf, int material, bool replace, VoxelEditConsumer edits)
+        public void ApplySdf<TSdf>(Vector3 pos, Quaternion rot, TSdf sdf, int material, bool replace, VoxelEditConsumer<TIndexer> edits)
             where TSdf : struct, ISdf
         {
             pos = TransformPointToLocalSpace(pos);
@@ -179,30 +188,30 @@ namespace Voxel
             Vector3 minBound = transformedSdf.Min();
             Vector3 maxBound = transformedSdf.Max();
 
-            int minX = Mathf.FloorToInt(minBound.x / chunkSize);
-            int minY = Mathf.FloorToInt(minBound.y / chunkSize);
-            int minZ = Mathf.FloorToInt(minBound.z / chunkSize);
+            int minX = Mathf.FloorToInt(minBound.x / ChunkSize);
+            int minY = Mathf.FloorToInt(minBound.y / ChunkSize);
+            int minZ = Mathf.FloorToInt(minBound.z / ChunkSize);
 
-            int maxX = Mathf.FloorToInt(maxBound.x / chunkSize);
-            int maxY = Mathf.FloorToInt(maxBound.y / chunkSize);
-            int maxZ = Mathf.FloorToInt(maxBound.z / chunkSize);
+            int maxX = Mathf.FloorToInt(maxBound.x / ChunkSize);
+            int maxY = Mathf.FloorToInt(maxBound.y / ChunkSize);
+            int maxZ = Mathf.FloorToInt(maxBound.z / ChunkSize);
 
-            var changes = new List<VoxelChunk.Change>();
+            var changes = new List<VoxelChunk<TIndexer>.Change>();
 
             var watch = System.Diagnostics.Stopwatch.StartNew();
 
             if (edits != null)
             {
-                var snapshots = new List<VoxelChunk.Snapshot>();
+                var snapshots = new List<VoxelChunk<TIndexer>.Snapshot>();
 
                 //Include padding
-                int minX2 = Mathf.FloorToInt((minBound.x + 1) / chunkSize);
-                int minY2 = Mathf.FloorToInt((minBound.y + 1) / chunkSize);
-                int minZ2 = Mathf.FloorToInt((minBound.z + 1) / chunkSize);
+                int minX2 = Mathf.FloorToInt((minBound.x + 1) / ChunkSize);
+                int minY2 = Mathf.FloorToInt((minBound.y + 1) / ChunkSize);
+                int minZ2 = Mathf.FloorToInt((minBound.z + 1) / ChunkSize);
 
-                int maxX2 = Mathf.FloorToInt((maxBound.x + 1) / chunkSize);
-                int maxY2 = Mathf.FloorToInt((maxBound.y + 1) / chunkSize);
-                int maxZ2 = Mathf.FloorToInt((maxBound.z + 1) / chunkSize);
+                int maxX2 = Mathf.FloorToInt((maxBound.x + 1) / ChunkSize);
+                int maxY2 = Mathf.FloorToInt((maxBound.y + 1) / ChunkSize);
+                int maxZ2 = Mathf.FloorToInt((maxBound.z + 1) / ChunkSize);
 
                 for (int cx = minX2; cx <= maxX2; cx++)
                 {
@@ -212,7 +221,7 @@ namespace Voxel
                         {
                             ChunkPos chunkPos = ChunkPos.FromChunk(cx, cy, cz);
 
-                            chunks.TryGetValue(chunkPos, out VoxelChunk chunk);
+                            chunks.TryGetValue(chunkPos, out VoxelChunk<TIndexer> chunk);
                             if (chunk != null)
                             {
                                 snapshots.Add(chunk.ScheduleSnapshot());
@@ -221,17 +230,17 @@ namespace Voxel
                     }
                 }
 
-                var snapshotChunks = new List<VoxelChunk>();
+                var snapshotChunks = new List<VoxelChunk<TIndexer>>();
 
                 //Finalize clone jobs
-                foreach(VoxelChunk.Snapshot snapshot in snapshots)
+                foreach(VoxelChunk<TIndexer>.Snapshot snapshot in snapshots)
                 {
                     snapshot.handle.Complete();
                     snapshotChunks.Add(snapshot.chunk);
                 }
 
                 //Produce edit
-                edits(new VoxelEdit(this, snapshotChunks));
+                edits(new VoxelEdit<TIndexer>(this, snapshotChunks));
             }
 
             //Schedule all jobs
@@ -243,13 +252,13 @@ namespace Voxel
                     {
                         ChunkPos chunkPos = ChunkPos.FromChunk(cx, cy, cz);
 
-                        chunks.TryGetValue(chunkPos, out VoxelChunk chunk);
+                        chunks.TryGetValue(chunkPos, out VoxelChunk<TIndexer> chunk);
                         if (chunk == null)
                         {
-                            chunks[chunkPos] = chunk = new VoxelChunk(this, chunkPos, chunkSize);
+                            chunks[chunkPos] = chunk = new VoxelChunk<TIndexer>(this, chunkPos, ChunkSize, IndexerFactory);
                         }
 
-                        changes.Add(chunk.ScheduleSdf(-cx * chunkSize, -cy * chunkSize, -cz * chunkSize, transformedSdf, material, replace));
+                        changes.Add(chunk.ScheduleSdf(-cx * ChunkSize, -cy * ChunkSize, -cz * ChunkSize, transformedSdf, material, replace));
                     }
                 }
             }
@@ -276,9 +285,9 @@ namespace Voxel
         {
             public readonly Vector3 pos;
             public readonly Vector3 sidePos;
-            public readonly VoxelChunk chunk;
+            public readonly VoxelChunk<TIndexer> chunk;
 
-            public RayCastResult(Vector3 pos, Vector3 sidePos, VoxelChunk chunk)
+            public RayCastResult(Vector3 pos, Vector3 sidePos, VoxelChunk<TIndexer> chunk)
             {
                 this.pos = pos;
                 this.sidePos = sidePos;
@@ -317,11 +326,11 @@ namespace Voxel
                                 int by = y + yo;
                                 int bz = z + zo;
 
-                                var chunk = GetChunk(ChunkPos.FromVoxel(bx, by, bz, chunkSize));
+                                var chunk = GetChunk(ChunkPos.FromVoxel(bx, by, bz, ChunkSize));
 
                                 if (chunk != null)
                                 {
-                                    int material = chunk.GetMaterial(((bx % chunkSize) + chunkSize) % chunkSize, ((by % chunkSize) + chunkSize) % chunkSize, ((bz % chunkSize) + chunkSize) % chunkSize);
+                                    int material = chunk.GetMaterial(((bx % ChunkSize) + ChunkSize) % ChunkSize, ((by % ChunkSize) + ChunkSize) % ChunkSize, ((bz % ChunkSize) + ChunkSize) % ChunkSize);
                                     if (material != 0)
                                     {
                                         result = new RayCastResult(new Vector3(x, y, z), new Vector3(prevX, prevY, prevZ), chunk);
@@ -344,51 +353,6 @@ namespace Voxel
             return false;
         }
 
-        void Start()
-        {
-            meshRenderer = gameObject.GetComponent<MeshRenderer>();
-        }
-
-        void Update()
-        {
-            var handles = new List<VoxelChunk.FinalizeBuild>();
-
-            System.Diagnostics.Stopwatch watch = null;
-
-            //Schedule all rebuild jobs
-            foreach (ChunkPos pos in chunks.Keys)
-            {
-                VoxelChunk chunk = chunks[pos];
-
-                if (chunk.mesh == null || chunk.NeedsRebuild)
-                {
-                    if(watch == null)
-                    {
-                        watch = System.Diagnostics.Stopwatch.StartNew();
-                    }
-                    handles.Add(chunk.ScheduleBuild());
-                }
-
-                if(chunk.mesh != null)
-                {
-                    Graphics.DrawMesh(chunk.mesh, Matrix4x4.TRS(transform.position, transform.rotation, transform.lossyScale) * Matrix4x4.Translate(new Vector3(pos.x * chunkSize, pos.y * chunkSize, pos.z * chunkSize)), meshRenderer.material, 0);
-                }
-            }
-
-            //Wait and finalize jobs
-            foreach (var handle in handles)
-            {
-                handle();
-            }
-
-            if(watch != null) { 
-                watch.Stop();
-
-                string text = "Polygonized " + handles.Count + " voxel chunks in " + watch.ElapsedMilliseconds + "ms. Avg: " + (watch.ElapsedMilliseconds / (float)handles.Count) + "ms.";
-                Debug.Log(text);
-            }
-        }
-
         public void Dispose()
         {
             foreach (var chunk in chunks.Values)
@@ -398,9 +362,45 @@ namespace Voxel
             chunks.Clear();
         }
 
-        void OnApplicationQuit()
+        public void Update(MeshRenderer renderer)
         {
-            Dispose();
+            var handles = new List<VoxelChunk<TIndexer>.FinalizeBuild>();
+
+            System.Diagnostics.Stopwatch watch = null;
+
+            //Schedule all rebuild jobs
+            foreach (ChunkPos pos in chunks.Keys)
+            {
+                VoxelChunk<TIndexer> chunk = chunks[pos];
+
+                if (chunk.mesh == null || chunk.NeedsRebuild)
+                {
+                    if (watch == null)
+                    {
+                        watch = System.Diagnostics.Stopwatch.StartNew();
+                    }
+                    handles.Add(chunk.ScheduleBuild());
+                }
+
+                if (chunk.mesh != null)
+                {
+                    Graphics.DrawMesh(chunk.mesh, Matrix4x4.TRS(Transform.position, Transform.rotation, Transform.lossyScale) * Matrix4x4.Translate(new Vector3(pos.x * ChunkSize, pos.y * ChunkSize, pos.z * ChunkSize)), renderer.material, 0);
+                }
+            }
+
+            //Wait and finalize jobs
+            foreach (var handle in handles)
+            {
+                handle();
+            }
+
+            if (watch != null)
+            {
+                watch.Stop();
+
+                string text = "Polygonized " + handles.Count + " voxel chunks in " + watch.ElapsedMilliseconds + "ms. Avg: " + (watch.ElapsedMilliseconds / (float)handles.Count) + "ms.";
+                Debug.Log(text);
+            }
         }
     }
 }

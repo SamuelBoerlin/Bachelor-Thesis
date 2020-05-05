@@ -244,10 +244,31 @@ MonoBehaviour:
   m_GameObject: {fileID: 444754937}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f480316267c5bdc4ba3c74ba2e7a64ba, type: 3}
+  m_Script: {fileID: 11500000, guid: 1e99acd48dbde5142b6bb5c42701bcdb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   queueSize: 5
+--- !u!114 &444754940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 444754937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71b385e7b2eaae947b61b0339ec8d6bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  textures:
+  - {fileID: 2800000, guid: 34a39a5c02a1c504297e59f7286779e9, type: 3}
+  - {fileID: 2800000, guid: 97a779c990d2e7d40b780da2713e7747, type: 3}
+  - {fileID: 2800000, guid: 6347c79933ede65479a79ebb10d3582c, type: 3}
+  - {fileID: 2800000, guid: efcad38c630abd14788f645b8f834c7a, type: 3}
+  - {fileID: 2800000, guid: 8eeb3b6627af1a3498d3b8bee02ea4ab, type: 3}
+  - {fileID: 2800000, guid: 8d321f3abed936e4f87fc851cd6c7322, type: 3}
+  - {fileID: 2800000, guid: 8eeb3b6627af1a3498d3b8bee02ea4ab, type: 3}
+  - {fileID: 2800000, guid: 8d321f3abed936e4f87fc851cd6c7322, type: 3}
 --- !u!114 &444754943
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -257,10 +278,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 444754937}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 821b9c79f41147c479cad40e7d76d87c, type: 3}
+  m_Script: {fileID: 11500000, guid: 0c06d99db3790814198d3ce2c4793a60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chunkSize: 32
+  chunkSize: 31
   cmsProperties: {fileID: 11400000, guid: 5d43920d8a3738e4bbcba0ff95188201, type: 2}
 --- !u!1001 &672770623
 PrefabInstance:
@@ -1277,17 +1298,17 @@ PrefabInstance:
     - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
       propertyPath: lockedSelection.x
-      value: 32
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
       propertyPath: lockedSelection.y
-      value: 43
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
       propertyPath: lockedSelection.z
-      value: 45
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
@@ -1327,6 +1348,11 @@ PrefabInstance:
     - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
       propertyPath: sdfMaterial
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
+        type: 3}
+      propertyPath: smoothVoxelizerNormals
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5467410061661521432, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,

@@ -6,7 +6,7 @@ namespace Voxel
 {
     /// <summary>
     /// Quantized hermite data: "Fast and Adaptive Polygon Conversion By Means Of Sparse Volumes", http://liu.diva-portal.org/smash/get/diva2:624728/FULLTEXT01.pdf.
-    /// Size: 4 bytes (intersections) + 3*2 bytes (normals) + 2 bytes (padding) = 12 bytes
+    /// Size: 4 bytes (intersections) + 3*2 bytes (normals) + 1 byte (material set) + 1 byte (padding) = 12 bytes
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct QuantizedHermiteData
@@ -22,14 +22,19 @@ namespace Voxel
         public readonly QuantizedNormal N2;
         public readonly QuantizedNormal N3;
 
+        //This is just here because it can make use of the otherwise wasted 2 byte padding
+        public readonly bool IsVoxelSet;
 
         /// <summary>
         /// Compresses the specified intersections and normals by quantizing them
         /// </summary>
+        /// <param name="isVoxelSet"></param>
         /// <param name="intersections"></param>
         /// <param name="normals"></param>
-        public QuantizedHermiteData(float3 intersections, float3x3 normals)
+        public QuantizedHermiteData(bool isVoxelSet, float3 intersections, float3x3 normals)
         {
+            IsVoxelSet = isVoxelSet;
+
             var quantized = (int3)math.floor(math.clamp(intersections, 0, 1) * Quantization) & ComponentMask;
             var zNormAbs = math.abs(normals[2]);
             IntersectionsData = ((zNormAbs.z / math.csum(zNormAbs) * QuantizedNormal.Quantization >= 1.0f ? ZFlagMask : 0) | (char)quantized.z << 20 | (char)quantized.y << 10 | (char)quantized.x);
@@ -37,6 +42,21 @@ namespace Voxel
             N1 = new QuantizedNormal(normals[0]);
             N2 = new QuantizedNormal(normals[1]);
             N3 = new QuantizedNormal(normals[2]);
+        }
+
+        /// <summary>
+        /// Copy constructor to copy instersections and normals without unpacking, but
+        /// can change the IsVoxelSet state.
+        /// </summary>
+        /// <param name="isVoxelSet"></param>
+        /// <param name="data"></param>
+        public QuantizedHermiteData(bool isVoxelSet, QuantizedHermiteData data)
+        {
+            IsVoxelSet = isVoxelSet;
+            IntersectionsData = data.IntersectionsData;
+            N1 = data.N1;
+            N2 = data.N2;
+            N3 = data.N3;
         }
 
         /// <summary>
@@ -49,7 +69,7 @@ namespace Voxel
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                if (IsSet(axis))
+                if (IsAxisSet(axis))
                 {
                     fixed (QuantizedNormal* ptr = &N1)
                     {
@@ -91,7 +111,7 @@ namespace Voxel
         /// <param name="axis"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe bool IsSet(int axis)
+        public unsafe bool IsAxisSet(int axis)
         {
             if (axis == 2)
             {

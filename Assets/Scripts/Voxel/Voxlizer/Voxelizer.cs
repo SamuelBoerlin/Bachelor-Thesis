@@ -94,7 +94,8 @@ namespace Voxel.Voxelizer
         /// <param name="material"></param>
         /// <param name="properties"></param>
         /// <returns>The voxelization job containing its job handle. The voxelization job must be disposed once the job has completed.</returns>
-        public static VoxelizationJob Voxelize(NativeArray<float3> vertices, NativeArray<float3> normals, NativeArray3D<Voxel> grid, int material, VoxelizationProperties properties)
+        public static VoxelizationJob Voxelize<TIndexer>(NativeArray<float3> vertices, NativeArray<float3> normals, NativeArray3D<Voxel, TIndexer> grid, int material, VoxelizationProperties properties)
+            where TIndexer : struct, IIndexer
         {
             var triangles = vertices.Length / 3;
 
@@ -237,10 +238,10 @@ namespace Voxel.Voxelizer
             //Voxelizing using only the axis intersections can result in holes.
             //The voxelizer job will detect those holes and put them in this list
             //so they can be fixed later
-            var holes = new NativeList<VoxelizerFillJob.Hole>(Allocator.TempJob);
+            var holes = new NativeList<VoxelizerFillJob<TIndexer>.Hole>(Allocator.TempJob);
 
             //Fill in materials and normals where possible
-            var voxelizerFillJobHandle = new VoxelizerFillJob
+            var voxelizerFillJobHandle = new VoxelizerFillJob<TIndexer>
             {
                 colsX = intersectionColsX,
                 colsY = intersectionColsY,
@@ -257,10 +258,10 @@ namespace Voxel.Voxelizer
 
             //If there are holes in the voxel data, i.e. missing intersections and normals,
             //then they are patched up in a second pass
-            var patchesQueue = new NativeQueue<VoxelizerFindPatchesJob.PatchedHole>(Allocator.TempJob);
+            var patchesQueue = new NativeQueue<VoxelizerFindPatchesJob<TIndexer>.PatchedHole>(Allocator.TempJob);
 
             //Find all hole patches in parallel
-            var findPatchesJobHandle = new VoxelizerFindPatchesJob
+            var findPatchesJobHandle = new VoxelizerFindPatchesJob<TIndexer>
             {
                 vertices = scaledVertices,
                 normals = normals,
@@ -271,7 +272,7 @@ namespace Voxel.Voxelizer
             }.Schedule(holes, properties.parallelForBatchCount, voxelizerFillJobHandle);
 
             //Apply the hole patches to the grid
-            var applyPatchesJobHandle = new VoxelizerApplyPatchesJob
+            var applyPatchesJobHandle = new VoxelizerApplyPatchesJob<TIndexer>
             {
                 queue = patchesQueue,
                 grid = grid
