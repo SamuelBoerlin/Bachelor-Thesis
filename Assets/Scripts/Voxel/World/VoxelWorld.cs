@@ -361,13 +361,18 @@ namespace Voxel
             return false;
         }
 
-        public void Dispose()
+        public void Clear()
         {
             foreach (var chunk in chunks.Values)
             {
                 chunk.Dispose();
             }
             chunks.Clear();
+        }
+
+        public void Dispose()
+        {
+            Clear();
         }
 
         public void Update(MeshRenderer renderer)

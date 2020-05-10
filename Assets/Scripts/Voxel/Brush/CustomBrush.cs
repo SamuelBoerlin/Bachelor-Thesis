@@ -10,43 +10,48 @@ using static CreateVoxelTerrain;
 
 namespace Voxel
 {
-    public class CustomBrush : MonoBehaviour, IDisposable
+    /// <summary>
+    /// A collection of custom brush primitives that form one custom compound SDF brush-
+    /// </summary>
+    /// <typeparam name="TBrushType">Custom brush datatype</typeparam>
+    /// <typeparam name="TEvaluator"><see cref="IBrushSdfEvaluator{TBrushType}"/> that evaluates the SDF of a given <see cref="TBrushType"/></typeparam>
+    public class CustomBrush<TBrushType, TEvaluator> : IDisposable
+        where TBrushType : struct
+        where TEvaluator : struct, IBrushSdfEvaluator<TBrushType>
     {
-        public bool NeedsRebuild
+        /// <summary>
+        /// The brush primitives that this custom brush is made of
+        /// </summary>
+        public NativeList<CustomBrushPrimitive<TBrushType>> Primitives {
+            private set;
+            get;
+        }
+
+        /// <summary>
+        /// The evaluator that evaluates the SDF of a given <see cref="TBrushType"/>
+        /// </summary>
+        public TEvaluator Evaluator
         {
             private set;
             get;
         }
 
-        public readonly struct CustomBrushPrimitive
+        public CustomBrush(TEvaluator evaluator)
         {
-            public readonly BrushType type;
-            public readonly BrushOperation operation;
-            public readonly float blend;
-            public readonly float3 position;
-
-            public CustomBrushPrimitive(BrushType type, BrushOperation operation, float blend, float3 position)
-            {
-                this.type = type;
-                this.operation = operation;
-                this.blend = blend;
-                this.position = position;
-            }
+            Primitives = new NativeList<CustomBrushPrimitive<TBrushType>>(Allocator.Persistent);
+            Evaluator = evaluator;
         }
 
-        public NativeList<CustomBrushPrimitive> Primitives {
-            private set;
-            get;
-        }
-
-        public void Awake()
+        /// <summary>
+        /// Adds a brush primitive
+        /// </summary>
+        /// <param name="type">Type of the brush</param>
+        /// <param name="operation">CSG operation of the brush</param>
+        /// <param name="blend">Smooth blend distance in voxel units</param>
+        /// <param name="transform">Transform to be applied to the brush primitive</param>
+        public void AddPrimitive(TBrushType type, BrushOperation operation, float blend, float4x4 transform)
         {
-            Primitives = new NativeList<CustomBrushPrimitive>(Allocator.Persistent);
-        }
-
-        public void OnApplicationQuit()
-        {
-            Dispose();
+            Primitives.Add(new CustomBrushPrimitive<TBrushType>(type, operation, blend, transform));
         }
 
         public void Dispose()
@@ -54,9 +59,23 @@ namespace Voxel
             Primitives.Dispose();
         }
 
-        public CustomBrushSdf CreateSdf()
+        /// <summary>
+        /// Creates an <see cref="ISdf"/> that returns the values of the compound SDF of this custom brush
+        /// </summary>
+        /// <returns></returns>
+        public CustomBrushSdf<TBrushType, TEvaluator> CreateSdf()
         {
-            return new CustomBrushSdf(Primitives);
+            return new CustomBrushSdf<TBrushType, TEvaluator>(Primitives, Evaluator);
+        }
+
+        /// <summary>
+        /// Returns the SDF type.
+        /// Used in the brush renderer.
+        /// </summary>
+        /// <returns></returns>
+        public Type GetSdfType()
+        {
+            return typeof(CustomBrushSdf<TBrushType, TEvaluator>);
         }
     }
 }

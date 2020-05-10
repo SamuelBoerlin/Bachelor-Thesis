@@ -4,6 +4,10 @@ using UnityEngine;
 
 namespace Voxel
 {
+    /// <summary>
+    /// Enables the rendering of SDF brushes.
+    /// Renderable SDF brushes need to be registered to <see cref="staticRenderers"/> or <see cref="dynamicRenderers"/>.
+    /// </summary>
     [RequireComponent(typeof(MeshRenderer))]
     public class SdfShapeRenderHandler : MonoBehaviour
     {
@@ -35,6 +39,12 @@ namespace Voxel
             }
         }
 
+        /// <summary>
+        /// Renders the SDF with the given position and rotation
+        /// </summary>
+        /// <param name="position">Position where to render the SDF</param>
+        /// <param name="rotation">Rotation to be applied before rendering</param>
+        /// <param name="sdf">SDF to render</param>
         public void Render(Vector3 position, Quaternion rotation, ISdf sdf)
         {
             var transform = Matrix4x4.TRS(position, rotation, Vector3.one);

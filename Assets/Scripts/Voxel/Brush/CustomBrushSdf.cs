@@ -9,22 +9,18 @@ using UnityEngine;
 
 namespace Voxel
 {
-    public struct CustomBrushSdf : ISdf
+    public struct CustomBrushSdf<TBrushType, TEvaluator> : ISdf
+        where TBrushType : struct
+        where TEvaluator : struct, IBrushSdfEvaluator<TBrushType>
     {
-        private readonly NativeList<CustomBrush.CustomBrushPrimitive> primitives;
+        private readonly NativeList<CustomBrushPrimitive<TBrushType>> primitives;
+        private readonly TEvaluator evaluator;
 
-        public CustomBrushSdf(NativeList<CustomBrush.CustomBrushPrimitive> primitives)
+        public CustomBrushSdf(NativeList<CustomBrushPrimitive<TBrushType>> primitives, TEvaluator evaluator)
         {
             this.primitives = primitives;
+            this.evaluator = evaluator;
         }
-
-        private OffsetSDF<TSdf> CreatePrimitive<TSdf>(CustomBrush.CustomBrushPrimitive primitive, TSdf baseSdf)
-            where TSdf : struct, ISdf
-        {
-            return new OffsetSDF<TSdf>(-primitive.position, baseSdf);
-        }
-
-        private static readonly float BOX_SIZE = 5.0f;
 
         public float Eval(float3 pos)
         {
@@ -35,37 +31,23 @@ namespace Voxel
                 var primitive = primitives[i];
 
                 //Evaluate primitive
-                float primitiveValue = 0.0f;
-                switch(primitive.type)
-                {
-                    case CreateVoxelTerrain.BrushType.Box:
-                        primitiveValue = CreatePrimitive(primitive, new BoxSDF(BOX_SIZE)).Eval(pos);
-                        break;
-                    case CreateVoxelTerrain.BrushType.Sphere:
-                        primitiveValue = CreatePrimitive(primitive, new SphereSDF(BOX_SIZE)).Eval(pos);
-                        break;
-                        //TODO Other primitives, and use transform SDF instead of offset SDF
-                }
+                float primitiveValue = this.evaluator.Eval(primitive, math.mul(primitive.invTransform, new float4(pos, 1.0f)).xyz);
 
-                //Blend primitive
                 if (i == 0)
                 {
                     value = primitiveValue;
                 }
                 else
                 {
+                    //Blend primitive smoothly
                     float h;
                     switch (primitive.operation)
                     {
                         case CreateVoxelTerrain.BrushOperation.Union:
-                            //h = math.clamp(0.5f + 0.5f * (primitiveValue - value) / primitive.blend, 0.0f, 1.0f);
-                            //value = math.min(value, math.lerp(primitiveValue, value, h) - primitive.blend * h * (1.0f - h));
                             h = math.max(primitive.blend - math.abs(primitiveValue - value), 0.0f);
                             value = math.min(value, math.min(primitiveValue, value) - h * h * 0.25f / primitive.blend);
                             break;
                         case CreateVoxelTerrain.BrushOperation.Difference:
-                            //h = math.clamp(0.5f - 0.5f * (primitiveValue + value) / primitive.blend, 0.0f, 1.0f);
-                            //value = math.min(value, math.lerp(primitiveValue, -value, h) + primitive.blend * h * (1.0f - h));
                             h = math.max(primitive.blend - math.abs(-primitiveValue - value), 0.0f);
                             value = math.max(value, math.max(-primitiveValue, value) + h * h * 0.25f / primitive.blend);
                             break;
@@ -89,17 +71,24 @@ namespace Voxel
             for (int i = 0, len = primitives.Length; i < len; i++)
             {
                 var primitive = primitives[i];
-                switch (primitive.type)
+                float3 localMin = evaluator.Min(primitive);
+                float3 localMax = evaluator.Max(primitive);
+                for (int mx = 0; mx < 2; mx++)
                 {
-                    case CreateVoxelTerrain.BrushType.Box:
-                        max = math.max(max, CreatePrimitive(primitive, new BoxSDF(BOX_SIZE)).Max());
-                        break;
-                    case CreateVoxelTerrain.BrushType.Sphere:
-                        max = math.max(max, CreatePrimitive(primitive, new SphereSDF(BOX_SIZE)).Max());
-                        break;
-                        //TODO Other primitives, and use transform SDF instead of offset SDF
+                    for (int my = 0; my < 2; my++)
+                    {
+                        for (int mz = 0; mz < 2; mz++)
+                        {
+                            float3 corner = math.mul(primitive.transform, new float4(
+                                mx == 0 ? localMin.x : localMax.x,
+                                my == 0 ? localMin.y : localMax.y,
+                                mz == 0 ? localMin.z : localMax.z,
+                                1.0f
+                                )).xyz;
+                            max = math.max(max, corner);
+                        }
+                    }
                 }
-
                 maxBlend = math.max(maxBlend, primitive.blend);
             }
 
@@ -119,17 +108,24 @@ namespace Voxel
             for (int i = 0, len = primitives.Length; i < len; i++)
             {
                 var primitive = primitives[i];
-                switch (primitive.type)
+                float3 localMin = evaluator.Min(primitive);
+                float3 localMax = evaluator.Max(primitive);
+                for (int mx = 0; mx < 2; mx++)
                 {
-                    case CreateVoxelTerrain.BrushType.Box:
-                        min = math.min(min, CreatePrimitive(primitive, new BoxSDF(BOX_SIZE)).Min());
-                        break;
-                    case CreateVoxelTerrain.BrushType.Sphere:
-                        min = math.min(min, CreatePrimitive(primitive, new SphereSDF(BOX_SIZE)).Min());
-                        break;
-                        //TODO Other primitives, and use transform SDF instead of offset SDF
+                    for (int my = 0; my < 2; my++)
+                    {
+                        for (int mz = 0; mz < 2; mz++)
+                        {
+                            float3 corner = math.mul(primitive.transform, new float4(
+                                mx == 0 ? localMin.x : localMax.x,
+                                my == 0 ? localMin.y : localMax.y,
+                                mz == 0 ? localMin.z : localMax.z,
+                                1.0f
+                                )).xyz;
+                            min = math.min(min, corner);
+                        }
+                    }
                 }
-
                 maxBlend = math.max(maxBlend, primitive.blend);
             }
 

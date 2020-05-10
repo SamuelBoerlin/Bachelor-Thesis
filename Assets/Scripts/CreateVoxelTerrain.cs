@@ -143,7 +143,7 @@ public class CreateVoxelTerrain : MonoBehaviour
 
     [SerializeField] private MeshFilter voxelizeMesh = null;
 
-    [SerializeField] private CustomBrush customBrush = null;
+    [SerializeField] private CustomBrushContainer customBrush = null;
 
     [SerializeField] private bool smoothVoxelizerNormals = true;
 
@@ -558,6 +558,9 @@ public class CreateVoxelTerrain : MonoBehaviour
                     outVoxels.Dispose();
 
                     break;
+                case BrushType.Custom:
+                    gameObject.GetComponent<VoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), customBrush.Instance.CreateSdf(), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                    break;
             }
         }
 
@@ -578,7 +581,7 @@ public class CreateVoxelTerrain : MonoBehaviour
                     gameObject.GetComponent<SdfShapeRenderHandler>().Render(new Vector3(gizmoPosition.x, gizmoPosition.y - brushSize / 2, gizmoPosition.z), Quaternion.Euler(sdfRotation), new PyramidSDF(brushSize * 2, brushSize * 2));
                     break;
                 case BrushType.Custom:
-                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), customBrush.CreateSdf());
+                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), customBrush.Instance.CreateSdf());
                     break;
             }
         }
