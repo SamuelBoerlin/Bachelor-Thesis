@@ -107,6 +107,12 @@ public class CreateVoxelTerrain : MonoBehaviour
 
     [SerializeField] private Vector3 sdfRotation = Vector3.zero;
 
+    public enum BrushOperation
+    {
+        Union,
+        Difference
+    }
+
     public enum BrushType
     {
         Sphere,
