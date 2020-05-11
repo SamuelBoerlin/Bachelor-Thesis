@@ -13,6 +13,20 @@ namespace Voxel
     public class CustomBrushSdfRenderer : DynamicSdfShapeRenderer
     {
         [SerializeField] private VoxelWorldContainer parentWorld;
+        [SerializeField] private SdfShapeRenderHandler sdfRenderer;
+
+        [SerializeField] private bool renderSurface = true;
+        public bool RenderSurface
+        {
+            get
+            {
+                return renderSurface;
+            }
+            set
+            {
+                renderSurface = value;
+            }
+        }
 
         private CustomBrushContainer brush;
         private MeshRenderer meshRenderer;
@@ -46,7 +60,21 @@ namespace Voxel
 
         public override void Render(Matrix4x4 transform)
         {
-            world.Render(meshRenderer, transform);
+            if(RenderSurface)
+            {
+                world.Render(meshRenderer, transform);
+            }
+            else if (sdfRenderer != null)
+            {
+                foreach (var primitive in brush.Instance.Primitives)
+                {
+                    ISdf renderSdf = brush.Instance.Evaluator.GetRenderSdf(primitive);
+                    if (renderSdf != null)
+                    {
+                        sdfRenderer.Render(transform * (Matrix4x4)primitive.transform, renderSdf);
+                    }
+                }
+            }
         }
 
         public override Type SdfType()

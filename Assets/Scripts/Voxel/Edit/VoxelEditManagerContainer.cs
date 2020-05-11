@@ -12,15 +12,17 @@ namespace Voxel
     {
         [SerializeField] private int queueSize = 5;
 
+        private VoxelEditManager<MortonIndexer> _instance;
         public VoxelEditManager<MortonIndexer> Instance
         {
-            get;
-            private set;
-        }
-
-        public void Start()
-        {
-            Instance = new VoxelEditManager<MortonIndexer>(GetComponent<VoxelWorldContainer>().Instance, queueSize);
+            get
+            {
+                if(_instance == null)
+                {
+                    _instance = new VoxelEditManager<MortonIndexer>(GetComponent<VoxelWorldContainer>().Instance, queueSize);
+                }
+                return _instance;
+            }
         }
 
         public void OnApplicationQuit()

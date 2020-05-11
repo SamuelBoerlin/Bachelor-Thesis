@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unity.Burst;
 using Unity.Mathematics;
 
 namespace Voxel
@@ -19,5 +20,14 @@ namespace Voxel
         float Eval(CustomBrushPrimitive<TBrushType> primitive, float3 pos);
         float3 Max(CustomBrushPrimitive<TBrushType> primitive);
         float3 Min(CustomBrushPrimitive<TBrushType> primitive);
+
+        /// <summary>
+        /// Returns the SDF to be rendered for a given primitive. May be null if the SDF
+        /// should not or cannot be rendered.
+        /// </summary>
+        /// <param name="primitive">Primitive to render</param>
+        /// <returns></returns>
+        [BurstDiscard]
+        ISdf GetRenderSdf(CustomBrushPrimitive<TBrushType> primitive);
     }
 }

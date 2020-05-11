@@ -18,7 +18,7 @@ namespace Voxel
             void Render(Matrix4x4 transform);
         }
 
-        private Dictionary<Type, ISdfRenderer> registry = new Dictionary<Type, ISdfRenderer>();
+        private Dictionary<Type, ISdfRenderer> registry;
 
         [SerializeField]
         private StaticSdfShapeRenderer[] staticRenderers = new StaticSdfShapeRenderer[0];
@@ -26,9 +26,9 @@ namespace Voxel
         [SerializeField]
         private DynamicSdfShapeRenderer[] dynamicRenderers = new DynamicSdfShapeRenderer[0];
 
-        private void Start()
+        private Dictionary<Type, ISdfRenderer> RegisterRenderers()
         {
-            registry.Clear();
+            var registry = new Dictionary<Type, ISdfRenderer>();
             foreach (ISdfRenderer renderer in staticRenderers)
             {
                 registry[renderer.SdfType()] = renderer;
@@ -37,6 +37,7 @@ namespace Voxel
             {
                 registry[renderer.SdfType()] = renderer;
             }
+            return registry;
         }
 
         /// <summary>
@@ -48,6 +49,21 @@ namespace Voxel
         public void Render(Vector3 position, Quaternion rotation, ISdf sdf)
         {
             var transform = Matrix4x4.TRS(position, rotation, Vector3.one);
+            Render(transform, sdf);
+        }
+
+        /// <summary>
+        /// Renders the SDF with the given transform
+        /// </summary>
+        /// <param name="transform">Transform to be applied before rendering</param>
+        /// <param name="sdf">SDF to render</param>
+        public void Render(Matrix4x4 transform, ISdf sdf)
+        {
+            if (registry == null)
+            {
+                registry = RegisterRenderers();
+            }
+
             var renderingTransform = Matrix4x4.identity;
 
             var transforms = new List<Matrix4x4>();

@@ -39,15 +39,17 @@ namespace Voxel
 
         private MeshRenderer meshRenderer;
 
+        private VoxelWorld<MortonIndexer> _instance;
         public VoxelWorld<MortonIndexer> Instance
         {
-            get;
-            private set;
-        }
-
-        void Awake()
-        {
-            Instance = new VoxelWorld<MortonIndexer>(ChunkSize, CMSProperties, transform, IndexerFactory);
+            get
+            {
+                if(_instance == null)
+                {
+                    _instance = new VoxelWorld<MortonIndexer>(ChunkSize, CMSProperties, transform, IndexerFactory);
+                }
+                return _instance;
+            }
         }
 
         void Start()
