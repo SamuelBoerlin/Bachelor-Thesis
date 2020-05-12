@@ -11,11 +11,23 @@ namespace Voxel
     [RequireComponent(typeof(MeshRenderer))]
     public class SdfShapeRenderHandler : MonoBehaviour
     {
+        /// <summary>
+        /// Renderer of an <see cref="ISdf"/> type
+        /// </summary>
         public interface ISdfRenderer
         {
+            /// <summary>
+            /// The <see cref="ISdf"/> type that this renderer renders
+            /// </summary>
+            /// <returns></returns>
             Type SdfType();
 
-            void Render(Matrix4x4 transform);
+            /// <summary>
+            /// Renders the SDF with the given transform and material
+            /// </summary>
+            /// <param name="transform">Transform to be applied before rendering</param>
+            /// <param name="material">Material to render the SDF with. If null the default material is chosen by this renderer</param>
+            void Render(Matrix4x4 transform, Material material = null);
         }
 
         private Dictionary<Type, ISdfRenderer> registry;
@@ -25,6 +37,9 @@ namespace Voxel
 
         [SerializeField]
         private DynamicSdfShapeRenderer[] dynamicRenderers = new DynamicSdfShapeRenderer[0];
+
+        [SerializeField]
+        private Material material;
 
         private Dictionary<Type, ISdfRenderer> RegisterRenderers()
         {
@@ -46,10 +61,11 @@ namespace Voxel
         /// <param name="position">Position where to render the SDF</param>
         /// <param name="rotation">Rotation to be applied before rendering</param>
         /// <param name="sdf">SDF to render</param>
-        public void Render(Vector3 position, Quaternion rotation, ISdf sdf)
+        /// <param name="material">Material to render the SDF with. If null the material is chosen by the SDF renderer itself</param>
+        public void Render(Vector3 position, Quaternion rotation, ISdf sdf, Material material = null)
         {
             var transform = Matrix4x4.TRS(position, rotation, Vector3.one);
-            Render(transform, sdf);
+            Render(transform, sdf, material);
         }
 
         /// <summary>
@@ -57,7 +73,8 @@ namespace Voxel
         /// </summary>
         /// <param name="transform">Transform to be applied before rendering</param>
         /// <param name="sdf">SDF to render</param>
-        public void Render(Matrix4x4 transform, ISdf sdf)
+        /// <param name="material">Material to render the SDF with. If null the material is chosen by the SDF renderer itself</param>
+        public void Render(Matrix4x4 transform, ISdf sdf, Material material = null)
         {
             if (registry == null)
             {
@@ -102,7 +119,7 @@ namespace Voxel
 
                 renderingTransform = transform * renderingTransform;
 
-                renderer.Render(renderingTransform);
+                renderer.Render(renderingTransform, material);
             }
         }
     }

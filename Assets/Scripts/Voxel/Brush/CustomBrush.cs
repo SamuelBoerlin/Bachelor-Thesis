@@ -15,17 +15,18 @@ namespace Voxel
     /// </summary>
     /// <typeparam name="TBrushType">Custom brush datatype</typeparam>
     /// <typeparam name="TEvaluator"><see cref="IBrushSdfEvaluator{TBrushType}"/> that evaluates the SDF of a given <see cref="TBrushType"/></typeparam>
-    public class CustomBrush<TBrushType, TEvaluator> : IDisposable
+    public class CustomBrush<TBrushType, TEvaluator>
         where TBrushType : struct
         where TEvaluator : struct, IBrushSdfEvaluator<TBrushType>
     {
         /// <summary>
         /// The brush primitives that this custom brush is made of
         /// </summary>
-        public NativeList<CustomBrushPrimitive<TBrushType>> Primitives {
+        public List<CustomBrushPrimitive<TBrushType>> Primitives
+        {
             private set;
             get;
-        }
+        } = new List<CustomBrushPrimitive<TBrushType>>();
 
         /// <summary>
         /// The evaluator that evaluates the SDF of a given <see cref="TBrushType"/>
@@ -38,7 +39,6 @@ namespace Voxel
 
         public CustomBrush(TEvaluator evaluator)
         {
-            Primitives = new NativeList<CustomBrushPrimitive<TBrushType>>(Allocator.Persistent);
             Evaluator = evaluator;
         }
 
@@ -54,18 +54,16 @@ namespace Voxel
             Primitives.Add(new CustomBrushPrimitive<TBrushType>(type, operation, blend, transform));
         }
 
-        public void Dispose()
-        {
-            Primitives.Dispose();
-        }
-
         /// <summary>
-        /// Creates an <see cref="ISdf"/> that returns the values of the compound SDF of this custom brush
+        /// Creates an <see cref="ISdf"/> that returns the values of the compound SDF of this custom brush.
+        /// The SDF must be disposed of when it is no longer needed!
         /// </summary>
+        /// <param name="allocator">Allocator with which the SDF data should be allocated</param>
         /// <returns></returns>
-        public CustomBrushSdf<TBrushType, TEvaluator> CreateSdf()
+        public CustomBrushSdf<TBrushType, TEvaluator> CreateSdf(Allocator allocator)
         {
-            return new CustomBrushSdf<TBrushType, TEvaluator>(Primitives, Evaluator);
+            var nativePrimitives = new NativeArray<CustomBrushPrimitive<TBrushType>>(Primitives.ToArray(), allocator);
+            return new CustomBrushSdf<TBrushType, TEvaluator>(nativePrimitives, Evaluator);
         }
 
         /// <summary>

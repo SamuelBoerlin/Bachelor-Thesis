@@ -9,14 +9,14 @@ using UnityEngine;
 
 namespace Voxel
 {
-    public struct CustomBrushSdf<TBrushType, TEvaluator> : ISdf
+    public struct CustomBrushSdf<TBrushType, TEvaluator> : ISdf, IDisposable
         where TBrushType : struct
         where TEvaluator : struct, IBrushSdfEvaluator<TBrushType>
     {
-        private readonly NativeList<CustomBrushPrimitive<TBrushType>> primitives;
+        private readonly NativeArray<CustomBrushPrimitive<TBrushType>> primitives;
         private readonly TEvaluator evaluator;
 
-        public CustomBrushSdf(NativeList<CustomBrushPrimitive<TBrushType>> primitives, TEvaluator evaluator)
+        public CustomBrushSdf(NativeArray<CustomBrushPrimitive<TBrushType>> primitives, TEvaluator evaluator)
         {
             this.primitives = primitives;
             this.evaluator = evaluator;
@@ -43,11 +43,11 @@ namespace Voxel
                     float h;
                     switch (primitive.operation)
                     {
-                        case CreateVoxelTerrain.BrushOperation.Union:
+                        case BrushOperation.Union:
                             h = math.max(primitive.blend - math.abs(primitiveValue - value), 0.0f);
                             value = math.min(value, math.min(primitiveValue, value) - h * h * 0.25f / primitive.blend);
                             break;
-                        case CreateVoxelTerrain.BrushOperation.Difference:
+                        case BrushOperation.Difference:
                             h = math.max(primitive.blend - math.abs(-primitiveValue - value), 0.0f);
                             value = math.max(value, math.max(-primitiveValue, value) + h * h * 0.25f / primitive.blend);
                             break;
@@ -140,6 +140,11 @@ namespace Voxel
         public Matrix4x4? RenderingTransform()
         {
             return null;
+        }
+
+        public void Dispose()
+        {
+            primitives.Dispose();
         }
     }
 }

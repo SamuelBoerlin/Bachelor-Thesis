@@ -1202,6 +1202,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VoxelTerrain
       objectReference: {fileID: 0}
+    - target: {fileID: 444754938, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+      propertyPath: dynamicRenderers.Array.data[0]
+      value: 
+      objectReference: {fileID: 360365143}
     - target: {fileID: 5467410061661521435, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1267,10 +1271,11 @@ PrefabInstance:
       propertyPath: customBrush
       value: 
       objectReference: {fileID: 360365147}
-    - target: {fileID: 444754938, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
-      propertyPath: dynamicRenderers.Array.data[0]
+    - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
+        type: 3}
+      propertyPath: camera
       value: 
-      objectReference: {fileID: 360365143}
+      objectReference: {fileID: 1091161011}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
 --- !u!1001 &6553592327425133024
@@ -1295,6 +1300,31 @@ PrefabInstance:
       propertyPath: sdfRenderer
       value: 
       objectReference: {fileID: 13755523}
+    - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
+        type: 3}
+      propertyPath: surfaceMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 0b0ddcde58a077a4c928f729ca41abe7, type: 2}
+    - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
+        type: 3}
+      propertyPath: primitiveMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: e57c92bfbb4fdf34ba75b31679c8c5a6, type: 2}
+    - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
+        type: 3}
+      propertyPath: primitiveUnionMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: e57c92bfbb4fdf34ba75b31679c8c5a6, type: 2}
+    - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
+        type: 3}
+      propertyPath: primitiveDifferenceMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 2292ab84a258ae94da66ef8ed7b56ee1, type: 2}
+    - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
+        type: 3}
+      propertyPath: renderPrimitives
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6553592327101494714, guid: d302b0ca11d73e348999b7efd20932e6,
         type: 3}
       propertyPath: m_LocalPosition.x

@@ -40,7 +40,7 @@ namespace Voxel
         /// </summary>
         public readonly float4x4 invTransform;
 
-        public CustomBrushPrimitive(TBrushType type, BrushOperation operation, float blend, float4x4 transform)
+        internal CustomBrushPrimitive(TBrushType type, BrushOperation operation, float blend, float4x4 transform)
         {
             this.type = type;
             this.operation = operation;

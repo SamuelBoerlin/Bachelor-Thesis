@@ -10,7 +10,7 @@ using VoxelPolygonizer;
 using VoxelPolygonizer.CMS;
 
 public struct MaterialColors : VoxelMeshTessellation.IMaterialColorMap
-{ 
+{
     public Color32 GetColor(int material)
     {
         return FromInteger(material);
@@ -93,7 +93,7 @@ public readonly struct JobCell
 
 
 [RequireComponent(typeof(MeshFilter))]
-public class CreateVoxelTerrain : MonoBehaviour
+public partial class CreateVoxelTerrain : MonoBehaviour
 {
     [SerializeField] private MeshCollider meshCollider = null;
 
@@ -106,22 +106,6 @@ public class CreateVoxelTerrain : MonoBehaviour
     [SerializeField] private bool placeSdf = false;
 
     [SerializeField] private Vector3 sdfRotation = Vector3.zero;
-
-    public enum BrushOperation
-    {
-        Union,
-        Difference
-    }
-
-    public enum BrushType
-    {
-        Sphere,
-        Box,
-        Pyramid,
-        Cylinder,
-        Mesh,
-        Custom
-    }
     [SerializeField] private BrushType brushType = BrushType.Sphere;
 
     [SerializeField] private bool replaceSdfMaterial = false;
@@ -160,6 +144,8 @@ public class CreateVoxelTerrain : MonoBehaviour
 
     private Vector3Int? prevSelectedCell = null;
     private Vector3Int? selectedCell = null;
+
+    private int selectedPrimitive = -1;
 
     const int fieldSize = 16;
 
@@ -348,14 +334,14 @@ public class CreateVoxelTerrain : MonoBehaviour
         GetComponent<MeshFilter>().sharedMesh = voxelMesh;
 
         MortonIndexer indexer = new MortonIndexer(32, 32, 32);
-        for(int x = 0; x < 32; x++)
+        for (int x = 0; x < 32; x++)
         {
             for (int y = 0; y < 32; y++)
             {
                 for (int z = 0; z < 32; z++)
                 {
                     int ind = indexer.ToIndex(x, y, z);
-                    if(ind >= 32*32*32)
+                    if (ind >= 32 * 32 * 32)
                     {
                         Debug.Log(ind);
                     }
@@ -373,12 +359,12 @@ public class CreateVoxelTerrain : MonoBehaviour
 
     private void Update()
     {
-        if(undo)
+        if (undo)
         {
             undo = false;
 
             var editManager = GetComponent<VoxelEditManagerContainer>().Instance;
-            if(editManager != null)
+            if (editManager != null)
             {
                 editManager.Undo();
             }
@@ -530,7 +516,8 @@ public class CreateVoxelTerrain : MonoBehaviour
                         inNormals[i + 2] = normals[triangles[i + 2]];
                     }
 
-                    var outVoxels = new NativeArray3D<Voxel.Voxel, MortonIndexer>(new MortonIndexer(64, 64, 64), 64, 64, 64, Allocator.TempJob);
+                    int voxelizerSize = 64;
+                    var outVoxels = new NativeArray3D<Voxel.Voxel, MortonIndexer>(new MortonIndexer(voxelizerSize, voxelizerSize, voxelizerSize), voxelizerSize, voxelizerSize, voxelizerSize, Allocator.TempJob);
 
                     var voxelizationProperties = smoothVoxelizerNormals ? Voxelizer.VoxelizationProperties.SMOOTH : Voxelizer.VoxelizationProperties.FLAT;
 
@@ -559,7 +546,10 @@ public class CreateVoxelTerrain : MonoBehaviour
 
                     break;
                 case BrushType.Custom:
-                    gameObject.GetComponent<VoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), customBrush.Instance.CreateSdf(), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                    using (var sdf = customBrush.Instance.CreateSdf(Allocator.TempJob))
+                    {
+                        gameObject.GetComponent<VoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), sdf, MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                    }
                     break;
             }
         }
@@ -581,7 +571,46 @@ public class CreateVoxelTerrain : MonoBehaviour
                     gameObject.GetComponent<SdfShapeRenderHandler>().Render(new Vector3(gizmoPosition.x, gizmoPosition.y - brushSize / 2, gizmoPosition.z), Quaternion.Euler(sdfRotation), new PyramidSDF(brushSize * 2, brushSize * 2));
                     break;
                 case BrushType.Custom:
-                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), customBrush.Instance.CreateSdf());
+                    Matrix4x4 brushTransform = Matrix4x4.TRS(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new Vector3(1, 1, 1));
+                    using (var sdf = customBrush.Instance.CreateSdf(Allocator.TempJob))
+                    {
+                        gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform, sdf);
+                    }
+
+                    Camera camera = Camera.current;
+                    if (camera != null)
+                    {
+                        selectedPrimitive = -1;
+
+                        var ray = camera.transform.forward.normalized;
+                        float maxDst = 60.0f;
+                        int steps = Mathf.CeilToInt(maxDst * 2);
+                        for (int i = 0; i < steps && selectedPrimitive < 0; i++)
+                        {
+                            var pos = camera.transform.position + ray * maxDst / steps * i;
+
+                            int j = 0;
+                            foreach (var primitive in customBrush.Instance.Primitives)
+                            {
+                                var renderSdf = customBrush.Instance.Evaluator.GetRenderSdf(primitive);
+                                if (renderSdf != null && renderSdf.Eval(math.mul(math.mul(brushTransform, primitive.invTransform), new float4(pos, 1.0f)).xyz) < 0)
+                                {
+                                    selectedPrimitive = j;
+                                    break;
+                                }
+                                j++;
+                            }
+                        }
+                    }
+                    if (selectedPrimitive >= 0 && selectedPrimitive < customBrush.Instance.Primitives.Count)
+                    {
+                        var primitive = customBrush.Instance.Primitives[selectedPrimitive];
+                        var renderSdf = customBrush.Instance.Evaluator.GetRenderSdf(primitive);
+                        if (renderSdf != null)
+                        {
+                            gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform * (Matrix4x4)primitive.transform, renderSdf);
+                        }
+                    }
                     break;
             }
         }

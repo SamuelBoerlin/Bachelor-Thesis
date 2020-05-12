@@ -14,38 +14,48 @@ namespace Voxel
         {
             get
             {
-                if(_instance == null)
+                if (_instance == null)
                 {
                     _instance = new CustomBrush<DefaultCustomBrushType, DefaultCustomBrushSdfEvaluator>(new DefaultCustomBrushSdfEvaluator());
-                    Initialise();
                 }
                 return _instance;
             }
         }
 
-        private void Initialise()
+        private CustomBrushSdfRenderer customBrushRenderer;
+
+        public void Start()
         {
-            Matrix4x4 globalTransform = Matrix4x4.identity;
-
-            Instance.AddPrimitive(DefaultCustomBrushType.BOX, CreateVoxelTerrain.BrushOperation.Union, 5f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 0.5f, 0.5f)));
-            Instance.AddPrimitive(DefaultCustomBrushType.BOX, CreateVoxelTerrain.BrushOperation.Union, 5f, globalTransform * Matrix4x4.Translate(new Vector3(8.5f, 4.5f, 2.5f)));
-            Instance.AddPrimitive(DefaultCustomBrushType.SPHERE, CreateVoxelTerrain.BrushOperation.Difference, 5.0f, globalTransform * Matrix4x4.Translate(new Vector3(8.5f, 4.5f, -3.5f)));
-
-            /*Instance.AddPrimitive(DefaultCustomBrushType.SPHERE, CreateVoxelTerrain.BrushOperation.Union, 5f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 0.5f, 0.5f)));
-            Instance.AddPrimitive(DefaultCustomBrushType.BOX, CreateVoxelTerrain.BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(8.5f, 0.5f, 0.5f)));
-            Instance.AddPrimitive(DefaultCustomBrushType.BOX, CreateVoxelTerrain.BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 8.5f, 0.5f)));
-            Instance.AddPrimitive(DefaultCustomBrushType.BOX, CreateVoxelTerrain.BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 0.5f, 8.5f)));
-            Instance.AddPrimitive(DefaultCustomBrushType.BOX, CreateVoxelTerrain.BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(-7.5f, 0.5f, 0.5f)));
-            Instance.AddPrimitive(DefaultCustomBrushType.BOX, CreateVoxelTerrain.BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, -7.5f, 0.5f)));
-            Instance.AddPrimitive(DefaultCustomBrushType.BOX, CreateVoxelTerrain.BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 0.5f, -7.5f)));*/
-
-            /*Instance.AddPrimitive(DefaultCustomBrushType.BOX, CreateVoxelTerrain.BrushOperation.Union, 5f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 0.5f, 0.5f)));
-            Instance.AddPrimitive(DefaultCustomBrushType.SPHERE, CreateVoxelTerrain.BrushOperation.Union, 3f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 7.5f, 0.5f)));*/
+            customBrushRenderer = GetComponent<CustomBrushSdfRenderer>();
         }
 
-        public void OnApplicationQuit()
+        public void Update()
         {
-            Instance.Dispose();
+            Matrix4x4 globalTransform = Matrix4x4.Translate(new Vector3(0.2f, 0.2f, 0.2f));
+
+            Instance.Primitives.Clear();
+
+            float blend = (Mathf.Sin(Time.time) + 1) * 2.5f;
+
+            Instance.AddPrimitive(DefaultCustomBrushType.BOX, BrushOperation.Union, blend, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 0.5f, 0.5f)));
+            Instance.AddPrimitive(DefaultCustomBrushType.BOX, BrushOperation.Union, blend, globalTransform * Matrix4x4.Translate(new Vector3(8.5f, 4.5f, 2.5f)));
+            Instance.AddPrimitive(DefaultCustomBrushType.SPHERE, BrushOperation.Difference, blend, globalTransform * Matrix4x4.TRS(new Vector3(8.5f, 4.5f, -3.5f), Quaternion.identity, new Vector3(0.8f, 0.8f, 0.8f)));
+
+            /*Instance.AddPrimitive(DefaultCustomBrushType.SPHERE, BrushOperation.Union, 5f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 0.5f, 0.5f)));
+            Instance.AddPrimitive(DefaultCustomBrushType.BOX, BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(8.5f, 0.5f, 0.5f)));
+            Instance.AddPrimitive(DefaultCustomBrushType.BOX, BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 8.5f, 0.5f)));
+            Instance.AddPrimitive(DefaultCustomBrushType.BOX, BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 0.5f, 8.5f)));
+            Instance.AddPrimitive(DefaultCustomBrushType.BOX, BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(-7.5f, 0.5f, 0.5f)));
+            Instance.AddPrimitive(DefaultCustomBrushType.BOX, BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, -7.5f, 0.5f)));
+            Instance.AddPrimitive(DefaultCustomBrushType.BOX, BrushOperation.Difference, 2f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 0.5f, -7.5f)));*/
+
+            /*Instance.AddPrimitive(DefaultCustomBrushType.BOX, BrushOperation.Union, 5f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 0.5f, 0.5f)));
+            Instance.AddPrimitive(DefaultCustomBrushType.SPHERE, BrushOperation.Union, (Mathf.Sin(Time.time) + 1) * 6, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 7.5f, 0.5f)));*/
+
+            if (customBrushRenderer != null)
+            {
+                customBrushRenderer.NeedsRebuild = true;
+            }
         }
     }
 }

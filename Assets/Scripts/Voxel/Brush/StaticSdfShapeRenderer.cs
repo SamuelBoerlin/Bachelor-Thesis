@@ -9,7 +9,7 @@ namespace Voxel
     /// </summary>
     public class StaticSdfShapeRenderer : ScriptableObject, SdfShapeRenderHandler.ISdfRenderer
     {
-        public virtual void Render(Matrix4x4 transform)
+        public virtual void Render(Matrix4x4 transform, Material material = null)
         {
 
         }

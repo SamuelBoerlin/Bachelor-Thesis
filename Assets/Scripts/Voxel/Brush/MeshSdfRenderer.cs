@@ -29,14 +29,18 @@ namespace Voxel
         [SerializeField]
         private Vector3 scale = Vector3.one * 2;
 
-        public override void Render(Matrix4x4 transform)
+        public override void Render(Matrix4x4 transform, Material material = null)
         {
+            if (material == null)
+            {
+                material = this.material;
+            }
             Graphics.DrawMesh(mesh, transform * Matrix4x4.TRS(translation, Quaternion.identity, scale), material, 0);
         }
 
         public override Type SdfType()
         {
-            switch(sdfType)
+            switch (sdfType)
             {
                 default:
                 case SdfTypes.Sphere:

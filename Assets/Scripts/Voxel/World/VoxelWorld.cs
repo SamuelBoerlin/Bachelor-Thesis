@@ -241,7 +241,7 @@ namespace Voxel
                 }
 
                 //Finalize clone jobs
-                foreach(VoxelChunk<TIndexer>.Snapshot snapshot in snapshots)
+                foreach (VoxelChunk<TIndexer>.Snapshot snapshot in snapshots)
                 {
                     snapshot.handle.Complete();
                     snapshotChunks.Add(snapshot.chunk);
@@ -272,7 +272,7 @@ namespace Voxel
             }
 
             //Wait and finalize jobs
-            foreach(var change in changes)
+            foreach (var change in changes)
             {
                 change.handle.Complete();
             }
@@ -375,7 +375,7 @@ namespace Voxel
             Clear();
         }
 
-        public void Update(MeshRenderer renderer)
+        public void Update()
         {
             var handles = new List<VoxelChunk<TIndexer>.FinalizeBuild>();
 
@@ -411,14 +411,14 @@ namespace Voxel
             }
         }
 
-        public void Render(MeshRenderer renderer, Matrix4x4 renderTransform)
+        public void Render(Matrix4x4 renderTransform, Material material)
         {
             foreach (ChunkPos pos in chunks.Keys)
             {
                 VoxelChunk<TIndexer> chunk = chunks[pos];
                 if (chunk.mesh != null)
                 {
-                    Graphics.DrawMesh(chunk.mesh, renderTransform * Matrix4x4.TRS(Transform.position, Transform.rotation, Transform.lossyScale) * Matrix4x4.Translate(new Vector3(pos.x * ChunkSize, pos.y * ChunkSize, pos.z * ChunkSize)), renderer.material, 0);
+                    Graphics.DrawMesh(chunk.mesh, renderTransform * Matrix4x4.TRS(Transform.position, Transform.rotation, Transform.lossyScale) * Matrix4x4.Translate(new Vector3(pos.x * ChunkSize, pos.y * ChunkSize, pos.z * ChunkSize)), material, 0);
                 }
             }
         }

@@ -44,7 +44,7 @@ namespace Voxel
         {
             get
             {
-                if(_instance == null)
+                if (_instance == null)
                 {
                     _instance = new VoxelWorld<MortonIndexer>(ChunkSize, CMSProperties, transform, IndexerFactory);
                 }
@@ -60,8 +60,8 @@ namespace Voxel
         void Update()
         {
             Instance.Transform = transform;
-            Instance.Update(meshRenderer);
-            Instance.Render(meshRenderer, Matrix4x4.identity);
+            Instance.Update();
+            Instance.Render(Matrix4x4.identity, meshRenderer.material);
         }
 
         void OnApplicationQuit()
