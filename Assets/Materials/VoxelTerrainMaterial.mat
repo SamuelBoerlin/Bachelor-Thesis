@@ -73,7 +73,7 @@ Material:
     - Vector1_373F76DE: 0
     - Vector1_76B866ED: 0.5
     - Vector1_B0058430: 0
-    - Vector1_E4DA9B3C: 0.1
+    - Vector1_E4DA9B3C: 0
     - _AlphaClip: 0
     - _Blend: 0
     - _BumpScale: 1
@@ -93,6 +93,7 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _Surface: 0
+    - _TextureArrayLength: 0
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
