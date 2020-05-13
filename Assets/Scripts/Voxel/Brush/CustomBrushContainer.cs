@@ -54,7 +54,7 @@ namespace Voxel
 
             if (customBrushRenderer != null)
             {
-                customBrushRenderer.NeedsRebuild = true;
+                //customBrushRenderer.NeedsRebuild = true;
             }
         }
     }

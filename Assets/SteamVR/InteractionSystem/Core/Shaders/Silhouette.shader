@@ -15,13 +15,85 @@ Shader "Valve/VR/Silhouette"
 	}
 
 	//-------------------------------------------------------------------------------------------------------------------------------------------------------------
-	CGINCLUDE
+	HLSLINCLUDE
 
 		//-------------------------------------------------------------------------------------------------------------------------------------------------------------
-		#pragma target 5.0
+		// Required to compile gles 2.0 with standard SRP library
+        // All shaders must be compiled with HLSLcc and currently only gles is not using HLSLcc by default
+        #pragma prefer_hlslcc gles
+        #pragma exclude_renderers d3d11_9x
+        #pragma target 2.0
+
+        // -------------------------------------
+        // Material Keywords
+        // unused shader_feature variants are stripped from build automatically
+        #pragma shader_feature _NORMALMAP
+        #pragma shader_feature _ALPHATEST_ON
+        #pragma shader_feature _ALPHAPREMULTIPLY_ON
+        #pragma shader_feature _EMISSION
+        #pragma shader_feature _METALLICSPECGLOSSMAP
+        #pragma shader_feature _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+        #pragma shader_feature _OCCLUSIONMAP
+
+        #pragma shader_feature _SPECULARHIGHLIGHTS_OFF
+        #pragma shader_feature _GLOSSYREFLECTIONS_OFF
+        #pragma shader_feature _SPECULAR_SETUP
+        #pragma shader_feature _RECEIVE_SHADOWS_OFF
+
+        // -------------------------------------
+        // Universal Render Pipeline keywords
+        // When doing custom shaders you most often want to copy and past these #pragmas
+        // These multi_compile variants are stripped from the build depending on:
+        // 1) Settings in the LWRP Asset assigned in the GraphicsSettings at build time
+        // e.g If you disable AdditionalLights in the asset then all _ADDITIONA_LIGHTS variants
+        // will be stripped from build
+        // 2) Invalid combinations are stripped. e.g variants with _MAIN_LIGHT_SHADOWS_CASCADE
+        // but not _MAIN_LIGHT_SHADOWS are invalid and therefore stripped.
+        #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
+        #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
+        #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+        #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
+        #pragma multi_compile _ _SHADOWS_SOFT
+        #pragma multi_compile _ _MIXED_LIGHTING_SUBTRACTIVE
+
+        // -------------------------------------
+        // Unity defined keywords
+        #pragma multi_compile _ DIRLIGHTMAP_COMBINED
+        #pragma multi_compile _ LIGHTMAP_ON
+        #pragma multi_compile_fog
+
+        //--------------------------------------
+        // GPU Instancing
+        #pragma multi_compile_instancing
+
+		// Including the following two function is enought for shading with Universal Pipeline. Everything is included in them.
+        // Core.hlsl will include SRP shader library, all constant buffers not related to materials (perobject, percamera, perframe).
+        // It also includes matrix/space conversion functions and fog.
+        // Lighting.hlsl will include the light functions/data to abstract light constants. You should use GetMainLight and GetLight functions
+        // that initialize Light struct. Lighting.hlsl also include GI, Light BDRF functions. It also includes Shadows.
+
+        // Required by all Universal Render Pipeline shaders.
+        // It will include Unity built-in shader variables (except the lighting variables)
+        // (https://docs.unity3d.com/Manual/SL-UnityShaderVariables.html
+        // It will also include many utilitary functions. 
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+        // Include this if you are doing a lit shader. This includes lighting shader variables,
+        // lighting and shadow functions
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+
+        // Material shader variables are not defined in SRP or LWRP shader library.
+        // This means _BaseColor, _BaseMap, _BaseMap_ST, and all variables in the Properties section of a shader
+        // must be defined by the shader itself. If you define all those properties in CBUFFER named
+        // UnityPerMaterial, SRP can cache the material properties between frames and reduce significantly the cost
+        // of each drawcall.
+        // In this case, for sinmplicity LitInput.hlsl is included. This contains the CBUFFER for the material
+        // properties defined above. As one can see this is not part of the ShaderLibrary, it specific to the
+        // LWRP Lit shader.
+        #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
 
 		//-------------------------------------------------------------------------------------------------------------------------------------------------------------
-		#include "UnityCG.cginc"
+		//#include "UnityCG.cginc"
 
 		//-------------------------------------------------------------------------------------------------------------------------------------------------------------
 		float4 g_vOutlineColor;
@@ -33,6 +105,7 @@ Shader "Valve/VR/Silhouette"
 		{
 			float4 vPositionOs : POSITION;
 			float3 vNormalOs : NORMAL;
+			UNITY_VERTEX_INPUT_INSTANCE_ID
 		};
 
 		//-------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -49,11 +122,11 @@ Shader "Valve/VR/Silhouette"
 			PS_INPUT o;
 			o.vPositionOs.xyzw = i.vPositionOs.xyzw;
 			o.vNormalOs.xyz = i.vNormalOs.xyz;
-#if UNITY_VERSION >= 540
-			o.vPositionPs = UnityObjectToClipPos( i.vPositionOs.xyzw );
-#else
+//#if UNITY_VERSION >= 540
+//			o.vPositionPs = UnityObjectToClipPos( i.vPositionOs.xyzw );
+//#else
 			o.vPositionPs = mul( UNITY_MATRIX_MVP, i.vPositionOs.xyzw );
-#endif
+//#endif
 			return o;
 		}
 
@@ -64,15 +137,16 @@ Shader "Valve/VR/Silhouette"
 
 			// Offset along normal in projection space
 			float3 vNormalVs = mul( ( float3x3 )UNITY_MATRIX_IT_MV, vertex.vNormalOs.xyz );
-			float2 vOffsetPs = TransformViewToProjection( vNormalVs.xy );
+			//float2 vOffsetPs = vNormalVs.xy;//TransformViewToProjection( vNormalVs.xy );
+			float2 vOffsetPs = mul( (float3x3)UNITY_MATRIX_P, vNormalVs).xy;
 			vOffsetPs.xy = normalize( vOffsetPs.xy );
 
 			// Calculate position
-#if UNITY_VERSION >= 540
-			extruded.vPositionPs = UnityObjectToClipPos( vertex.vPositionOs.xyzw );
-#else
+//#if UNITY_VERSION >= 540
+//			extruded.vPositionPs = UnityObjectToClipPos( vertex.vPositionOs.xyzw );
+//#else
 			extruded.vPositionPs = mul( UNITY_MATRIX_MVP, vertex.vPositionOs.xyzw );
-#endif
+//#endif
 			extruded.vPositionPs.xy += vOffsetPs.xy * extruded.vPositionPs.w * g_flOutlineWidth;
 
 			return extruded;
@@ -117,29 +191,30 @@ Shader "Valve/VR/Silhouette"
 		}
 
 		//-------------------------------------------------------------------------------------------------------------------------------------------------------------
-		fixed4 MainPs( PS_INPUT i ) : SV_Target
+		float4 MainPs( PS_INPUT i ) : SV_Target
 		{
 			return g_vOutlineColor;
 		}
 
 		//-------------------------------------------------------------------------------------------------------------------------------------------------------------
-		fixed4 NullPs( PS_INPUT i ) : SV_Target
+		float4 NullPs( PS_INPUT i ) : SV_Target
 		{
 			return float4( 1.0, 0.0, 1.0, 1.0 );
 		}
 
-	ENDCG
+	ENDHLSL
 
 	SubShader
 	{
-		Tags { "RenderType"="Outline" "Queue" = "Geometry-1"  }
+		Tags { "RenderPipeline" = "UniversalRenderPipeline" "IgnoreProjector" = "True" "RenderType"="Opaque" "Queue" = "Geometry-1" }
 
 		//-------------------------------------------------------------------------------------------------------------------------------------------------------------
 		// Render the object with stencil=1 to mask out the part that isn't the silhouette
 		//-------------------------------------------------------------------------------------------------------------------------------------------------------------
 		Pass
 		{
-			Tags { "LightMode" = "Always" }
+			Name "StencilPass"
+			Tags { "LightMode" = "SilhouetteStencilPass" }
 			ColorMask 0
 			Cull Off
 			ZWrite Off
@@ -150,10 +225,10 @@ Shader "Valve/VR/Silhouette"
 				Pass replace
 			}
 
-			CGPROGRAM
+			HLSLPROGRAM
 				#pragma vertex MainVs
 				#pragma fragment NullPs
-			ENDCG
+			ENDHLSL
 		}
 
 		//-------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -162,7 +237,8 @@ Shader "Valve/VR/Silhouette"
 		//-------------------------------------------------------------------------------------------------------------------------------------------------------------
 		Pass
 		{
-			Tags { "LightMode" = "Always" }
+			Name "SilhouetteExtrudePass"
+			Tags { "LightMode" = "SilhouetteExtrudePass" }
 			Cull Off
 			ZWrite On
 			Stencil
@@ -173,11 +249,13 @@ Shader "Valve/VR/Silhouette"
 				Fail keep
 			}
 
-			CGPROGRAM
+			HLSLPROGRAM
+				#pragma require geometry
+
 				#pragma vertex MainVs
 				#pragma geometry ExtrudeGs
 				#pragma fragment MainPs
-			ENDCG
+			ENDHLSL
 		}
 	}
 }
