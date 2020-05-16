@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 444754939}
   - component: {fileID: 444754938}
   - component: {fileID: 444754940}
+  - component: {fileID: 137132094}
   m_Layer: 0
   m_Name: VoxelTerrain
   m_TagString: Untagged
@@ -33,7 +34,7 @@ Transform:
   m_GameObject: {fileID: 5467410061661521447}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1, z: 3}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -114,7 +115,7 @@ MonoBehaviour:
   meshCollider: {fileID: 5467410061661521436}
   scale: 1
   regenerate: 0
-  placeSdf: 0
+  placeSdf: 1
   sdfRotation: {x: 0, y: 0, z: 0}
   brushType: 0
   replaceSdfMaterial: 0
@@ -124,10 +125,11 @@ MonoBehaviour:
   materialTexture: 0
   generateEachFrame: 0
   lockSelection: 0
-  lockedSelection: {x: -20, y: 0, z: 0}
+  lockedSelection: {x: 0, y: 0, z: 0}
   renderLockedSelectionOnly: 0
   fixedTime: 3.3
-  voxelizeMesh: {fileID: 0}
+  voxelizeMesh: {fileID: -2432090755550338912, guid: a626b7367265b7842bafeb4a8427cfdb,
+    type: 3}
   customBrush: {fileID: 0}
   smoothVoxelizerNormals: 1
   undo: 0
@@ -178,7 +180,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b6f8a69b6f0cfcb4bb45e37aea39a69d, type: 2}
   - {fileID: 11400000, guid: 644b0dd30c9ad6a4c94bd892c84d8d49, type: 2}
   - {fileID: 11400000, guid: 3c13f75b8f0c1e74c8c0318e091ff2b5, type: 2}
-  dynamicRenderers: []
+  dynamicRenderers:
+  - {fileID: 0}
   material: {fileID: 0}
 --- !u!114 &444754940
 MonoBehaviour:
@@ -205,3 +208,55 @@ MonoBehaviour:
   - {fileID: 2800000, guid: d059310c544b65d4fb3188bd6466a8b5, type: 3}
   - {fileID: 2800000, guid: 0e1bd4dd4f34c514d9465db5511dd694, type: 3}
   - {fileID: 2800000, guid: d059310c544b65d4fb3188bd6466a8b5, type: 3}
+--- !u!114 &137132094
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5467410061661521447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b93b6a877adcbf94c89a9d6e0c0e844d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  activateActionSetOnAttach:
+    actionSetPath: 
+  hideHandOnAttach: 1
+  hideSkeletonOnAttach: 0
+  hideControllerOnAttach: 0
+  handAnimationOnPickup: 0
+  setRangeOfMotionOnPickup: -1
+  useHandObjectAttachmentPoint: 1
+  attachEaseIn: 0
+  snapAttachEaseInCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  snapAttachEaseInTime: 0.15
+  snapAttachEaseInCompleted: 0
+  skeletonPoser: {fileID: 0}
+  handFollowTransform: 1
+  highlightOnHover: 0
+  hideHighlight: []
+  hoverPriority: 0

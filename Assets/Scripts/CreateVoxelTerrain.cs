@@ -125,7 +125,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
 
     [SerializeField] [Range(0.0f, 30.0f)] private float fixedTime = 0.0f;
 
-    [SerializeField] private MeshFilter voxelizeMesh = null;
+    [SerializeField] private Mesh voxelizeMesh = null;
 
     [SerializeField] private DefaultCustomBrushContainer customBrush = null;
 
@@ -497,10 +497,9 @@ public partial class CreateVoxelTerrain : MonoBehaviour
                     gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y - brushSize / 2, gizmoPosition.z), Quaternion.Euler(sdfRotation), new PyramidSDF(brushSize * 2, brushSize * 2), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Mesh:
-                    var mesh = voxelizeMesh.mesh;
-                    var triangles = mesh.triangles;
-                    var vertices = mesh.vertices;
-                    var normals = mesh.normals;
+                    var triangles = voxelizeMesh.triangles;
+                    var vertices = voxelizeMesh.vertices;
+                    var normals = voxelizeMesh.normals;
 
                     var inVertices = new NativeArray<float3>(triangles.Length, Allocator.TempJob);
                     var inNormals = new NativeArray<float3>(triangles.Length, Allocator.TempJob);

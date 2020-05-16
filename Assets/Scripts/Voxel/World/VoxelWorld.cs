@@ -77,6 +77,14 @@ namespace Voxel
             return chunk;
         }
 
+        public IReadOnlyCollection<ChunkPos> Chunks
+        {
+            get
+            {
+                return chunks.Keys;
+            }
+        }
+
         public delegate void VoxelEditConsumer<TEditIndexer>(VoxelEdit<TEditIndexer> edit) where TEditIndexer : struct, IIndexer;
 
         public void ApplyGrid<TGridIndexer>(int x, int y, int z, NativeArray3D<Voxel, TGridIndexer> grid, bool propagatePadding, bool includePadding, VoxelEditConsumer<TIndexer> edits, bool writeToChunks = true, bool writeUnsetVoxels = false)

@@ -13,7 +13,7 @@ namespace Voxel
             internal set
             {
                 _chunk = value;
-                OnSetChunk(value);
+                OnSetChunk();
             }
             get
             {
@@ -37,7 +37,12 @@ namespace Voxel
             }
         }
 
-        protected virtual void OnSetChunk(VoxelChunk<TIndexer> chunk)
+        protected virtual void OnSetChunk()
+        {
+
+        }
+
+        public virtual void OnChunkRebuilt()
         {
 
         }

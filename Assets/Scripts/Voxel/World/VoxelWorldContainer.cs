@@ -78,19 +78,19 @@ namespace Voxel
 
         protected abstract IndexerFactory<TIndexer> CreateIndexerFactory();
 
-        void Start()
+        protected virtual void Start()
         {
             meshRenderer = GetComponent<MeshRenderer>();
         }
 
-        void Update()
+        protected virtual void Update()
         {
             Instance.Transform = transform;
             Instance.Update();
             Instance.Render(Matrix4x4.identity, meshRenderer.material);
         }
 
-        void OnApplicationQuit()
+        protected virtual void OnApplicationQuit()
         {
             Instance.Dispose();
         }

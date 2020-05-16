@@ -49,7 +49,7 @@ namespace Voxel
             }
         }
 
-        public void OnApplicationQuit()
+        protected virtual void OnApplicationQuit()
         {
             Instance.Dispose();
         }

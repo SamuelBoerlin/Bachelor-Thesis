@@ -54,7 +54,11 @@ namespace Voxel
 
         private readonly IndexerFactory<TIndexer> indexerFactory;
 
-        private GameObject chunkObject;
+        public GameObject ChunkObject
+        {
+            get;
+            private set;
+        }
 
         public VoxelChunk(VoxelWorld<TIndexer> world, ChunkPos pos, int chunkSize, IndexerFactory<TIndexer> indexerFactory)
         {
@@ -69,10 +73,10 @@ namespace Voxel
             if (world.ChunkPrefab != null)
             {
                 Vector3 prefabWorldPos = world.VoxelWorldObject.transform.TransformPoint(new Vector3(pos.x * ChunkSize, pos.y * ChunkSize, pos.z * ChunkSize));
-                chunkObject = UnityEngine.Object.Instantiate(world.ChunkPrefab, prefabWorldPos, world.VoxelWorldObject.transform.rotation, world.VoxelWorldObject.transform);
-                chunkObject.name = string.Format("{0} ({1}, {2}, {3})", world.ChunkPrefab.name, pos.x, pos.y, pos.z);
+                ChunkObject = UnityEngine.Object.Instantiate(world.ChunkPrefab, prefabWorldPos, world.VoxelWorldObject.transform.rotation, world.VoxelWorldObject.transform);
+                ChunkObject.name = string.Format("{0} ({1}, {2}, {3})", world.ChunkPrefab.name, pos.x, pos.y, pos.z);
 
-                var chunkContainer = chunkObject.GetComponent<VoxelChunkContainer<TIndexer>>();
+                var chunkContainer = ChunkObject.GetComponent<VoxelChunkContainer<TIndexer>>();
                 if (chunkContainer != null && chunkContainer.ChunkType == GetType())
                 {
                     dynamic d = this;
@@ -294,6 +298,11 @@ namespace Voxel
                 {
                     mesh.SetColors(colors);
                 }
+
+                if(ChunkObject != null)
+                {
+                    ChunkObject.GetComponent<VoxelChunkContainer<TIndexer>>()?.OnChunkRebuilt();
+                }
             };
         }
 
@@ -301,9 +310,9 @@ namespace Voxel
         {
             voxels.Dispose();
 
-            if (chunkObject != null)
+            if (ChunkObject != null)
             {
-                UnityEngine.Object.Destroy(chunkObject);
+                UnityEngine.Object.Destroy(ChunkObject);
             }
         }
 
