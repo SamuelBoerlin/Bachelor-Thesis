@@ -7,21 +7,45 @@ using UnityEngine;
 
 namespace Voxel
 {
-    [RequireComponent(typeof(VoxelWorldContainer))]
-    public class VoxelEditManagerContainer : MonoBehaviour
+    public abstract class VoxelEditManagerContainer<TIndexer> : MonoBehaviour
+        where TIndexer : struct, IIndexer
     {
         [SerializeField] private int queueSize = 5;
 
-        private VoxelEditManager<MortonIndexer> _instance;
-        public VoxelEditManager<MortonIndexer> Instance
+        private VoxelEditManager<TIndexer> _instance;
+        public VoxelEditManager<TIndexer> Instance
         {
             get
             {
                 if(_instance == null)
                 {
-                    _instance = new VoxelEditManager<MortonIndexer>(GetComponent<VoxelWorldContainer>().Instance, queueSize);
+                    var container = GetComponent<VoxelWorldContainer<TIndexer>>();
+                    if (container == null)
+                    {
+                        Debug.LogError(string.Format("Cannot create {0} because {1} component does not exist on this game object", typeof(VoxelEditManager<TIndexer>).Name, typeof(VoxelWorldContainer<TIndexer>).Name));
+                    }
+                    else
+                    {
+                        _instance = new VoxelEditManager<TIndexer>(container.Instance, queueSize);
+                    }
                 }
                 return _instance;
+            }
+        }
+
+        public Type ManagerType
+        {
+            get
+            {
+                return typeof(VoxelEditManager<TIndexer>);
+            }
+        }
+
+        public Type IndexerType
+        {
+            get
+            {
+                return typeof(TIndexer);
             }
         }
 

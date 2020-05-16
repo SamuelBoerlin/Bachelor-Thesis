@@ -47,6 +47,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -80,7 +81,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 6553592327101494710}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a0cb454c9a0ee4c4894abe3a5fd97b80, type: 3}
+  m_Script: {fileID: 11500000, guid: 5124849fc652c214096f7caec32ecc01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &6553592327101494711
@@ -92,7 +93,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 6553592327101494710}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7242ece17da6f4c4f93e42b691e79cd8, type: 3}
+  m_Script: {fileID: 11500000, guid: e8fb83a0c557c9942b767ec219a30e2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  sdfRenderer: {fileID: 0}
+  renderSurface: 1
+  renderPrimitives: 0
+  surfaceMaterial: {fileID: 2100000, guid: 0b0ddcde58a077a4c928f729ca41abe7, type: 2}
+  primitiveUnionMaterial: {fileID: 2100000, guid: e57c92bfbb4fdf34ba75b31679c8c5a6,
+    type: 2}
+  primitiveDifferenceMaterial: {fileID: 2100000, guid: 2292ab84a258ae94da66ef8ed7b56ee1,
+    type: 2}
   parentWorld: {fileID: 0}

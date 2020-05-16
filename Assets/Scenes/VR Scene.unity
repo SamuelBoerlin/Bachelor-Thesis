@@ -208,7 +208,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 46851720}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.726, y: 0.25, z: -1.001}
+  m_LocalPosition: {x: 4.726, y: 0.17, z: -1.001}
   m_LocalScale: {x: 1, y: 0.5, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -223,7 +223,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7242ece17da6f4c4f93e42b691e79cd8, type: 3}
+  m_Script: {fileID: 11500000, guid: e8fb83a0c557c9942b767ec219a30e2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &591388755 stripped
@@ -235,7 +235,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a0cb454c9a0ee4c4894abe3a5fd97b80, type: 3}
+  m_Script: {fileID: 11500000, guid: 5124849fc652c214096f7caec32ecc01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &713316283
@@ -974,6 +974,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 444754938, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+      propertyPath: dynamicRenderers.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 444754938, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
       propertyPath: dynamicRenderers.Array.data[0]
       value: 
       objectReference: {fileID: 591388754}
@@ -987,16 +991,6 @@ PrefabInstance:
       propertyPath: customBrush
       value: 
       objectReference: {fileID: 591388755}
-    - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
-        type: 3}
-      propertyPath: camera
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
-        type: 3}
-      propertyPath: brushType
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5467410061661521435, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1059,6 +1053,36 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+--- !u!1 &1610357430
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1610357431}
+  m_Layer: 0
+  m_Name: Sphere
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1610357431
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1610357430}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 8.114202, y: 12.923856, z: 12.606524}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 16
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1716027541 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 444754938, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
@@ -1080,7 +1104,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e36e947f5eec86a449b29107cdd9d508, type: 3}
+  m_Script: {fileID: 11500000, guid: 69b472e4fbe897a4fab0cc54c9320699, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1001 &1745885791
@@ -1535,39 +1559,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
         type: 3}
-      propertyPath: parentWorld
-      value: 
-      objectReference: {fileID: 1716027542}
-    - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
-        type: 3}
       propertyPath: sdfRenderer
       value: 
       objectReference: {fileID: 1716027541}
     - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
         type: 3}
-      propertyPath: surfaceMaterial
+      propertyPath: parentWorld
       value: 
-      objectReference: {fileID: 2100000, guid: 0b0ddcde58a077a4c928f729ca41abe7, type: 2}
-    - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
-        type: 3}
-      propertyPath: primitiveMaterial
-      value: 
-      objectReference: {fileID: 2100000, guid: e57c92bfbb4fdf34ba75b31679c8c5a6, type: 2}
-    - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
-        type: 3}
-      propertyPath: primitiveUnionMaterial
-      value: 
-      objectReference: {fileID: 2100000, guid: e57c92bfbb4fdf34ba75b31679c8c5a6, type: 2}
-    - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
-        type: 3}
-      propertyPath: primitiveDifferenceMaterial
-      value: 
-      objectReference: {fileID: 2100000, guid: 2292ab84a258ae94da66ef8ed7b56ee1, type: 2}
-    - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
-        type: 3}
-      propertyPath: renderPrimitives
-      value: 0
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1716027542}
     - target: {fileID: 6553592327101494714, guid: d302b0ca11d73e348999b7efd20932e6,
         type: 3}
       propertyPath: m_LocalPosition.x

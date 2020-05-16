@@ -127,7 +127,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
 
     [SerializeField] private MeshFilter voxelizeMesh = null;
 
-    [SerializeField] private CustomBrushContainer customBrush = null;
+    [SerializeField] private DefaultCustomBrushContainer customBrush = null;
 
     [SerializeField] private bool smoothVoxelizerNormals = true;
 
@@ -363,7 +363,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
         {
             undo = false;
 
-            var editManager = GetComponent<VoxelEditManagerContainer>().Instance;
+            var editManager = GetComponent<DefaultVoxelEditManagerContainer>().Instance;
             if (editManager != null)
             {
                 editManager.Undo();
@@ -374,7 +374,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
         {
             redo = false;
 
-            var editManager = GetComponent<VoxelEditManagerContainer>().Instance;
+            var editManager = GetComponent<DefaultVoxelEditManagerContainer>().Instance;
             if (editManager != null)
             {
                 editManager.Redo();
@@ -390,7 +390,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
                 Vector3 relDir = Quaternion.Inverse(transform.rotation) * camera.transform.forward.normalized;
 
                 //if (field.RayCast(relPos, relDir, 16, out TestVoxelField.RayCastResult result))
-                if (gameObject.GetComponent<VoxelWorldContainer>().Instance.RayCast(relPos, relDir, 64, out VoxelWorld<MortonIndexer>.RayCastResult result))
+                if (gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.RayCast(relPos, relDir, 64, out VoxelWorld<MortonIndexer>.RayCastResult result))
                 {
                     selectedCell = new Vector3Int(Mathf.FloorToInt(result.pos.x), Mathf.FloorToInt(result.pos.y), Mathf.FloorToInt(result.pos.z));
                 }
@@ -421,7 +421,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
         if (selectedCell != null && prevSelectedCell != selectedCell)
         {
             //field.FillCell(selectedCell.Value.x, selectedCell.Value.y, selectedCell.Value.z, 0, gizmoCellMaterials, gizmoCellIntersections, gizmoCellNormals);
-            var sculpture = gameObject.GetComponent<VoxelWorldContainer>().Instance;
+            var sculpture = gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance;
             VoxelChunk<MortonIndexer> chunk = sculpture.GetChunk(ChunkPos.FromVoxel(selectedCell.Value, sculpture.ChunkSize));
             if (chunk != null)
             {
@@ -480,21 +480,21 @@ public partial class CreateVoxelTerrain : MonoBehaviour
             placeSdf = false;
             regenerate = true;
 
-            var editManager = GetComponent<VoxelEditManagerContainer>().Instance;
+            var editManager = GetComponent<DefaultVoxelEditManagerContainer>().Instance;
 
             switch (brushType)
             {
                 case BrushType.Sphere:
-                    gameObject.GetComponent<VoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new SphereSDF(brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new SphereSDF(brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Box:
-                    gameObject.GetComponent<VoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new BoxSDF(brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new BoxSDF(brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Cylinder:
-                    gameObject.GetComponent<VoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new CylinderSDF(brushSize, brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new CylinderSDF(brushSize, brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Pyramid:
-                    gameObject.GetComponent<VoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y - brushSize / 2, gizmoPosition.z), Quaternion.Euler(sdfRotation), new PyramidSDF(brushSize * 2, brushSize * 2), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y - brushSize / 2, gizmoPosition.z), Quaternion.Euler(sdfRotation), new PyramidSDF(brushSize * 2, brushSize * 2), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Mesh:
                     var mesh = voxelizeMesh.mesh;
@@ -535,7 +535,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
                     watch.Start();
 
                     //TODO Make voxelizer also undoable?
-                    gameObject.GetComponent<VoxelWorldContainer>().Instance.ApplyGrid((int)gizmoPosition.x, (int)gizmoPosition.y, (int)gizmoPosition.z, outVoxels, true, false, null);
+                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplyGrid((int)gizmoPosition.x, (int)gizmoPosition.y, (int)gizmoPosition.z, outVoxels, true, false, null);
 
                     watch.Stop();
                     Debug.Log("Applied to grid: " + watch.ElapsedMilliseconds + "ms");
@@ -548,7 +548,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
                 case BrushType.Custom:
                     using (var sdf = customBrush.Instance.CreateSdf(Allocator.TempJob))
                     {
-                        gameObject.GetComponent<VoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), sdf, MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                        gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), sdf, MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
                     }
                     break;
             }

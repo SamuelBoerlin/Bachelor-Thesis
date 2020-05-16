@@ -9,7 +9,8 @@ namespace Voxel
 {
     [RequireComponent(typeof(Transform))]
     [RequireComponent(typeof(MeshRenderer))]
-    public class VoxelWorldContainer : MonoBehaviour
+    public abstract class VoxelWorldContainer<TIndexer> : MonoBehaviour
+        where TIndexer : struct, IIndexer
     {
         [SerializeField] private int chunkSize = 16;
         public int ChunkSize
@@ -29,32 +30,57 @@ namespace Voxel
             }
         }
 
-        public IndexerFactory<MortonIndexer> IndexerFactory
+        [SerializeField] private GameObject chunkPrefab = null;
+
+        private IndexerFactory<TIndexer> _indexerFactory;
+        public IndexerFactory<TIndexer> IndexerFactory
         {
             get
             {
-                return (xSize, ySize, zSize) => new MortonIndexer(xSize, ySize, zSize);
+                if (_indexerFactory == null)
+                {
+                    _indexerFactory = CreateIndexerFactory();
+                }
+                return _indexerFactory;
             }
         }
 
         private MeshRenderer meshRenderer;
 
-        private VoxelWorld<MortonIndexer> _instance;
-        public VoxelWorld<MortonIndexer> Instance
+        private VoxelWorld<TIndexer> _instance;
+        public VoxelWorld<TIndexer> Instance
         {
             get
             {
                 if (_instance == null)
                 {
-                    _instance = new VoxelWorld<MortonIndexer>(ChunkSize, CMSProperties, transform, IndexerFactory);
+                    _instance = new VoxelWorld<TIndexer>(gameObject, chunkPrefab, transform, ChunkSize, CMSProperties, IndexerFactory);
                 }
                 return _instance;
             }
         }
 
+        public Type WorldType
+        {
+            get
+            {
+                return typeof(VoxelWorld<TIndexer>);
+            }
+        }
+
+        public Type IndexerType
+        {
+            get
+            {
+                return typeof(TIndexer);
+            }
+        }
+
+        protected abstract IndexerFactory<TIndexer> CreateIndexerFactory();
+
         void Start()
         {
-            meshRenderer = gameObject.GetComponent<MeshRenderer>();
+            meshRenderer = GetComponent<MeshRenderer>();
         }
 
         void Update()

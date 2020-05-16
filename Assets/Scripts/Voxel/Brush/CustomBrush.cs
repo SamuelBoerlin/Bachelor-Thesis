@@ -37,6 +37,30 @@ namespace Voxel
             get;
         }
 
+        public Type EvaluatorType
+        {
+            get
+            {
+                return typeof(TEvaluator);
+            }
+        }
+
+        public Type BrushType
+        {
+            get
+            {
+                return typeof(TBrushType);
+            }
+        }
+
+        public Type SdfType
+        {
+            get
+            {
+                return typeof(CustomBrushSdf<TBrushType, TEvaluator>);
+            }
+        }
+
         public CustomBrush(TEvaluator evaluator)
         {
             Evaluator = evaluator;
@@ -64,16 +88,6 @@ namespace Voxel
         {
             var nativePrimitives = new NativeArray<CustomBrushPrimitive<TBrushType>>(Primitives.ToArray(), allocator);
             return new CustomBrushSdf<TBrushType, TEvaluator>(nativePrimitives, Evaluator);
-        }
-
-        /// <summary>
-        /// Returns the SDF type.
-        /// Used in the brush renderer.
-        /// </summary>
-        /// <returns></returns>
-        public Type GetSdfType()
-        {
-            return typeof(CustomBrushSdf<TBrushType, TEvaluator>);
         }
     }
 }

@@ -9,10 +9,11 @@ using UnityEngine;
 
 namespace Voxel
 {
-    [RequireComponent(typeof(CustomBrushContainer))]
-    public class CustomBrushSdfRenderer : DynamicSdfShapeRenderer
+    public abstract class CustomBrushSdfRenderer<TIndexer, TBrushType, TEvaluator> : DynamicSdfShapeRenderer
+        where TIndexer : struct, IIndexer
+        where TBrushType : struct
+        where TEvaluator : struct, IBrushSdfEvaluator<TBrushType>
     {
-        [SerializeField] private VoxelWorldContainer parentWorld;
         [SerializeField] private SdfShapeRenderHandler sdfRenderer;
 
         [SerializeField] private bool renderSurface = true;
@@ -45,9 +46,22 @@ namespace Voxel
         [SerializeField] private Material primitiveUnionMaterial;
         [SerializeField] private Material primitiveDifferenceMaterial;
 
-        private CustomBrushContainer brush;
+        private VoxelWorldContainer<TIndexer> _parentWorld;
+        public VoxelWorldContainer<TIndexer> ParentWorld
+        {
+            get
+            {
+                if (_parentWorld == null)
+                {
+                    _parentWorld = GetParentWorld();
+                }
+                return _parentWorld;
+            }
+        }
 
-        private VoxelWorld<MortonIndexer> world;
+        private CustomBrushContainer<TIndexer, TBrushType, TEvaluator> brush;
+
+        private VoxelWorld<TIndexer> world;
 
         public bool NeedsRebuild
         {
@@ -55,10 +69,12 @@ namespace Voxel
             set;
         } = true;
 
+        protected abstract VoxelWorldContainer<TIndexer> GetParentWorld();
+
         public void Start()
         {
-            brush = GetComponent<CustomBrushContainer>();
-            world = new VoxelWorld<MortonIndexer>(parentWorld.ChunkSize, parentWorld.CMSProperties, transform, parentWorld.IndexerFactory);
+            brush = GetComponent<CustomBrushContainer<TIndexer, TBrushType, TEvaluator>>();
+            world = new VoxelWorld<TIndexer>(gameObject, null, transform, ParentWorld.ChunkSize, ParentWorld.CMSProperties, ParentWorld.IndexerFactory);
         }
 
         void Update()
@@ -76,7 +92,7 @@ namespace Voxel
             world.Update();
         }
 
-        public override void Render(Matrix4x4 transform, Material material = null)
+        public override void Render(Matrix4x4 transform, SdfShapeRenderHandler.UniformSetter uniformSetter, Material material = null)
         {
             Material surfaceMaterial;
             Material primitiveUnionMaterial;
@@ -95,6 +111,7 @@ namespace Voxel
 
             if (RenderSurface)
             {
+                uniformSetter(surfaceMaterial);
                 world.Render(transform, surfaceMaterial);
             }
 
@@ -103,9 +120,11 @@ namespace Voxel
                 foreach (var primitive in brush.Instance.Primitives)
                 {
                     ISdf renderSdf = brush.Instance.Evaluator.GetRenderSdf(primitive);
-                    if (renderSdf != null && !brush.Instance.GetSdfType().IsAssignableFrom(renderSdf.GetType()))
+                    if (renderSdf != null && !brush.Instance.SdfType.IsAssignableFrom(renderSdf.GetType()))
                     {
-                        sdfRenderer.Render(transform * (Matrix4x4)primitive.transform, renderSdf, primitive.operation == BrushOperation.Union ? primitiveUnionMaterial : primitiveDifferenceMaterial);
+                        Material renderMaterial = primitive.operation == BrushOperation.Union ? primitiveUnionMaterial : primitiveDifferenceMaterial;
+                        uniformSetter(renderMaterial);
+                        sdfRenderer.Render(transform * (Matrix4x4)primitive.transform, renderSdf, renderMaterial);
                     }
                 }
             }
@@ -113,7 +132,7 @@ namespace Voxel
 
         public override Type SdfType()
         {
-            return brush.Instance.GetSdfType();
+            return brush.Instance.SdfType;
         }
 
         public void OnApplicationQuit()

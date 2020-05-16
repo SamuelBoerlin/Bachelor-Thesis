@@ -11,6 +11,8 @@ namespace Voxel
     [RequireComponent(typeof(MeshRenderer))]
     public class SdfShapeRenderHandler : MonoBehaviour
     {
+        public delegate void UniformSetter(Material material);
+
         /// <summary>
         /// Renderer of an <see cref="ISdf"/> type
         /// </summary>
@@ -26,8 +28,10 @@ namespace Voxel
             /// Renders the SDF with the given transform and material
             /// </summary>
             /// <param name="transform">Transform to be applied before rendering</param>
+            /// <param name="uniformSetter">Sets the _SdfTransform and _SdfTransformInverseTranspose uniforms of the SDF</param>
             /// <param name="material">Material to render the SDF with. If null the default material is chosen by this renderer</param>
-            void Render(Matrix4x4 transform, Material material = null);
+            void Render(Matrix4x4 transform, UniformSetter uniformSetter, Material material = null);
+
         }
 
         private Dictionary<Type, ISdfRenderer> registry;
@@ -81,7 +85,7 @@ namespace Voxel
                 registry = RegisterRenderers();
             }
 
-            var renderingTransform = Matrix4x4.identity;
+            var sdfTransform = Matrix4x4.identity;
 
             var transforms = new List<Matrix4x4>();
 
@@ -114,12 +118,16 @@ namespace Voxel
 
                 foreach (var matrix in transforms)
                 {
-                    renderingTransform = matrix * renderingTransform;
+                    sdfTransform = matrix * sdfTransform;
                 }
 
-                renderingTransform = transform * renderingTransform;
+                UniformSetter uniformSetter = mat =>
+                {
+                    mat.SetMatrix("_SdfTransform", sdfTransform);
+                    mat.SetMatrix("_SdfTransformInverseTranspose", Matrix4x4.Transpose(Matrix4x4.Inverse(sdfTransform)));
+                };
 
-                renderer.Render(renderingTransform, material);
+                renderer.Render(transform, uniformSetter, material);
             }
         }
     }

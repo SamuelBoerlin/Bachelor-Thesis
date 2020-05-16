@@ -46,20 +46,39 @@ namespace Voxel
             private set;
         }
 
-        private readonly VoxelWorld<TIndexer> world;
+        public VoxelWorld<TIndexer> World
+        {
+            get;
+            private set;
+        }
+
         private readonly IndexerFactory<TIndexer> indexerFactory;
+
+        private GameObject chunkObject;
 
         public VoxelChunk(VoxelWorld<TIndexer> world, ChunkPos pos, int chunkSize, IndexerFactory<TIndexer> indexerFactory)
         {
-            this.world = world;
+            this.World = world;
             this.chunkSize = chunkSize;
             this.chunkSizeSq = chunkSize * chunkSize;
             this.Pos = pos;
             this.indexerFactory = indexerFactory;
 
             voxels = new NativeArray3D<Voxel, TIndexer>(indexerFactory(chunkSize + 1, chunkSize + 1, chunkSize + 1), chunkSize + 1, chunkSize + 1, chunkSize + 1, Allocator.Persistent);
-            //voxels = new Voxel[chunkSize * chunkSize * chunkSize];
-            //voxels = new NativeArray<Voxel>(chunkSize * chunkSize * chunkSize, Allocator.Persistent); //TODO Dispose
+
+            if (world.ChunkPrefab != null)
+            {
+                Vector3 prefabWorldPos = world.VoxelWorldObject.transform.TransformPoint(new Vector3(pos.x * ChunkSize, pos.y * ChunkSize, pos.z * ChunkSize));
+                chunkObject = UnityEngine.Object.Instantiate(world.ChunkPrefab, prefabWorldPos, world.VoxelWorldObject.transform.rotation, world.VoxelWorldObject.transform);
+                chunkObject.name = string.Format("{0} ({1}, {2}, {3})", world.ChunkPrefab.name, pos.x, pos.y, pos.z);
+
+                var chunkContainer = chunkObject.GetComponent<VoxelChunkContainer<TIndexer>>();
+                if (chunkContainer != null && chunkContainer.ChunkType == GetType())
+                {
+                    dynamic d = this;
+                    chunkContainer.Chunk = d;
+                }
+            }
         }
 
         public int GetMaterial(int x, int y, int z)
@@ -154,15 +173,15 @@ namespace Voxel
         {
             var jobs = new List<JobHandle>();
 
-            world.GetChunk(ChunkPos.FromChunk(Pos.x - 1, Pos.y, Pos.z))?.ScheduleUpdatePadding(this, jobs);
-            world.GetChunk(ChunkPos.FromChunk(Pos.x, Pos.y - 1, Pos.z))?.ScheduleUpdatePadding(this, jobs);
-            world.GetChunk(ChunkPos.FromChunk(Pos.x, Pos.y, Pos.z - 1))?.ScheduleUpdatePadding(this, jobs);
+            World.GetChunk(ChunkPos.FromChunk(Pos.x - 1, Pos.y, Pos.z))?.ScheduleUpdatePadding(this, jobs);
+            World.GetChunk(ChunkPos.FromChunk(Pos.x, Pos.y - 1, Pos.z))?.ScheduleUpdatePadding(this, jobs);
+            World.GetChunk(ChunkPos.FromChunk(Pos.x, Pos.y, Pos.z - 1))?.ScheduleUpdatePadding(this, jobs);
 
-            world.GetChunk(ChunkPos.FromChunk(Pos.x - 1, Pos.y - 1, Pos.z))?.ScheduleUpdatePadding(this, jobs);
-            world.GetChunk(ChunkPos.FromChunk(Pos.x - 1, Pos.y, Pos.z - 1))?.ScheduleUpdatePadding(this, jobs);
-            world.GetChunk(ChunkPos.FromChunk(Pos.x, Pos.y - 1, Pos.z - 1))?.ScheduleUpdatePadding(this, jobs);
+            World.GetChunk(ChunkPos.FromChunk(Pos.x - 1, Pos.y - 1, Pos.z))?.ScheduleUpdatePadding(this, jobs);
+            World.GetChunk(ChunkPos.FromChunk(Pos.x - 1, Pos.y, Pos.z - 1))?.ScheduleUpdatePadding(this, jobs);
+            World.GetChunk(ChunkPos.FromChunk(Pos.x, Pos.y - 1, Pos.z - 1))?.ScheduleUpdatePadding(this, jobs);
 
-            world.GetChunk(ChunkPos.FromChunk(Pos.x - 1, Pos.y - 1, Pos.z - 1))?.ScheduleUpdatePadding(this, jobs);
+            World.GetChunk(ChunkPos.FromChunk(Pos.x - 1, Pos.y - 1, Pos.z - 1))?.ScheduleUpdatePadding(this, jobs);
 
             foreach (var handle in jobs)
             {
@@ -215,7 +234,7 @@ namespace Voxel
             ChunkBuildJob<TIndexer> polygonizerJob = new ChunkBuildJob<TIndexer>
             {
                 Voxels = voxels,
-                PolygonizationProperties = world.CMSProperties.Data,
+                PolygonizationProperties = World.CMSProperties.Data,
                 MeshVertices = meshVertices,
                 MeshNormals = meshNormals,
                 MeshTriangles = meshTriangles,
@@ -281,6 +300,11 @@ namespace Voxel
         public void Dispose()
         {
             voxels.Dispose();
+
+            if (chunkObject != null)
+            {
+                UnityEngine.Object.Destroy(chunkObject);
+            }
         }
 
         public readonly struct Snapshot
@@ -297,7 +321,7 @@ namespace Voxel
 
         public Snapshot ScheduleSnapshot()
         {
-            var snapshotChunk = new VoxelChunk<TIndexer>(world, Pos, ChunkSize, indexerFactory);
+            var snapshotChunk = new VoxelChunk<TIndexer>(World, Pos, ChunkSize, indexerFactory);
 
             var cloneJob = new ChunkCloneJob<TIndexer, TIndexer>
             {

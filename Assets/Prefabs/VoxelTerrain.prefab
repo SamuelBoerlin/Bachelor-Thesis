@@ -13,10 +13,10 @@ GameObject:
   - component: {fileID: 5467410061661521432}
   - component: {fileID: 5467410061661521436}
   - component: {fileID: 5467410061661521434}
-  - component: {fileID: 444754938}
-  - component: {fileID: 444754939}
-  - component: {fileID: 444754940}
   - component: {fileID: 444754941}
+  - component: {fileID: 444754939}
+  - component: {fileID: 444754938}
+  - component: {fileID: 444754940}
   m_Layer: 0
   m_Name: VoxelTerrain
   m_TagString: Untagged
@@ -60,6 +60,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -94,9 +95,9 @@ MeshCollider:
   m_Material: {fileID: 13400000, guid: 1aafccaad252b854ea9f3a2e817d1cee, type: 2}
   m_IsTrigger: 0
   m_Enabled: 1
-  serializedVersion: 3
+  serializedVersion: 4
   m_Convex: 0
-  m_CookingOptions: 14
+  m_CookingOptions: 30
   m_Mesh: {fileID: 0}
 --- !u!114 &5467410061661521434
 MonoBehaviour:
@@ -115,7 +116,7 @@ MonoBehaviour:
   regenerate: 0
   placeSdf: 0
   sdfRotation: {x: 0, y: 0, z: 0}
-  brushType: 5
+  brushType: 0
   replaceSdfMaterial: 0
   materialRed: 255
   materialGreen: 255
@@ -131,6 +132,35 @@ MonoBehaviour:
   smoothVoxelizerNormals: 1
   undo: 0
   redo: 0
+--- !u!114 &444754941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5467410061661521447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69b472e4fbe897a4fab0cc54c9320699, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  chunkSize: 31
+  cmsProperties: {fileID: 11400000, guid: 5d43920d8a3738e4bbcba0ff95188201, type: 2}
+  chunkPrefab: {fileID: 1079267181018791947, guid: fbe12e7672123c54781b41ce5e10f2db,
+    type: 3}
+--- !u!114 &444754939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5467410061661521447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 809c63180727ca647963a97e5df1d914, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  queueSize: 10
 --- !u!114 &444754938
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -148,21 +178,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b6f8a69b6f0cfcb4bb45e37aea39a69d, type: 2}
   - {fileID: 11400000, guid: 644b0dd30c9ad6a4c94bd892c84d8d49, type: 2}
   - {fileID: 11400000, guid: 3c13f75b8f0c1e74c8c0318e091ff2b5, type: 2}
-  dynamicRenderers:
-  - {fileID: 0}
---- !u!114 &444754939
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5467410061661521447}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5ad6506704229df46b7e919f30b1f06e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  queueSize: 10
+  dynamicRenderers: []
+  material: {fileID: 0}
 --- !u!114 &444754940
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -188,17 +205,3 @@ MonoBehaviour:
   - {fileID: 2800000, guid: d059310c544b65d4fb3188bd6466a8b5, type: 3}
   - {fileID: 2800000, guid: 0e1bd4dd4f34c514d9465db5511dd694, type: 3}
   - {fileID: 2800000, guid: d059310c544b65d4fb3188bd6466a8b5, type: 3}
---- !u!114 &444754941
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5467410061661521447}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e36e947f5eec86a449b29107cdd9d508, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  chunkSize: 31
-  cmsProperties: {fileID: 11400000, guid: 5d43920d8a3738e4bbcba0ff95188201, type: 2}

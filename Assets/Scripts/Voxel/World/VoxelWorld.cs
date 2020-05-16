@@ -27,6 +27,18 @@ namespace Voxel
             get;
         }
 
+        public GameObject VoxelWorldObject
+        {
+            private set;
+            get;
+        }
+
+        public GameObject ChunkPrefab
+        {
+            private set;
+            get;
+        }
+
         public IndexerFactory<TIndexer> IndexerFactory
         {
             private set;
@@ -34,11 +46,13 @@ namespace Voxel
         }
 
 
-        public VoxelWorld(int chunkSize, CMSProperties cmsProperties, Transform transform, IndexerFactory<TIndexer> indexerFactory)
+        public VoxelWorld(GameObject voxelWorldObject, GameObject chunkPrefab, Transform transform, int chunkSize, CMSProperties cmsProperties, IndexerFactory<TIndexer> indexerFactory)
         {
+            VoxelWorldObject = voxelWorldObject;
+            ChunkPrefab = chunkPrefab;
+            Transform = transform;
             ChunkSize = chunkSize;
             CMSProperties = cmsProperties;
-            Transform = transform;
             IndexerFactory = indexerFactory;
         }
 
