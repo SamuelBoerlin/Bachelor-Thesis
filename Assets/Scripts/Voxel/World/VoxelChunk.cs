@@ -13,22 +13,22 @@ namespace Voxel
     public class VoxelChunk<TIndexer> : IDisposable
         where TIndexer : struct, IIndexer
     {
-        private readonly int chunkSize;
+        private readonly int _chunkSize;
         private readonly int chunkSizeSq;
         public int ChunkSize
         {
             get
             {
-                return chunkSize;
+                return _chunkSize;
             }
         }
 
-        private NativeArray3D<Voxel, TIndexer> voxels;
+        private NativeArray3D<Voxel, TIndexer> _voxels;
         public NativeArray3D<Voxel, TIndexer> Voxels
         {
             get
             {
-                return voxels;
+                return _voxels;
             }
         }
 
@@ -60,21 +60,34 @@ namespace Voxel
             private set;
         }
 
+        private readonly NativeArray<int> _voxelCount;
+        public int VoxelCount
+        {
+            get
+            {
+                return _voxelCount.IsCreated ? _voxelCount[0] : 0;
+            }
+        }
+
         public VoxelChunk(VoxelWorld<TIndexer> world, ChunkPos pos, int chunkSize, IndexerFactory<TIndexer> indexerFactory)
         {
             this.World = world;
-            this.chunkSize = chunkSize;
+            this._chunkSize = chunkSize;
             this.chunkSizeSq = chunkSize * chunkSize;
             this.Pos = pos;
             this.indexerFactory = indexerFactory;
 
-            voxels = new NativeArray3D<Voxel, TIndexer>(indexerFactory(chunkSize + 1, chunkSize + 1, chunkSize + 1), chunkSize + 1, chunkSize + 1, chunkSize + 1, Allocator.Persistent);
+            _voxels = new NativeArray3D<Voxel, TIndexer>(indexerFactory(chunkSize + 1, chunkSize + 1, chunkSize + 1), chunkSize + 1, chunkSize + 1, chunkSize + 1, Allocator.Persistent);
+            _voxelCount = new NativeArray<int>(1, Allocator.Persistent);
+        }
 
-            if (world.ChunkPrefab != null)
+        internal void OnAddedToWorld()
+        {
+            if (World.ChunkPrefab != null)
             {
-                Vector3 prefabWorldPos = world.VoxelWorldObject.transform.TransformPoint(new Vector3(pos.x * ChunkSize, pos.y * ChunkSize, pos.z * ChunkSize));
-                ChunkObject = UnityEngine.Object.Instantiate(world.ChunkPrefab, prefabWorldPos, world.VoxelWorldObject.transform.rotation, world.VoxelWorldObject.transform);
-                ChunkObject.name = string.Format("{0} ({1}, {2}, {3})", world.ChunkPrefab.name, pos.x, pos.y, pos.z);
+                Vector3 prefabWorldPos = World.VoxelWorldObject.transform.TransformPoint(new Vector3(Pos.x * ChunkSize, Pos.y * ChunkSize, Pos.z * ChunkSize));
+                ChunkObject = UnityEngine.Object.Instantiate(World.ChunkPrefab, prefabWorldPos, World.VoxelWorldObject.transform.rotation, World.VoxelWorldObject.transform);
+                ChunkObject.name = string.Format("{0} ({1}, {2}, {3})", World.ChunkPrefab.name, Pos.x, Pos.y, Pos.z);
 
                 var chunkContainer = ChunkObject.GetComponent<VoxelChunkContainer<TIndexer>>();
                 if (chunkContainer != null && chunkContainer.ChunkType == GetType())
@@ -87,7 +100,7 @@ namespace Voxel
 
         public int GetMaterial(int x, int y, int z)
         {
-            return voxels[x, y, z].Material;
+            return _voxels[x, y, z].Material;
         }
 
         public delegate void FinalizeChange();
@@ -110,7 +123,8 @@ namespace Voxel
             var gridJob = new ChunkGridJob<TGridIndexer, TIndexer>
             {
                 source = grid,
-                chunkSize = chunkSize + (includePadding ? 1 : 0),
+                chunkSize = _chunkSize,
+                includePadding = includePadding,
                 writeUnsetVoxels = writeUnsetVoxels,
                 tx = tx,
                 ty = ty,
@@ -118,7 +132,8 @@ namespace Voxel
                 gx = gx,
                 gy = gy,
                 gz = gz,
-                target = voxels
+                target = _voxels,
+                voxelCount = _voxelCount
             };
 
             return new Change(gridJob.Schedule(), () =>
@@ -139,7 +154,7 @@ namespace Voxel
             where TSdf : struct, ISdf
         {
             var changed = new NativeArray<bool>(1, Allocator.TempJob);
-            var outVoxels = new NativeArray3D<Voxel, TIndexer>(indexerFactory(voxels.Length(0), voxels.Length(1), voxels.Length(2)), voxels.Length(0), voxels.Length(1), voxels.Length(2), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            var outVoxels = new NativeArray3D<Voxel, TIndexer>(indexerFactory(_voxels.Length(0), _voxels.Length(1), _voxels.Length(2)), _voxels.Length(0), _voxels.Length(1), _voxels.Length(2), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
 
             var sdfJob = new ChunkSdfJob<TSdf, TIndexer>
             {
@@ -147,15 +162,16 @@ namespace Voxel
                 sdf = sdf,
                 material = material,
                 replace = replace,
-                snapshot = voxels,
+                snapshot = _voxels,
                 changed = changed,
-                outVoxels = outVoxels
+                outVoxels = outVoxels,
+                voxelCount = _voxelCount
             };
 
             return new Change(sdfJob.Schedule(), () =>
                 {
-                    voxels.Dispose();
-                    voxels = outVoxels;
+                    _voxels.Dispose();
+                    _voxels = outVoxels;
 
                     if (sdfJob.changed[0])
                     {
@@ -210,18 +226,18 @@ namespace Voxel
 
             jobs.Add(new ChunkPaddingJob<TIndexer, TIndexer>
             {
-                source = neighbor.voxels,
-                chunkSize = chunkSize,
+                source = neighbor._voxels,
+                chunkSize = _chunkSize,
                 xOff = xOff,
                 yOff = yOff,
                 zOff = zOff,
-                target = voxels
+                target = _voxels
             }.Schedule());
         }
 
         public void FillCell(int x, int y, int z, int cellIndex, NativeArray<int> materials, NativeArray<float> intersections, NativeArray<float3> normals)
         {
-            ChunkBuildJob<TIndexer>.FillCell(voxels, x, y, z, cellIndex, materials, intersections, normals);
+            ChunkBuildJob<TIndexer>.FillCell(_voxels, x, y, z, cellIndex, materials, intersections, normals);
         }
 
         public delegate void FinalizeBuild();
@@ -237,7 +253,7 @@ namespace Voxel
 
             ChunkBuildJob<TIndexer> polygonizerJob = new ChunkBuildJob<TIndexer>
             {
-                Voxels = voxels,
+                Voxels = _voxels,
                 PolygonizationProperties = World.CMSProperties.Data,
                 MeshVertices = meshVertices,
                 MeshNormals = meshNormals,
@@ -308,7 +324,8 @@ namespace Voxel
 
         public void Dispose()
         {
-            voxels.Dispose();
+            _voxels.Dispose();
+            _voxelCount.Dispose();
 
             if (ChunkObject != null)
             {
@@ -334,9 +351,11 @@ namespace Voxel
 
             var cloneJob = new ChunkCloneJob<TIndexer, TIndexer>
             {
-                source = voxels,
-                chunkSize = chunkSize + 1, //Include padding when cloning
-                target = snapshotChunk.voxels
+                source = _voxels,
+                sourceVoxelCount = _voxelCount,
+                chunkSize = _chunkSize + 1, //Include padding when cloning
+                target = snapshotChunk._voxels,
+                targetVoxelCount = snapshotChunk._voxelCount
             };
 
             return new Snapshot(cloneJob.Schedule(), snapshotChunk);

@@ -29,7 +29,7 @@ namespace Voxel
 
         protected abstract TEvaluator CreateBrushSdfEvaluator();
 
-        public void Start()
+        protected virtual void Start()
         {
             customBrushRenderer = GetComponent<CustomBrushSdfRenderer<TIndexer, TBrushType, TEvaluator>>();
         }

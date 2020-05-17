@@ -58,12 +58,12 @@ namespace Voxel
 
         private Vector3 TransformPointToLocalSpace(Vector3 vec)
         {
-            return Transform.InverseTransformPoint(vec);
+            return Transform.worldToLocalMatrix.MultiplyPoint(vec);
         }
 
         private Vector3 TransformDirToLocalSpace(Vector3 vec)
         {
-            return Transform.InverseTransformDirection(vec);
+            return Transform.worldToLocalMatrix.MultiplyVector(vec);
         }
 
         private Quaternion TransformQuatToLocalSpace(Quaternion rot)
@@ -166,6 +166,7 @@ namespace Voxel
                             if (chunk == null)
                             {
                                 chunks[chunkPos] = chunk = new VoxelChunk<TIndexer>(this, chunkPos, ChunkSize, IndexerFactory);
+                                chunk.OnAddedToWorld();
                             }
 
                             var gx = (cx - minX) * ChunkSize;
@@ -286,6 +287,7 @@ namespace Voxel
                         if (chunk == null)
                         {
                             chunks[chunkPos] = chunk = new VoxelChunk<TIndexer>(this, chunkPos, ChunkSize, IndexerFactory);
+                            chunk.OnAddedToWorld();
                         }
 
                         changes.Add(chunk.ScheduleSdf(-cx * ChunkSize, -cy * ChunkSize, -cz * ChunkSize, transformedSdf, material, replace));
@@ -403,12 +405,18 @@ namespace Voxel
 
             System.Diagnostics.Stopwatch watch = null;
 
+            List<ChunkPos> pendingRemovals = new List<ChunkPos>();
+
             //Schedule all rebuild jobs
-            foreach (ChunkPos pos in chunks.Keys)
+            foreach (var pos in chunks.Keys)
             {
                 VoxelChunk<TIndexer> chunk = chunks[pos];
 
-                if (chunk.mesh == null || chunk.NeedsRebuild)
+                if (chunk.VoxelCount <= 0)
+                {
+                    pendingRemovals.Add(pos);
+                }
+                else if (chunk.mesh == null || chunk.NeedsRebuild)
                 {
                     if (watch == null)
                     {
@@ -422,6 +430,14 @@ namespace Voxel
             foreach (var handle in handles)
             {
                 handle();
+            }
+
+            //Remove empty chunks
+            foreach (var pos in pendingRemovals)
+            {
+                VoxelChunk<TIndexer> chunk = chunks[pos];
+                chunk.Dispose();
+                chunks.Remove(pos);
             }
 
             if (watch != null)

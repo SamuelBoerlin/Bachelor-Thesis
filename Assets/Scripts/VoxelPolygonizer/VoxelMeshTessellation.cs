@@ -519,7 +519,7 @@ namespace VoxelPolygonizer
             where TCell : struct, IVoxelCell
             where TColorMap : struct, IMaterialColorMap
         {
-            Matrix4x4 translatedTransform = Matrix4x4.Translate(position) * transform;
+            Matrix4x4 translatedTransform = transform * Matrix4x4.Translate(position);
 
             Gizmos.matrix = translatedTransform;
 

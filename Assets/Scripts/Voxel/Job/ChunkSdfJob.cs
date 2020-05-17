@@ -24,12 +24,14 @@ namespace Voxel
 
         public NativeArray3D<Voxel, TIndexer> outVoxels;
 
+        public NativeArray<int> voxelCount;
+
         public void Execute()
         {
-            changed[0] = ApplySdf(snapshot, origin, sdf, material, replace, outVoxels, Allocator.Temp);
+            changed[0] = ApplySdf(snapshot, origin, sdf, material, replace, outVoxels, voxelCount, Allocator.Temp);
         }
 
-        public static bool ApplySdf(NativeArray3D<Voxel, TIndexer> snapshot, float3 origin, TSdf sdf, int material, bool replace, NativeArray3D<Voxel, TIndexer> outVoxels, Allocator allocator)
+        public static bool ApplySdf(NativeArray3D<Voxel, TIndexer> snapshot, float3 origin, TSdf sdf, int material, bool replace, NativeArray3D<Voxel, TIndexer> outVoxels, NativeArray<int> voxelCount, Allocator allocator)
         {
             int chunkSize = snapshot.Length(0) - 1;
 
@@ -58,11 +60,13 @@ namespace Voxel
                                 if (replace && outVoxels[x, y, z].Material != 0)
                                 {
                                     //TODO Does this need intersection value checks?
+                                    ChunkJobUtils.CompareMaterialsAndAdjustCounter(voxelCount, outVoxels[x, y, z].Material, material);
                                     outVoxels[x, y, z] = outVoxels[x, y, z].ModifyMaterial(true, material);
                                     changed = true;
                                 }
                                 else if (!replace && outVoxels[x, y, z].Material != material)
                                 {
+                                    ChunkJobUtils.CompareMaterialsAndAdjustCounter(voxelCount, outVoxels[x, y, z].Material, material);
                                     outVoxels[x, y, z] = outVoxels[x, y, z].ModifyMaterial(true, material);
                                     changed = true;
                                 }

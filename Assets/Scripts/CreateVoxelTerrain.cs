@@ -386,11 +386,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
             Camera camera = Camera.current;
             if (camera != null)
             {
-                Vector3 relPos = camera.transform.position - transform.position;
-                Vector3 relDir = Quaternion.Inverse(transform.rotation) * camera.transform.forward.normalized;
-
-                //if (field.RayCast(relPos, relDir, 16, out TestVoxelField.RayCastResult result))
-                if (gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.RayCast(relPos, relDir, 64, out VoxelWorld<MortonIndexer>.RayCastResult result))
+                if (gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.RayCast(camera.transform.position, camera.transform.forward.normalized, 64, out VoxelWorld<MortonIndexer>.RayCastResult result))
                 {
                     selectedCell = new Vector3Int(Mathf.FloorToInt(result.pos.x), Mathf.FloorToInt(result.pos.y), Mathf.FloorToInt(result.pos.z));
                 }
@@ -475,6 +471,8 @@ public partial class CreateVoxelTerrain : MonoBehaviour
 
         float brushSize = 2.1f + 8;
 
+        Matrix4x4 brushTransform = transform.localToWorldMatrix * Matrix4x4.TRS(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new Vector3(1, 1, 1));
+
         if (placeSdf)
         {
             placeSdf = false;
@@ -485,16 +483,16 @@ public partial class CreateVoxelTerrain : MonoBehaviour
             switch (brushType)
             {
                 case BrushType.Sphere:
-                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new SphereSDF(brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(brushTransform.MultiplyPoint(Vector3.zero), brushTransform.rotation, new SphereSDF(brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Box:
-                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new BoxSDF(brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(brushTransform.MultiplyPoint(Vector3.zero), brushTransform.rotation, new BoxSDF(brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Cylinder:
-                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new CylinderSDF(brushSize, brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(brushTransform.MultiplyPoint(Vector3.zero), brushTransform.rotation, new CylinderSDF(brushSize, brushSize), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Pyramid:
-                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y - brushSize / 2, gizmoPosition.z), Quaternion.Euler(sdfRotation), new PyramidSDF(brushSize * 2, brushSize * 2), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                    gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(brushTransform.MultiplyPoint(new Vector3(0, -brushSize / 2, 0)), brushTransform.rotation, new PyramidSDF(brushSize * 2, brushSize * 2), MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
                     break;
                 case BrushType.Mesh:
                     var triangles = voxelizeMesh.triangles;
@@ -547,7 +545,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
                 case BrushType.Custom:
                     using (var sdf = customBrush.Instance.CreateSdf(Allocator.TempJob))
                     {
-                        gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), sdf, MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
+                        gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.ApplySdf(brushTransform.MultiplyPoint(Vector3.zero), brushTransform.rotation, sdf, MaterialColors.ToInteger(materialRed, materialGreen, materialBlue, materialTexture), replaceSdfMaterial, editManager.Consumer());
                     }
                     break;
             }
@@ -558,19 +556,18 @@ public partial class CreateVoxelTerrain : MonoBehaviour
             switch (brushType)
             {
                 case BrushType.Sphere:
-                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new SphereSDF(brushSize));
+                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform, new SphereSDF(brushSize));
                     break;
                 case BrushType.Box:
-                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new BoxSDF(brushSize));
+                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform, new BoxSDF(brushSize));
                     break;
                 case BrushType.Cylinder:
-                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new CylinderSDF(brushSize, brushSize));
+                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform, new CylinderSDF(brushSize, brushSize));
                     break;
                 case BrushType.Pyramid:
-                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(new Vector3(gizmoPosition.x, gizmoPosition.y - brushSize / 2, gizmoPosition.z), Quaternion.Euler(sdfRotation), new PyramidSDF(brushSize * 2, brushSize * 2));
+                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform * Matrix4x4.Translate(new Vector3(0, -brushSize / 2, 0)), new PyramidSDF(brushSize * 2, brushSize * 2));
                     break;
                 case BrushType.Custom:
-                    Matrix4x4 brushTransform = Matrix4x4.TRS(new Vector3(gizmoPosition.x, gizmoPosition.y, gizmoPosition.z), Quaternion.Euler(sdfRotation), new Vector3(1, 1, 1));
                     using (var sdf = customBrush.Instance.CreateSdf(Allocator.TempJob))
                     {
                         gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform, sdf);

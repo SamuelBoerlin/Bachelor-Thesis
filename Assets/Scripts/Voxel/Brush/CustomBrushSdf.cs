@@ -65,9 +65,14 @@ namespace Voxel
                 return new float3(0, 0, 0);
             }
 
-            float3 max = new float3(float.MinValue, float.MinValue, float.MinValue);
             float maxBlend = 0;
+            for (int i = 0, len = primitives.Length; i < len; i++)
+            {
+                var primitive = primitives[i];
+                maxBlend = math.max(maxBlend, primitive.blend);
+            }
 
+            float3 max = new float3(float.MinValue, float.MinValue, float.MinValue);
             for (int i = 0, len = primitives.Length; i < len; i++)
             {
                 var primitive = primitives[i];
@@ -80,19 +85,18 @@ namespace Voxel
                         for (int mz = 0; mz < 2; mz++)
                         {
                             float3 corner = math.mul(primitive.transform, new float4(
-                                mx == 0 ? localMin.x : localMax.x,
-                                my == 0 ? localMin.y : localMax.y,
-                                mz == 0 ? localMin.z : localMax.z,
+                                (mx == 0 ? localMin.x : localMax.x) + maxBlend,
+                                (my == 0 ? localMin.y : localMax.y) + maxBlend,
+                                (mz == 0 ? localMin.z : localMax.z) + maxBlend,
                                 1.0f
                                 )).xyz;
                             max = math.max(max, corner);
                         }
                     }
                 }
-                maxBlend = math.max(maxBlend, primitive.blend);
             }
 
-            return max + maxBlend;
+            return max;
         }
 
         public float3 Min()
@@ -102,9 +106,14 @@ namespace Voxel
                 return new float3(0, 0, 0);
             }
 
-            float3 min = new float3(float.MaxValue, float.MaxValue, float.MaxValue);
             float maxBlend = 0;
+            for (int i = 0, len = primitives.Length; i < len; i++)
+            {
+                var primitive = primitives[i];
+                maxBlend = math.max(maxBlend, primitive.blend);
+            }
 
+            float3 min = new float3(float.MaxValue, float.MaxValue, float.MaxValue);
             for (int i = 0, len = primitives.Length; i < len; i++)
             {
                 var primitive = primitives[i];
@@ -117,19 +126,18 @@ namespace Voxel
                         for (int mz = 0; mz < 2; mz++)
                         {
                             float3 corner = math.mul(primitive.transform, new float4(
-                                mx == 0 ? localMin.x : localMax.x,
-                                my == 0 ? localMin.y : localMax.y,
-                                mz == 0 ? localMin.z : localMax.z,
+                                (mx == 0 ? localMin.x : localMax.x) - maxBlend,
+                                (my == 0 ? localMin.y : localMax.y) - maxBlend,
+                                (mz == 0 ? localMin.z : localMax.z) - maxBlend,
                                 1.0f
                                 )).xyz;
                             min = math.min(min, corner);
                         }
                     }
                 }
-                maxBlend = math.max(maxBlend, primitive.blend);
             }
 
-            return min - maxBlend;
+            return min;
         }
 
         public ISdf RenderChild()

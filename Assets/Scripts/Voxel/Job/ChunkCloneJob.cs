@@ -15,9 +15,11 @@ namespace Voxel
         where TTargetIndexer : struct, IIndexer
     {
         [ReadOnly] public NativeArray3D<Voxel, TSourceIndexer> source;
+        [ReadOnly] public NativeArray<int> sourceVoxelCount;
         [ReadOnly] public int chunkSize;
 
         [WriteOnly] public NativeArray3D<Voxel, TTargetIndexer> target;
+        [WriteOnly] public NativeArray<int> targetVoxelCount;
 
         public void Execute()
         {
@@ -31,6 +33,8 @@ namespace Voxel
                     }
                 }
             }
+
+            targetVoxelCount[0] = sourceVoxelCount[0];
         }
     }
 }
