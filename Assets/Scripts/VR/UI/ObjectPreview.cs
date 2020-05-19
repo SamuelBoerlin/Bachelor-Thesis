@@ -9,7 +9,7 @@ using UnityEngine.UI;
 
 public class ObjectPreview : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
-    [SerializeField] private ObjectRenderer objectRenderer;
+    [SerializeField] private ObjectToTextureRenderManager objectRenderer;
 
     [SerializeField] private GameObject _renderObject;
     public GameObject RenderObject
@@ -65,13 +65,16 @@ public class ObjectPreview : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     [SerializeField] private Animator virtualPreviewAnimator;
 
+    [SerializeField] private bool updateTextureEveryFrame = false;
+
     [Serializable]
     public class ReleaseEvent : UnityEvent<GameObject> { }
     public ReleaseEvent onReleased;
 
     public bool UpdateTexture
     {
-        get; set;
+        get;
+        set;
     } = true;
 
     private Canvas canvas;
@@ -90,10 +93,10 @@ public class ObjectPreview : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     private void Update()
     {
-        if (_renderObject != null && UpdateTexture)
+        if (_renderObject != null && (UpdateTexture || updateTextureEveryFrame))
         {
             UpdateTexture = false;
-            objectRenderer.Render(_renderObject, bakedTransform.position, Quaternion.Euler(bakedTransform.rotation1) * Quaternion.Euler(bakedTransform.rotation2), bakedTransform.scale, width, height, ref texture);
+            objectRenderer.QueueRenderer(_renderObject, bakedTransform.position, Quaternion.Euler(bakedTransform.rotation1) * Quaternion.Euler(bakedTransform.rotation2), bakedTransform.scale, width, height, ref texture);
             image.texture = texture;
             image.enabled = true;
         }

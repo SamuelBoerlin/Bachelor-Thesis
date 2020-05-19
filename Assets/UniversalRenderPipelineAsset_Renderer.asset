@@ -56,7 +56,8 @@ MonoBehaviour:
   m_RendererFeatures:
   - {fileID: 1520196814181221365}
   - {fileID: -1559299356064704811}
-  m_RendererFeatureMap: f5c3f3b9f2d21815d59644477f415cea
+  - {fileID: 7038951696789757403}
+  m_RendererFeatureMap: f5c3f3b9f2d21815d59644477f415ceadb5d49364661af61
   postProcessData: {fileID: 11400000, guid: d96fc8fa4248d0b4587096170402c5ea, type: 2}
   shaders:
     blitPS: {fileID: 4800000, guid: c17132b1f77d20942aa75f8429c0f8bc, type: 3}
@@ -120,3 +121,16 @@ MonoBehaviour:
       restoreCamera: 1
       offset: {x: 0, y: 0, z: 0, w: 0}
       cameraFieldOfView: 60
+--- !u!114 &7038951696789757403
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a8a82db9d99f074f8ea67a771b15a1d, type: 3}
+  m_Name: Object To Texture Render Pass Feature
+  m_EditorClassIdentifier: 
+  m_Active: 1

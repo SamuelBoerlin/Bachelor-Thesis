@@ -23,8 +23,8 @@ TagManager:
   - Player
   - Player Hands
   - Chunk Bounds
-  - Render Texture
-  - 
+  - Object To Texture Renderer Camera
+  - Object To Texture Renderer Object
   - 
   - 
   - 
