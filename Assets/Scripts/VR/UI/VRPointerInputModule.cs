@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -7,6 +8,17 @@ using Valve.VR;
 
 public class VRPointerInputModule : BaseInputModule
 {
+    public class Args : EventArgs
+    {
+        public VRPointerInputModule Module
+        {
+            get;
+            internal set;
+        }
+    }
+
+    public static event EventHandler<Args> OnVRPointerInputModuleInitialized;
+
     [SerializeField] private Camera eventCamera;
     [SerializeField] private SteamVR_Input_Sources inputSource;
     [SerializeField] private SteamVR_Action_Boolean clickAction;
@@ -24,6 +36,22 @@ public class VRPointerInputModule : BaseInputModule
         base.Awake();
         EventData = new PointerEventData(eventSystem);
         EventSystem.current = eventSystem;
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+
+        OnVRPointerInputModuleInitialized?.Invoke(this, new Args()
+        {
+            Module = this
+        });
+    }
+
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+        OnVRPointerInputModuleInitialized = null;
     }
 
     public override void Process()

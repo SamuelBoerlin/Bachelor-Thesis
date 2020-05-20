@@ -146,7 +146,7 @@
                      "output" : "/actions/default/in/snapturnright"
                   },
                   "north" : {
-                     "output" : "/actions/default/in/teleport"
+                     "output" : "/actions/default/in/querymenu"
                   },
                   "south" : {
                      "output" : "/actions/default/in/teleport"

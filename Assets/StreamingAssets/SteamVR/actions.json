@@ -66,6 +66,10 @@
       "type": "boolean"
     },
     {
+      "name": "/actions/default/in/QueryMenu",
+      "type": "boolean"
+    },
+    {
       "name": "/actions/default/out/Haptic",
       "type": "vibration"
     },
@@ -102,7 +106,7 @@
   "action_sets": [
     {
       "name": "/actions/default",
-      "usage": "single"
+      "usage": "leftright"
     },
     {
       "name": "/actions/platformer",
@@ -185,7 +189,8 @@
       "/actions/default/in/RotateBrush": "Rotate Brush",
       "/actions/default/in/ResetBrush": "Reset Brush",
       "/actions/default/in/PlaceBrush": "Place Brush",
-      "/actions/default/in/SelectBrush": "Select Brush"
+      "/actions/default/in/SelectBrush": "Select Brush",
+      "/actions/default/in/QueryMenu": "Query Menu"
     }
   ]
 }

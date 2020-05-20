@@ -1,15 +1,25 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Valve.VR;
+using Valve.VR.InteractionSystem;
 
-[ExecuteInEditMode]
 public class VRPointer : MonoBehaviour
 {
     [SerializeField] private float maxLength = 5.0f;
 
-    [SerializeField] private VRPointerInputModule inputModule;
-
-    [SerializeField] private VRSculpting sculpting;
+    [SerializeField] private VRSculpting _sculpting;
+    public VRSculpting VRSculpting
+    {
+        get
+        {
+            return _sculpting;
+        }
+        set
+        {
+            _sculpting = value;
+        }
+    }
 
     [SerializeField] private LineRenderer lineRenderer;
 
@@ -17,11 +27,55 @@ public class VRPointer : MonoBehaviour
 
     private GameObject canvasCursor;
 
+    private SteamVR_Events.Action renderModelLoadedAction;
+
+    private VRPointerInputModule inputModule;
+
+    private void Awake()
+    {
+        renderModelLoadedAction = SteamVR_Events.RenderModelLoadedAction(OnRenderModelLoaded);
+
+        VRPointerInputModule.OnVRPointerInputModuleInitialized += OnVRPointerInputModuleInitialized;
+    }
+
+    private void OnDestroy()
+    {
+        VRPointerInputModule.OnVRPointerInputModuleInitialized -= OnVRPointerInputModuleInitialized;
+    }
+
+    private void OnVRPointerInputModuleInitialized(object sender, VRPointerInputModule.Args args)
+    {
+        inputModule = args.Module;
+    }
+
+    private void OnEnable()
+    {
+        renderModelLoadedAction.enabled = true;
+    }
+
+    private void OnDisable()
+    {
+        renderModelLoadedAction.enabled = false;
+    }
+
+    private void OnRenderModelLoaded(SteamVR_RenderModel loadedRenderModel, bool success)
+    {
+        //Check if render model is the main model of the hand and if so move them pointer there
+        if (transform.parent != null)
+        {
+            var hand = transform.parent.GetComponent<Hand>();
+            if (hand != null && hand.mainRenderModel != null && hand.mainRenderModel.GetComponentInChildren<SteamVR_RenderModel>() == loadedRenderModel)
+            {
+                transform.parent = loadedRenderModel.transform;
+            }
+        }
+    }
+
     private void LateUpdate()
     {
         if (lineRenderer != null)
         {
-            lineRenderer.enabled = sculpting.IsPointerActive;
+            lineRenderer.enabled = _sculpting.IsPointerActive;
 
             bool hasCursor = false;
 
@@ -37,8 +91,6 @@ public class VRPointer : MonoBehaviour
                         canvasCursor = Instantiate(canvasCursorPrefab);
                     }
 
-                    Debug.Log("Update cursor");
-
                     canvasCursor.transform.position = inputModule.EventData.pointerCurrentRaycast.worldPosition;
                     canvasCursor.transform.rotation = canvas.transform.rotation;
 
@@ -50,7 +102,7 @@ public class VRPointer : MonoBehaviour
 
             if (!hasCursor)
             {
-                if(canvasCursor != null)
+                if (canvasCursor != null)
                 {
                     Destroy(canvasCursor);
                     canvasCursor = null;
@@ -68,8 +120,8 @@ public class VRPointer : MonoBehaviour
                 }
             }
 
-            lineRenderer.SetPosition(0, transform.position);
-            lineRenderer.SetPosition(1, lineEnd);
+            lineRenderer.SetPosition(0, Vector3.zero);
+            lineRenderer.SetPosition(1, transform.worldToLocalMatrix.MultiplyPoint(lineEnd));
         }
     }
 }

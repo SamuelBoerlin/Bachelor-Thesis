@@ -182,7 +182,7 @@ public class ObjectPreview : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (virtualPreviewContainer == null)
+        if (virtualPreviewContainer == null && _renderObject != null)
         {
             virtualPreviewContainer = new GameObject("Virtual Preview Container");
             virtualPreviewContainer.transform.parent = transform;

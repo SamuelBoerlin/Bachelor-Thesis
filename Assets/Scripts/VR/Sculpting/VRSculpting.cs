@@ -55,6 +55,10 @@ public class VRSculpting : MonoBehaviour
     [SerializeField] private float brushRotateDeadzone = 0.1f;
     [SerializeField] private SteamVR_Action_Boolean brushResetAction;
 
+    [SerializeField] private SteamVR_Action_Boolean queryMenuAction;
+    [SerializeField] private GameObject controllerQueryMenu;
+    [SerializeField] private GameObject queryMenuPrefab;
+
     [SerializeField] private GameObject controller;
     [SerializeField] private GameObject controllerBrush;
 
@@ -93,18 +97,34 @@ public class VRSculpting : MonoBehaviour
     }
 
     private GameObject brushSelectionMenuObject;
+    private GameObject queryMenuObject;
 
     public bool IsPointerActive
     {
         get
         {
-            return brushSelectionMenuObject != null;
+            return brushSelectionMenuObject != null ||
+                (inputModule != null && inputModule.EventData != null && inputModule.EventData.pointerCurrentRaycast.gameObject != null && inputModule.EventData.pointerCurrentRaycast.gameObject.GetComponentInParent<Canvas>() != null);
         }
     }
+
+    private VRPointerInputModule inputModule;
 
     private void Awake()
     {
         BrushType = BrushType.Box;
+
+        VRPointerInputModule.OnVRPointerInputModuleInitialized += OnVRPointerInputModuleInitialized;
+    }
+
+    private void OnDestroy()
+    {
+        VRPointerInputModule.OnVRPointerInputModuleInitialized -= OnVRPointerInputModuleInitialized;
+    }
+
+    private void OnVRPointerInputModuleInitialized(object sender, VRPointerInputModule.Args args)
+    {
+        inputModule = args.Module;
     }
 
     private void Start()
@@ -114,6 +134,23 @@ public class VRSculpting : MonoBehaviour
 
     public void Update()
     {
+        if (queryMenuAction != null && queryMenuAction.stateDown)
+        {
+            if (queryMenuObject == null)
+            {
+                queryMenuObject = Instantiate(queryMenuPrefab);
+                queryMenuObject.transform.position = controllerQueryMenu.transform.position;
+                queryMenuObject.transform.rotation = controllerQueryMenu.transform.rotation;
+                queryMenuObject.transform.rotation = Quaternion.LookRotation(new Vector3(queryMenuObject.transform.forward.x, 0, queryMenuObject.transform.forward.z), new Vector3(0, 1, 0));
+                queryMenuObject.GetComponentInChildren<Canvas>().worldCamera = eventCamera;
+            }
+            else
+            {
+                Destroy(queryMenuObject);
+                queryMenuObject = null;
+            }
+        }
+
         if (brushSelectionAction != null && brushSelectionAction.state)
         {
             if (brushSelectionMenuObject == null)
