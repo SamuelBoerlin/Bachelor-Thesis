@@ -50,6 +50,22 @@
       "type": "boolean"
     },
     {
+      "name": "/actions/default/in/RotateBrush",
+      "type": "vector2"
+    },
+    {
+      "name": "/actions/default/in/ResetBrush",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/PlaceBrush",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/SelectBrush",
+      "type": "boolean"
+    },
+    {
       "name": "/actions/default/out/Haptic",
       "type": "vibration"
     },
@@ -165,7 +181,11 @@
       "/actions/default/out/Haptic": "Haptic",
       "/actions/platformer/in/Jump": "Jump",
       "/actions/default/in/SnapTurnLeft": "Snap Turn (Left)",
-      "/actions/default/in/SnapTurnRight": "Snap Turn (Right)"
+      "/actions/default/in/SnapTurnRight": "Snap Turn (Right)",
+      "/actions/default/in/RotateBrush": "Rotate Brush",
+      "/actions/default/in/ResetBrush": "Reset Brush",
+      "/actions/default/in/PlaceBrush": "Place Brush",
+      "/actions/default/in/SelectBrush": "Select Brush"
     }
   ]
 }

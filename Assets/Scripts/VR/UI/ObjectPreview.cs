@@ -122,7 +122,7 @@ public class ObjectPreview : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             }
 
             //Check if preview object has been released
-            if (virtualPreviewObject.transform.parent != virtualPreviewContainer.transform)
+            if (virtualPreviewObject != null && virtualPreviewObject.transform.parent != virtualPreviewContainer.transform)
             {
                 Destroy(virtualPreviewContainer);
                 virtualPreviewContainer = null;

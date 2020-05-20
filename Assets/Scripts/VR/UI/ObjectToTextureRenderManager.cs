@@ -9,10 +9,10 @@ using UnityEngine.Rendering.Universal;
 [RequireComponent(typeof(Camera))]
 public class ObjectToTextureRenderManager : MonoBehaviour
 {
-    [MenuItem("GameObject/UI/Object To Texture Render Manager", false, 0)]
+    [MenuItem("GameObject/UI/ObjectToTextureRenderManager", false, 0)]
     public static void CreateObjectRenderer()
     {
-        var obj = new GameObject("Object To Texture Render Manager");
+        var obj = new GameObject("ObjectToTextureRenderManager");
 
         var camera = obj.AddComponent<Camera>();
         camera.orthographic = false;

@@ -111,8 +111,9 @@ namespace Voxel
 
             if (RenderSurface)
             {
-                uniformSetter(surfaceMaterial);
-                world.Render(transform, surfaceMaterial);
+                MaterialPropertyBlock properties = new MaterialPropertyBlock();
+                uniformSetter(properties);
+                world.Render(transform, surfaceMaterial, properties);
             }
 
             if (RenderPrimitives && sdfRenderer != null)
@@ -123,7 +124,6 @@ namespace Voxel
                     if (renderSdf != null && !brush.Instance.SdfType.IsAssignableFrom(renderSdf.GetType()))
                     {
                         Material renderMaterial = primitive.operation == BrushOperation.Union ? primitiveUnionMaterial : primitiveDifferenceMaterial;
-                        uniformSetter(renderMaterial);
                         sdfRenderer.Render(transform * (Matrix4x4)primitive.transform, renderSdf, renderMaterial);
                     }
                 }

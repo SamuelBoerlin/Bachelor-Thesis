@@ -117,7 +117,7 @@ MonoBehaviour:
     rotation2: {x: 0, y: 45, z: 0}
     scale: {x: 1, y: 1, z: 1}
   virtualTransform:
-    position: {x: 0, y: 0, z: 1}
+    position: {x: 0, y: 0, z: -1}
     rotation1: {x: 0, y: 0, z: 0}
     rotation2: {x: 0, y: 45, z: 0}
     scale: {x: 0.25, y: 0.25, z: 0.25}

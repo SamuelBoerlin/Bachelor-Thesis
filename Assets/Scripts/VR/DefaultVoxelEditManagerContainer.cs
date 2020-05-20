@@ -2,7 +2,7 @@
 using System.Collections;
 using Voxel;
 
-public class DefaultVoxelEditManagerContainer : VoxelEditManagerContainer<MortonIndexer>
+public class DefaultVoxelEditManagerContainer : VoxelEditManagerContainer<LinearIndexer>
 {
 
 }

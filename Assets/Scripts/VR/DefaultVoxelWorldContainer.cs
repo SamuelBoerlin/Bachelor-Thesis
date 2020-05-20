@@ -6,7 +6,7 @@ using Valve.VR;
 using Voxel;
 
 [RequireComponent(typeof(Interactable))]
-public class DefaultVoxelWorldContainer : VoxelWorldContainer<MortonIndexer>
+public class DefaultVoxelWorldContainer : VoxelWorldContainer<LinearIndexer>
 {
     public HashSet<SteamVR_Input_Sources> HoveringHands
     {
@@ -26,8 +26,8 @@ public class DefaultVoxelWorldContainer : VoxelWorldContainer<MortonIndexer>
         InteractableComponent = GetComponent<Interactable>();
     }
 
-    protected override IndexerFactory<MortonIndexer> CreateIndexerFactory()
+    protected override IndexerFactory<LinearIndexer> CreateIndexerFactory()
     {
-        return (xSize, ySize, zSize) => new MortonIndexer(xSize, ySize, zSize);
+        return (xSize, ySize, zSize) => new LinearIndexer(xSize, ySize, zSize);
     }
 }

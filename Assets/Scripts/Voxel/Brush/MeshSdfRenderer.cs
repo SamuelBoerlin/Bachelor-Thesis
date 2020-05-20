@@ -35,8 +35,9 @@ namespace Voxel
             {
                 material = this.material;
             }
-            uniformSetter(material);
-            Graphics.DrawMesh(mesh, transform * Matrix4x4.TRS(translation, Quaternion.identity, scale), material, 0);
+            MaterialPropertyBlock properties = new MaterialPropertyBlock();
+            uniformSetter(properties);
+            Graphics.DrawMesh(mesh, transform * Matrix4x4.TRS(translation, Quaternion.identity, scale), material, 0, null, 0, properties, false);
         }
 
         public override Type SdfType()

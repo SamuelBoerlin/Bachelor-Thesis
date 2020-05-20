@@ -268,32 +268,17 @@ namespace Voxel
             {
                 handle.Complete();
 
-                var vertices = new List<Vector3>(meshVertices.Length);
-                var indices = new List<int>(meshTriangles.Length);
-                var materials = new List<int>(meshMaterials.Length);
-                var colors = new List<Color32>(meshColors.Length);
-                var normals = new List<Vector3>(meshNormals.Length);
+                var vertices = new Vector3[meshVertices.Length];
+                var indices = new int[meshTriangles.Length];
+                var materials = new int[meshMaterials.Length];
+                var colors = new Color32[meshColors.Length];
+                var normals = new Vector3[meshNormals.Length];
 
-                for (int i = 0; i < meshVertices.Length; i++)
-                {
-                    vertices.Add(meshVertices[i]);
-                }
-                for (int i = 0; i < meshTriangles.Length; i++)
-                {
-                    indices.Add(meshTriangles[i]);
-                }
-                for (int i = 0; i < meshMaterials.Length; i++)
-                {
-                    materials.Add(meshMaterials[i]);
-                }
-                for (int i = 0; i < meshColors.Length; i++)
-                {
-                    colors.Add(meshColors[i]);
-                }
-                for (int i = 0; i < meshNormals.Length; i++)
-                {
-                    normals.Add(meshNormals[i]);
-                }
+                meshVertices.CopyToFast(vertices);
+                meshTriangles.CopyToFast(indices);
+                meshMaterials.CopyToFast(materials);
+                meshColors.CopyToFast(colors);
+                meshNormals.CopyToFast(normals);
 
                 meshVertices.Dispose();
                 meshNormals.Dispose();
@@ -310,12 +295,12 @@ namespace Voxel
                 mesh.SetVertices(vertices);
                 mesh.SetNormals(normals);
                 mesh.SetTriangles(indices, 0);
-                if (colors.Count > 0)
+                if (colors.Length > 0)
                 {
                     mesh.SetColors(colors);
                 }
 
-                if(ChunkObject != null)
+                if (ChunkObject != null)
                 {
                     ChunkObject.GetComponent<VoxelChunkContainer<TIndexer>>()?.OnChunkRebuilt();
                 }

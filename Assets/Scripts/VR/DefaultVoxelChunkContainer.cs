@@ -2,7 +2,7 @@
 using System.Collections;
 using Voxel;
 
-public class DefaultVoxelChunkContainer : VoxelChunkContainer<MortonIndexer>
+public class DefaultVoxelChunkContainer : VoxelChunkContainer<LinearIndexer>
 {
     [SerializeField] private MeshFilter outlineMesh;
     [SerializeField] private MeshRenderer outlineRenderer;

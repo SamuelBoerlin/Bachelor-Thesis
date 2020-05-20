@@ -105,6 +105,38 @@ namespace Valve.VR
             }
         }
         
+        public virtual SteamVR_Action_Vector2 RotateBrush
+        {
+            get
+            {
+                return SteamVR_Actions.default_RotateBrush;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean ResetBrush
+        {
+            get
+            {
+                return SteamVR_Actions.default_ResetBrush;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean PlaceBrush
+        {
+            get
+            {
+                return SteamVR_Actions.default_PlaceBrush;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean SelectBrush
+        {
+            get
+            {
+                return SteamVR_Actions.default_SelectBrush;
+            }
+        }
+        
         public virtual SteamVR_Action_Vibration Haptic
         {
             get

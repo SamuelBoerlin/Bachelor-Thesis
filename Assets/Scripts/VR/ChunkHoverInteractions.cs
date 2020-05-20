@@ -3,11 +3,14 @@ using System.Collections;
 using Valve.VR.InteractionSystem;
 using Voxel;
 using System.Collections.Generic;
+using Valve.VR;
 
 [RequireComponent(typeof(DefaultVoxelChunkContainer))]
 [RequireComponent(typeof(Interactable))]
 public class ChunkHoverInteractions : MonoBehaviour
 {
+    [SerializeField] private SteamVR_Input_Sources[] interactableSources;
+
     private DefaultVoxelChunkContainer chunkContainer;
 
     private Interactable interactable;
@@ -18,22 +21,37 @@ public class ChunkHoverInteractions : MonoBehaviour
         interactable = GetComponent<Interactable>();
     }
 
+    private bool IsInteractable(SteamVR_Input_Sources source)
+    {
+        foreach (var sourceType in interactableSources)
+        {
+            if (source == sourceType)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void OnHandHoverBegin(Hand hand)
     {
-        var world = chunkContainer.Chunk.World;
-        var worldObject = world.VoxelWorldObject;
-        var worldContainer = worldObject.GetComponent<DefaultVoxelWorldContainer>();
-
-        worldContainer.HoveringHands.Add(hand.handType);
-
-        if (worldContainer.HoveringHands.Count == 1)
+        if (IsInteractable(hand.handType))
         {
-            foreach (var pos in world.Chunks)
+            var world = chunkContainer.Chunk.World;
+            var worldObject = world.VoxelWorldObject;
+            var worldContainer = worldObject.GetComponent<DefaultVoxelWorldContainer>();
+
+            worldContainer.HoveringHands.Add(hand.handType);
+
+            if (worldContainer.HoveringHands.Count == 1)
             {
-                var chunk = world.GetChunk(pos);
-                if (chunk.ChunkObject != null)
+                foreach (var pos in world.Chunks)
                 {
-                    chunk.ChunkObject.GetComponent<DefaultVoxelChunkContainer>()?.SetOutlineEnabled(true);
+                    var chunk = world.GetChunk(pos);
+                    if (chunk.ChunkObject != null)
+                    {
+                        chunk.ChunkObject.GetComponent<DefaultVoxelChunkContainer>()?.SetOutlineEnabled(true);
+                    }
                 }
             }
         }

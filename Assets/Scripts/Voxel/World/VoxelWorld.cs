@@ -432,14 +432,6 @@ namespace Voxel
                 handle();
             }
 
-            //Remove empty chunks
-            foreach (var pos in pendingRemovals)
-            {
-                VoxelChunk<TIndexer> chunk = chunks[pos];
-                chunk.Dispose();
-                chunks.Remove(pos);
-            }
-
             if (watch != null)
             {
                 watch.Stop();
@@ -447,16 +439,36 @@ namespace Voxel
                 string text = "Polygonized " + handles.Count + " voxel chunks in " + watch.ElapsedMilliseconds + "ms. Avg: " + (watch.ElapsedMilliseconds / (float)handles.Count) + "ms.";
                 Debug.Log(text);
             }
+
+            //Remove empty chunks
+            foreach (var pos in pendingRemovals)
+            {
+                VoxelChunk<TIndexer> chunk = chunks[pos];
+                chunk.Dispose();
+                chunks.Remove(pos);
+            }
         }
 
-        public void Render(Matrix4x4 renderTransform, Material material)
+        public void Render(Matrix4x4 renderTransform, Material material, MaterialPropertyBlock properties = null)
         {
+            Matrix4x4 baseTransform = renderTransform * Matrix4x4.TRS(Transform.position, Transform.rotation, Transform.lossyScale);
+            Matrix4x4 chunkTransform = baseTransform;
+            Vector4 offset = Vector4.zero;
             foreach (ChunkPos pos in chunks.Keys)
             {
                 VoxelChunk<TIndexer> chunk = chunks[pos];
                 if (chunk.mesh != null)
                 {
-                    Graphics.DrawMesh(chunk.mesh, renderTransform * Matrix4x4.TRS(Transform.position, Transform.rotation, Transform.lossyScale) * Matrix4x4.Translate(new Vector3(pos.x * ChunkSize, pos.y * ChunkSize, pos.z * ChunkSize)), material, 0);
+                    offset.x = pos.x * ChunkSize;
+                    offset.y = pos.y * ChunkSize;
+                    offset.z = pos.z * ChunkSize;
+                    offset.w = 1.0f;
+                    offset = baseTransform * offset;
+                    chunkTransform.m03 = offset.x;
+                    chunkTransform.m13 = offset.y;
+                    chunkTransform.m23 = offset.z;
+                    chunkTransform.m33 = offset.w;
+                    Graphics.DrawMesh(chunk.mesh, chunkTransform, material, 0, null, 0, properties, true);
                 }
             }
         }

@@ -386,7 +386,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
             Camera camera = Camera.current;
             if (camera != null)
             {
-                if (gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.RayCast(camera.transform.position, camera.transform.forward.normalized, 64, out VoxelWorld<MortonIndexer>.RayCastResult result))
+                if (gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance.RayCast(camera.transform.position, camera.transform.forward.normalized, 64, out VoxelWorld<LinearIndexer>.RayCastResult result))
                 {
                     selectedCell = new Vector3Int(Mathf.FloorToInt(result.pos.x), Mathf.FloorToInt(result.pos.y), Mathf.FloorToInt(result.pos.z));
                 }
@@ -418,7 +418,7 @@ public partial class CreateVoxelTerrain : MonoBehaviour
         {
             //field.FillCell(selectedCell.Value.x, selectedCell.Value.y, selectedCell.Value.z, 0, gizmoCellMaterials, gizmoCellIntersections, gizmoCellNormals);
             var sculpture = gameObject.GetComponent<DefaultVoxelWorldContainer>().Instance;
-            VoxelChunk<MortonIndexer> chunk = sculpture.GetChunk(ChunkPos.FromVoxel(selectedCell.Value, sculpture.ChunkSize));
+            var chunk = sculpture.GetChunk(ChunkPos.FromVoxel(selectedCell.Value, sculpture.ChunkSize));
             if (chunk != null)
             {
                 chunk.FillCell(

@@ -8,10 +8,9 @@ namespace Voxel
     /// Enables the rendering of SDF brushes.
     /// Renderable SDF brushes need to be registered to <see cref="staticRenderers"/> or <see cref="dynamicRenderers"/>.
     /// </summary>
-    [RequireComponent(typeof(MeshRenderer))]
     public class SdfShapeRenderHandler : MonoBehaviour
     {
-        public delegate void UniformSetter(Material material);
+        public delegate void UniformSetter(MaterialPropertyBlock properties);
 
         /// <summary>
         /// Renderer of an <see cref="ISdf"/> type
@@ -31,7 +30,6 @@ namespace Voxel
             /// <param name="uniformSetter">Sets the _SdfTransform and _SdfTransformInverseTranspose uniforms of the SDF</param>
             /// <param name="material">Material to render the SDF with. If null the default material is chosen by this renderer</param>
             void Render(Matrix4x4 transform, UniformSetter uniformSetter, Material material = null);
-
         }
 
         private Dictionary<Type, ISdfRenderer> registry;
@@ -121,10 +119,10 @@ namespace Voxel
                     sdfTransform = matrix * sdfTransform;
                 }
 
-                UniformSetter uniformSetter = mat =>
+                UniformSetter uniformSetter = properties =>
                 {
-                    mat.SetMatrix("_SdfTransform", sdfTransform);
-                    mat.SetMatrix("_SdfTransformInverseTranspose", Matrix4x4.Transpose(Matrix4x4.Inverse(sdfTransform)));
+                    properties.SetMatrix("_SdfTransform", sdfTransform);
+                    properties.SetMatrix("_SdfTransformInverseTranspose", Matrix4x4.Transpose(Matrix4x4.Inverse(sdfTransform)));
                 };
 
                 renderer.Render(transform, uniformSetter, material);

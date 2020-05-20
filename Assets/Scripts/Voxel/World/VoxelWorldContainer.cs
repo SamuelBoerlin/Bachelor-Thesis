@@ -83,7 +83,7 @@ namespace Voxel
             meshRenderer = GetComponent<MeshRenderer>();
         }
 
-        protected virtual void Update()
+        protected virtual void LateUpdate()
         {
             Instance.Transform = transform;
             Instance.Update();

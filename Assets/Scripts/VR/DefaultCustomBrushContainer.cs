@@ -2,7 +2,7 @@
 using Voxel;
 
 [RequireComponent(typeof(DefaultCustomBrushSdfRenderer))]
-public class DefaultCustomBrushContainer : CustomBrushContainer<MortonIndexer, DefaultCustomBrushType, DefaultCustomBrushSdfEvaluator>
+public class DefaultCustomBrushContainer : CustomBrushContainer<LinearIndexer, DefaultCustomBrushType, DefaultCustomBrushSdfEvaluator>
 {
     protected override DefaultCustomBrushSdfEvaluator CreateBrushSdfEvaluator()
     {

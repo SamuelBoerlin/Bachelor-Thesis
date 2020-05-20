@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using Valve.VR;
 
 public class VRPointerInputModule : BaseInputModule
@@ -22,6 +23,7 @@ public class VRPointerInputModule : BaseInputModule
     {
         base.Awake();
         EventData = new PointerEventData(eventSystem);
+        EventSystem.current = eventSystem;
     }
 
     public override void Process()
@@ -67,17 +69,17 @@ public class VRPointerInputModule : BaseInputModule
         EventData.pressPosition = EventData.position;
         EventData.pointerPress = pointerPress;
         EventData.rawPointerPress = hoveredGameObject;
+
+        eventSystem.SetSelectedGameObject(hoveredGameObject);
     }
 
     private void HandlePointerRelease()
     {
         ExecuteEvents.Execute(EventData.pointerPress, EventData, ExecuteEvents.pointerUpHandler);
 
-        GameObject pointerUpHandler = ExecuteEvents.GetEventHandler<IPointerClickHandler>(hoveredGameObject);
-
-        if (EventData.pointerPress == pointerUpHandler)
+        if (EventData.rawPointerPress == hoveredGameObject)
         {
-            ExecuteEvents.Execute(EventData.pointerPress, EventData, ExecuteEvents.pointerUpHandler);
+            ExecuteEvents.Execute(EventData.pointerPress, EventData, ExecuteEvents.pointerClickHandler);
         }
 
         eventSystem.SetSelectedGameObject(null);
