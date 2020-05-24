@@ -315,14 +315,18 @@ namespace Voxel
 
         public readonly struct RayCastResult
         {
-            public readonly Vector3 pos;
-            public readonly Vector3 sidePos;
+            public readonly bool isPosEmpty;
+            public readonly Vector3Int pos;
+            public readonly Vector3Int sidePos;
+            public readonly Vector3Int nonEmptyPos;
             public readonly VoxelChunk<TIndexer> chunk;
 
-            public RayCastResult(Vector3 pos, Vector3 sidePos, VoxelChunk<TIndexer> chunk)
+            public RayCastResult(bool isPosEmpty, Vector3Int pos, Vector3Int sidePos, Vector3Int nonEmptyPos, VoxelChunk<TIndexer> chunk)
             {
+                this.isPosEmpty = isPosEmpty;
                 this.pos = pos;
                 this.sidePos = sidePos;
+                this.nonEmptyPos = nonEmptyPos;
                 this.chunk = chunk;
             }
         }
@@ -365,7 +369,9 @@ namespace Voxel
                                     int material = chunk.GetMaterial(((bx % ChunkSize) + ChunkSize) % ChunkSize, ((by % ChunkSize) + ChunkSize) % ChunkSize, ((bz % ChunkSize) + ChunkSize) % ChunkSize);
                                     if (material != 0)
                                     {
-                                        result = new RayCastResult(new Vector3(x, y, z), new Vector3(prevX, prevY, prevZ), chunk);
+                                        var baseChunk = GetChunk(ChunkPos.FromVoxel(x, y, z, ChunkSize));
+                                        int baseMaterial = baseChunk.GetMaterial(((x % ChunkSize) + ChunkSize) % ChunkSize, ((y % ChunkSize) + ChunkSize) % ChunkSize, ((z % ChunkSize) + ChunkSize) % ChunkSize);
+                                        result = new RayCastResult(baseMaterial == 0, new Vector3Int(x, y, z), new Vector3Int(prevX, prevY, prevZ), new Vector3Int(bx, by, bz), chunk);
                                         return true;
                                     }
                                 }
@@ -381,7 +387,7 @@ namespace Voxel
                 pos += stepOffset;
             }
 
-            result = new RayCastResult(Vector3.zero, Vector3.zero, null);
+            result = new RayCastResult(true, Vector3Int.zero, Vector3Int.zero, Vector3Int.zero, null);
             return false;
         }
 

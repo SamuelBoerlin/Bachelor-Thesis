@@ -81,6 +81,21 @@ public class HSVManager : MonoBehaviour
         }
     }
 
+    public void SetHSV(float h, float s, float v)
+    {
+        hueSlider.Slider.value = h;
+        saturationSlider.Slider.value = s;
+        valueSlider.Slider.value = v;
+        hue = h;
+        saturation = s;
+        value = v;
+        UpdateColor();
+        BroadcastMessage("OnSetHSVHue", value, SendMessageOptions.DontRequireReceiver);
+        BroadcastMessage("OnSetHSVSaturation", value, SendMessageOptions.DontRequireReceiver);
+        BroadcastMessage("OnSetHSVValue", value, SendMessageOptions.DontRequireReceiver);
+        onColorChanged?.Invoke();
+    }
+
     public void SetHue(float value)
     {
         hueSlider.Slider.value = value;

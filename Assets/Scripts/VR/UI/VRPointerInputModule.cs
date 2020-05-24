@@ -25,12 +25,22 @@ public class VRPointerInputModule : BaseInputModule
 
     [SerializeField] private float dragThreshold = 0.005f;
 
-    private GameObject hoveredGameObject;
+    public GameObject HoveredGameObject
+    {
+        private set;
+        get;
+    }
 
     private GameObject pressedGameObject;
     private Vector3 pressedPosition;
 
     public PointerEventData EventData
+    {
+        private set;
+        get;
+    }
+
+    public VRPointerRaycastHandler.RaycastMetadata RaycastMetadata
     {
         private set;
         get;
@@ -63,7 +73,7 @@ public class VRPointerInputModule : BaseInputModule
     {
         UpdateEventData();
 
-        HandlePointerExitAndEnter(EventData, hoveredGameObject);
+        HandlePointerExitAndEnter(EventData, HoveredGameObject);
 
         if (clickAction.GetStateDown(inputSource))
         {
@@ -81,14 +91,40 @@ public class VRPointerInputModule : BaseInputModule
         }
     }
 
+    private RaycastResult FindCachedRaycastAndSetMeta()
+    {
+        var result = FindFirstRaycast(m_RaycastResultCache);
+
+        VRPointerRaycastHandler.RaycastMetadata meta = null;
+        if (result.gameObject == null && Physics.Raycast(eventCamera.transform.position, eventCamera.transform.forward, out RaycastHit physicsRaycast, 100.0f))
+        {
+            var handler = physicsRaycast.collider.gameObject.GetComponent<VRPointerRaycastHandler>();
+            if (handler != null)
+            {
+                handler.HandleRaycast(eventCamera.transform.position, physicsRaycast.point, eventCamera.transform.forward, out Vector3 hit, out meta);
+                result = new RaycastResult
+                {
+                    distance = (hit - eventCamera.transform.position).magnitude,
+                    gameObject = physicsRaycast.collider.gameObject,
+                    screenPosition = EventData.position,
+                    worldPosition = hit
+                };
+            }
+        }
+
+        RaycastMetadata = meta;
+
+        return result;
+    }
+
     private void UpdateEventData()
     {
         EventData.Reset();
         EventData.position = new Vector2(eventCamera.pixelWidth / 2, eventCamera.pixelHeight / 2);
 
         eventSystem.RaycastAll(EventData, m_RaycastResultCache);
-        EventData.pointerCurrentRaycast = FindFirstRaycast(m_RaycastResultCache);
-        hoveredGameObject = EventData.pointerCurrentRaycast.gameObject;
+        EventData.pointerCurrentRaycast = FindCachedRaycastAndSetMeta();
+        HoveredGameObject = EventData.pointerCurrentRaycast.gameObject;
 
         m_RaycastResultCache.Clear();
     }
@@ -102,22 +138,22 @@ public class VRPointerInputModule : BaseInputModule
     {
         EventData.pointerPressRaycast = EventData.pointerCurrentRaycast;
 
-        GameObject pointerPress = ExecuteEvents.ExecuteHierarchy(hoveredGameObject, EventData, ExecuteEvents.pointerDownHandler);
+        GameObject pointerPress = ExecuteEvents.ExecuteHierarchy(HoveredGameObject, EventData, ExecuteEvents.pointerDownHandler);
 
         if (pointerPress == null)
         {
-            pointerPress = ExecuteEvents.ExecuteHierarchy(hoveredGameObject, EventData, ExecuteEvents.pointerClickHandler);
+            pointerPress = ExecuteEvents.ExecuteHierarchy(HoveredGameObject, EventData, ExecuteEvents.pointerClickHandler);
         }
 
         EventData.pressPosition = EventData.position;
         EventData.pointerPress = pointerPress;
-        EventData.rawPointerPress = hoveredGameObject;
+        EventData.rawPointerPress = HoveredGameObject;
 
-        eventSystem.SetSelectedGameObject(hoveredGameObject);
+        eventSystem.SetSelectedGameObject(HoveredGameObject);
 
-        if (hoveredGameObject != null)
+        if (HoveredGameObject != null)
         {
-            pressedGameObject = hoveredGameObject;
+            pressedGameObject = HoveredGameObject;
             pressedPosition = EventData.pointerCurrentRaycast.worldPosition;
         }
         else
@@ -135,11 +171,11 @@ public class VRPointerInputModule : BaseInputModule
             {
                 if ((EventData.pointerCurrentRaycast.worldPosition - pressedPosition).magnitude > dragThreshold)
                 {
-                    GameObject pointerDrag = ExecuteEvents.ExecuteHierarchy(hoveredGameObject, EventData, ExecuteEvents.beginDragHandler);
+                    GameObject pointerDrag = ExecuteEvents.ExecuteHierarchy(HoveredGameObject, EventData, ExecuteEvents.beginDragHandler);
 
                     if (pointerDrag == null)
                     {
-                        pointerDrag = ExecuteEvents.ExecuteHierarchy(hoveredGameObject, EventData, ExecuteEvents.dragHandler);
+                        pointerDrag = ExecuteEvents.ExecuteHierarchy(HoveredGameObject, EventData, ExecuteEvents.dragHandler);
                     }
 
                     EventData.dragging = true;
@@ -164,7 +200,7 @@ public class VRPointerInputModule : BaseInputModule
 
         ExecuteEvents.Execute(EventData.pointerPress, EventData, ExecuteEvents.pointerUpHandler);
 
-        if (EventData.rawPointerPress == hoveredGameObject)
+        if (EventData.rawPointerPress == HoveredGameObject)
         {
             ExecuteEvents.Execute(EventData.pointerPress, EventData, ExecuteEvents.pointerClickHandler);
         }

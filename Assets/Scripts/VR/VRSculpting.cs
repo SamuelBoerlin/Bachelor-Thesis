@@ -206,11 +206,15 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
         get
         {
             return brushSelectionMenuObject != null ||
-                (inputModule != null && inputModule.EventData != null && inputModule.EventData.pointerCurrentRaycast.gameObject != null && inputModule.EventData.pointerCurrentRaycast.gameObject.GetComponentInParent<Canvas>() != null);
+                (InputModule != null && InputModule.EventData != null && InputModule.EventData.pointerCurrentRaycast.gameObject != null && InputModule.EventData.pointerCurrentRaycast.gameObject.GetComponentInParent<Canvas>() != null);
         }
     }
 
-    private VRPointerInputModule inputModule;
+    public VRPointerInputModule InputModule
+    {
+        private set;
+        get;
+    }
 
     private void Awake()
     {
@@ -226,7 +230,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
     private void OnVRPointerInputModuleInitialized(object sender, VRPointerInputModule.Args args)
     {
-        inputModule = args.Module;
+        InputModule = args.Module;
     }
 
     private void Start()
@@ -240,7 +244,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
         var script = ui.GetComponent<VRUI>();
         if (script != null)
         {
-            script.InitializeUI(this, inputModule, eventCamera);
+            script.InitializeUI(this, InputModule, eventCamera);
         }
         else
         {
@@ -346,5 +350,17 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             case BrushType.Pyramid:
                 return consumer.Consume(new PyramidSDF(baseSize * 2, baseSize * 2));
         }
+    }
+
+    public BrushMaterialType? FindBrushMaterialTypeForId(int id)
+    {
+        foreach(var type in BrushMaterials)
+        {
+            if(type.ID == id)
+            {
+                return type;
+            }
+        }
+        return null;
     }
 }

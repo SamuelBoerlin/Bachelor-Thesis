@@ -4,10 +4,11 @@ using Valve.VR.InteractionSystem;
 using Voxel;
 using System.Collections.Generic;
 using Valve.VR;
+using UnityEngine.EventSystems;
 
 [RequireComponent(typeof(DefaultVoxelChunkContainer))]
 [RequireComponent(typeof(Interactable))]
-public class ChunkHoverInteractions : MonoBehaviour
+public class ChunkHoverInteractions : VRPointerRaycastHandler
 {
     [SerializeField] private SteamVR_Input_Sources[] interactableSources;
 
@@ -98,6 +99,40 @@ public class ChunkHoverInteractions : MonoBehaviour
         {
             hand.DetachObject(worldObject);
             hand.HoverUnlock(interactable);
+        }
+    }
+
+    public class ChunkRaycastMetadata : RaycastMetadata
+    {
+        public readonly Vector3Int voxel;
+        public readonly int material;
+
+        internal ChunkRaycastMetadata(Vector3Int voxel, int material)
+        {
+            this.voxel = voxel;
+            this.material = material;
+        }
+    }
+
+    public override void HandleRaycast(Vector3 origin, Vector3 start, Vector3 direction, out Vector3 hit, out RaycastMetadata metadata)
+    {
+        var chunk = chunkContainer.Chunk;
+        var world = chunk.World;
+
+        hit = new Vector3(0, 0, 0);
+        metadata = null;
+
+        if (world.RayCast(start, direction, chunk.ChunkSize * 1.735f * 2.0f, out var result))
+        {
+            hit = world.Transform.localToWorldMatrix.MultiplyPoint(result.pos + new Vector3(0.5f, 0.5f, 0.5f));
+
+            var voxelPos = result.isPosEmpty ? new Vector3Int((int)result.nonEmptyPos.x, (int)result.nonEmptyPos.y, (int)result.nonEmptyPos.z) : new Vector3Int((int)result.pos.x, (int)result.pos.y, (int)result.pos.z);
+            metadata = new ChunkRaycastMetadata(voxelPos,
+                world.GetChunk(ChunkPos.FromVoxel(voxelPos, chunk.ChunkSize)).GetMaterial(
+                    ((voxelPos.x % chunk.ChunkSize) + chunk.ChunkSize) % chunk.ChunkSize,
+                    ((voxelPos.y % chunk.ChunkSize) + chunk.ChunkSize) % chunk.ChunkSize,
+                    ((voxelPos.z % chunk.ChunkSize) + chunk.ChunkSize) % chunk.ChunkSize)
+                    );
         }
     }
 }

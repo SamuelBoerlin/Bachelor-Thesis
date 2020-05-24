@@ -111,12 +111,17 @@ public class VRPointer : MonoBehaviour
                 float pointerLength = inputModule != null && inputModule.EventData != null && inputModule.EventData.pointerCurrentRaycast.distance > 0 ? inputModule.EventData.pointerCurrentRaycast.distance : maxLength;
 
                 var ray = new Ray(transform.position, transform.forward);
-                Physics.Raycast(ray, out RaycastHit hit, pointerLength);
 
                 lineEnd = transform.position + (transform.forward * pointerLength);
-                if (hit.collider != null)
+
+                if (inputModule.EventData == null || inputModule.EventData.pointerCurrentRaycast.gameObject == null)
                 {
-                    lineEnd = hit.point;
+                    Physics.Raycast(ray, out RaycastHit hit, pointerLength);
+
+                    if (hit.collider != null)
+                    {
+                        lineEnd = hit.point;
+                    }
                 }
             }
 

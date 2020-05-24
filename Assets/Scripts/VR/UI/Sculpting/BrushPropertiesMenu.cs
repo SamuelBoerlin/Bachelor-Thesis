@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Voxel;
 using UnityEngine.EventSystems;
 using static VRSculpting;
+using Valve.VR;
 
 [RequireComponent(typeof(Canvas))]
 public class BrushPropertiesMenu : MonoBehaviour
@@ -37,9 +38,14 @@ public class BrushPropertiesMenu : MonoBehaviour
     [SerializeField] private int materialTileXSpacing = 210;
     [SerializeField] private int materialTileYSpacing = -210;
 
+    [SerializeField] private Button materialPickButton;
+    [SerializeField] private SteamVR_Action_Boolean materialPickAction;
+
     private bool initialized = false;
 
     private List<(GameObject, BrushMaterialButton, ButtonEventEffects, BrushMaterialType)> materialButtons = new List<(GameObject, BrushMaterialButton, ButtonEventEffects, BrushMaterialType)>();
+
+    private bool isMaterialPicking = false;
 
     public void OnInitializeUI(VRUI.Context ctx)
     {
@@ -63,6 +69,7 @@ public class BrushPropertiesMenu : MonoBehaviour
         differenceButton.onClick.AddListener(OnDifferenceButtonClick);
         replaceButton.onClick.AddListener(OnReplaceButtonClick);
         materialButton.onClick.AddListener(OnMaterialButtonClick);
+        materialPickButton.onClick.AddListener(OnMaterialPickButtonClick);
 
         UpdateSelectedMaterial();
     }
@@ -75,6 +82,25 @@ public class BrushPropertiesMenu : MonoBehaviour
         differenceButton.onClick.RemoveListener(OnDifferenceButtonClick);
         replaceButton.onClick.RemoveListener(OnReplaceButtonClick);
         materialButton.onClick.RemoveListener(OnMaterialButtonClick);
+        materialPickButton.onClick.RemoveListener(OnMaterialPickButtonClick);
+    }
+
+    private void Update()
+    {
+        if (isMaterialPicking && materialPickAction != null && materialPickAction.stateDown && VRSculpting.InputModule.RaycastMetadata != null && VRSculpting.InputModule.RaycastMetadata is ChunkHoverInteractions.ChunkRaycastMetadata)
+        {
+            var voxelColor = MaterialColors.FromInteger(((ChunkHoverInteractions.ChunkRaycastMetadata)VRSculpting.InputModule.RaycastMetadata).material);
+
+            Color.RGBToHSV(voxelColor, out float h, out float s, out float v);
+            hsvManager.SetHSV(h, s, v);
+
+            var materialType = VRSculpting.FindBrushMaterialTypeForId(voxelColor.a);
+            if (materialType.HasValue)
+            {
+                VRSculpting.BrushMaterial = materialType.Value;
+                UpdateSelectedMaterial();
+            }
+        }
     }
 
     private void OnColorChanged()
@@ -186,5 +212,19 @@ public class BrushPropertiesMenu : MonoBehaviour
         }
 
         materialImage.texture = VRSculpting.BrushMaterial.Texture;
+    }
+
+    private void OnMaterialPickButtonClick()
+    {
+        if (isMaterialPicking)
+        {
+            isMaterialPicking = false;
+            materialPickButton.GetComponent<ButtonEventEffects>().PermanentHover = false;
+        }
+        else
+        {
+            isMaterialPicking = true;
+            materialPickButton.GetComponent<ButtonEventEffects>().PermanentHover = true;
+        }
     }
 }
