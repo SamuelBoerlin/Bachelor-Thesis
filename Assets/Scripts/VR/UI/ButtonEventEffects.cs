@@ -9,9 +9,33 @@ public class ButtonEventEffects : MonoBehaviour, IPointerEnterHandler, IPointerE
 {
     [SerializeField] private Image hoverImage;
 
+    [SerializeField] private bool _permanentHover;
+    public bool PermanentHover
+    {
+        get
+        {
+            return _permanentHover;
+        }
+        set
+        {
+            _permanentHover = value;
+            if (_permanentHover)
+            {
+                hoverImage.enabled = true;
+            }
+            else if (!hovered)
+            {
+                hoverImage.enabled = false;
+            }
+        }
+    }
+
+    private bool hovered;
+
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if(hoverImage)
+        hovered = true;
+        if (hoverImage)
         {
             hoverImage.enabled = true;
         }
@@ -19,7 +43,8 @@ public class ButtonEventEffects : MonoBehaviour, IPointerEnterHandler, IPointerE
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (hoverImage)
+        hovered = false;
+        if (!_permanentHover && hoverImage)
         {
             hoverImage.enabled = false;
         }

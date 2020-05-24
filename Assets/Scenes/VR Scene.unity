@@ -355,7 +355,7 @@ MonoBehaviour:
     actionPath: /actions/default/in/SelectBrush
     needsReinit: 0
   controllerBrushSelectionMenu: {fileID: 48126978}
-  brushSelectionMenuPrefab: {fileID: 6888348797581497199, guid: 596f4947dce6a7d40a33c5a6ffb5bc27,
+  brushSelectionMenuPrefab: {fileID: 3106801376209204422, guid: 81c055d2589a51848b24ffc493db326b,
     type: 3}
   brushRotateAction:
     actionPath: /actions/default/in/RotateBrush
@@ -374,6 +374,23 @@ MonoBehaviour:
   controller: {fileID: 161941430}
   controllerBrush: {fileID: 2108839681}
   voxelWorld: {fileID: 1716027542}
+  _brushType: 0
+  _brushColor: {r: 1, g: 1, b: 1, a: 1}
+  _brushOperation: 0
+  _brushMaterials:
+  - _name: Grass
+    _id: 0
+    _texture: {fileID: 2800000, guid: 34a39a5c02a1c504297e59f7286779e9, type: 3}
+  - _name: Dirt
+    _id: 1
+    _texture: {fileID: 2800000, guid: 8eeb3b6627af1a3498d3b8bee02ea4ab, type: 3}
+  - _name: Wood
+    _id: 2
+    _texture: {fileID: 2800000, guid: 0e1bd4dd4f34c514d9465db5511dd694, type: 3}
+  _brushMaterial:
+    _name: Grass
+    _id: 0
+    _texture: {fileID: 2800000, guid: 34a39a5c02a1c504297e59f7286779e9, type: 3}
 --- !u!1 &420546069 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 110716, guid: dc06161b6d97feb419f45f03b62e14b9,
@@ -617,6 +634,7 @@ MonoBehaviour:
   clickAction:
     actionPath: /actions/default/in/InteractUI
     needsReinit: 0
+  dragThreshold: 0.005
 --- !u!114 &628201817
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1758,7 +1776,7 @@ PrefabInstance:
         type: 3}
       propertyPath: _inputModule
       value: 
-      objectReference: {fileID: 628201816}
+      objectReference: {fileID: 0}
     - target: {fileID: 6534781875342489420, guid: 1403958cc62275644ae9eb1f5f5e8eac,
         type: 3}
       propertyPath: _sculpting

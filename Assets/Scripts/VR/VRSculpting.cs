@@ -4,9 +4,10 @@ using UnityEngine.EventSystems;
 using Valve.VR;
 using Voxel;
 using System;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(SdfShapeRenderHandler))]
-public class VRSculpting : MonoBehaviour
+public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 {
     public class SdfConsumer
     {
@@ -64,7 +65,7 @@ public class VRSculpting : MonoBehaviour
 
     [SerializeField] private DefaultVoxelWorldContainer voxelWorld;
 
-    private BrushType _brushType = BrushType.None;
+    [SerializeField] private BrushType _brushType = BrushType.None;
     public BrushType BrushType
     {
         get
@@ -77,8 +78,109 @@ public class VRSculpting : MonoBehaviour
             _brushType = value;
             if (change)
             {
-                OnBrushChange();
+                OnBrushTypeChange();
             }
+        }
+    }
+
+    [SerializeField] private Color _brushColor = Color.white;
+    public Color BrushColor
+    {
+        get
+        {
+            return _brushColor;
+        }
+        set
+        {
+            _brushColor = value;
+        }
+    }
+
+    [SerializeField] private BrushOperation _brushOperation = BrushOperation.Union;
+    public BrushOperation BrushOperation
+    {
+        get
+        {
+            return _brushOperation;
+        }
+        set
+        {
+            _brushOperation = value;
+        }
+    }
+
+    [Serializable]
+    public struct BrushMaterialType
+    {
+        [SerializeField] internal string _name;
+        public string Name
+        {
+            get
+            {
+                return _name;
+            }
+        }
+
+        [SerializeField] internal int _id;
+        public int ID
+        {
+            get
+            {
+                return _id;
+            }
+        }
+
+        [SerializeField] internal Texture2D _texture;
+        public Texture2D Texture
+        {
+            get
+            {
+                return _texture;
+            }
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is BrushMaterialType))
+            {
+                return false;
+            }
+
+            var type = (BrushMaterialType)obj;
+            return _name == type._name &&
+                   _id == type._id &&
+                   EqualityComparer<Texture2D>.Default.Equals(_texture, type._texture);
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = 554432026;
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(_name);
+            hashCode = hashCode * -1521134295 + _id.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<Texture2D>.Default.GetHashCode(_texture);
+            return hashCode;
+        }
+    }
+
+    [SerializeField] private BrushMaterialType[] _brushMaterials;
+    public BrushMaterialType[] BrushMaterials
+    {
+        get
+        {
+            return _brushMaterials;
+        }
+    }
+
+    [SerializeField, BrushMaterial] private BrushMaterialType _brushMaterial;
+    public BrushMaterialType BrushMaterial
+    {
+        get
+        {
+            return _brushMaterial;
+        }
+        set
+        {
+            _brushMaterial = value;
         }
     }
 
@@ -132,17 +234,31 @@ public class VRSculpting : MonoBehaviour
         _brushRenderer = GetComponent<SdfShapeRenderHandler>();
     }
 
+    public GameObject InstantiateUI(GameObject prefab)
+    {
+        var ui = Instantiate(prefab);
+        var script = ui.GetComponent<VRUI>();
+        if (script != null)
+        {
+            script.InitializeUI(this, inputModule, eventCamera);
+        }
+        else
+        {
+            throw new InvalidOperationException("VR UI prefab instance does not have VRUI MonoBehaviour");
+        }
+        return ui;
+    }
+
     public void Update()
     {
         if (queryMenuAction != null && queryMenuAction.stateDown)
         {
             if (queryMenuObject == null)
             {
-                queryMenuObject = Instantiate(queryMenuPrefab);
+                queryMenuObject = InstantiateUI(queryMenuPrefab);
                 queryMenuObject.transform.position = controllerQueryMenu.transform.position;
                 queryMenuObject.transform.rotation = controllerQueryMenu.transform.rotation;
                 queryMenuObject.transform.rotation = Quaternion.LookRotation(new Vector3(queryMenuObject.transform.forward.x, 0, queryMenuObject.transform.forward.z), new Vector3(0, 1, 0));
-                queryMenuObject.GetComponentInChildren<Canvas>().worldCamera = eventCamera;
             }
             else
             {
@@ -155,12 +271,10 @@ public class VRSculpting : MonoBehaviour
         {
             if (brushSelectionMenuObject == null)
             {
-                brushSelectionMenuObject = Instantiate(brushSelectionMenuPrefab);
+                brushSelectionMenuObject = InstantiateUI(brushSelectionMenuPrefab);
                 brushSelectionMenuObject.transform.position = controllerBrushSelectionMenu.transform.position;
                 brushSelectionMenuObject.transform.rotation = controllerBrushSelectionMenu.transform.rotation;
                 brushSelectionMenuObject.transform.rotation = Quaternion.LookRotation(new Vector3(brushSelectionMenuObject.transform.forward.x, 0, brushSelectionMenuObject.transform.forward.z), new Vector3(0, 1, 0));
-                brushSelectionMenuObject.GetComponentInChildren<Canvas>().worldCamera = eventCamera;
-                brushSelectionMenuObject.GetComponentInChildren<BrushSelectionMenu>().VRSculpting = this;
             }
         }
         else if (brushSelectionMenuObject != null)
@@ -193,7 +307,9 @@ public class VRSculpting : MonoBehaviour
 
         if (placeAction != null && placeAction.active && placeAction.state && !IsPointerActive)
         {
-            CreateSdf(BrushType, new PlacementSdfConsumer(voxelWorld, controllerBrush.transform.position, controllerBrush.transform.rotation * brushRotation, 1, false));
+            CreateSdf(BrushType, new PlacementSdfConsumer(voxelWorld, controllerBrush.transform.position, controllerBrush.transform.rotation * brushRotation,
+                BrushOperation == BrushOperation.Difference ? 0 : MaterialColors.ToInteger((int)Mathf.Round(BrushColor.r * 255), (int)Mathf.Round(BrushColor.g * 255), (int)Mathf.Round(BrushColor.b * 255), BrushMaterial.ID),
+                BrushOperation == BrushOperation.Replace));
         }
 
         if (previewSdf != null && !IsPointerActive)
@@ -202,7 +318,7 @@ public class VRSculpting : MonoBehaviour
         }
     }
 
-    private void OnBrushChange()
+    private void OnBrushTypeChange()
     {
         previewSdf = CreateSdf(BrushType);
     }

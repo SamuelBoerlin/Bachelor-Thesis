@@ -34,6 +34,11 @@ public class BrushSelectionMenu : MonoBehaviour
 
     private Dictionary<BrushSelectionButton, BrushType> buttons = new Dictionary<BrushSelectionButton, BrushType>();
 
+    public void OnInitializeUI(VRUI.Context ctx)
+    {
+        VRSculpting = ctx.controller;
+    }
+
     private void Start()
     {
         var canvas = GetComponent<Canvas>();

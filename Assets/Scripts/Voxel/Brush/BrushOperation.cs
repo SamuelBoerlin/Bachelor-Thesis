@@ -3,6 +3,7 @@
     public enum BrushOperation
     {
         Union,
-        Difference
+        Difference,
+        Replace
     }
 }

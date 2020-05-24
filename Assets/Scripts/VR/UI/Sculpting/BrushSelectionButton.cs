@@ -12,15 +12,17 @@ public class BrushSelectionButton : MonoBehaviour, IPointerEnterHandler, IPointe
         get;
     }
 
+    [SerializeField] private Button _button;
     public Button Button
     {
-        private set;
-        get;
-    }
-
-    private void Awake()
-    {
-        Button = GetComponent<Button>();
+        get
+        {
+            if (_button == null)
+            {
+                _button = GetComponent<Button>();
+            }
+            return _button;
+        }
     }
 
     public void OnPointerEnter(PointerEventData eventData)

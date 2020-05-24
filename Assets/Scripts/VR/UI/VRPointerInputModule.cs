@@ -23,7 +23,12 @@ public class VRPointerInputModule : BaseInputModule
     [SerializeField] private SteamVR_Input_Sources inputSource;
     [SerializeField] private SteamVR_Action_Boolean clickAction;
 
+    [SerializeField] private float dragThreshold = 0.005f;
+
     private GameObject hoveredGameObject;
+
+    private GameObject pressedGameObject;
+    private Vector3 pressedPosition;
 
     public PointerEventData EventData
     {
@@ -65,6 +70,11 @@ public class VRPointerInputModule : BaseInputModule
             HandlePointerPress();
         }
 
+        if (clickAction.GetState(inputSource))
+        {
+            HandlePointerHeld();
+        }
+
         if (clickAction.GetStateUp(inputSource))
         {
             HandlePointerRelease();
@@ -83,6 +93,11 @@ public class VRPointerInputModule : BaseInputModule
         m_RaycastResultCache.Clear();
     }
 
+    private Vector3 GetLocalPosition(GameObject reference, Vector3 worldPos)
+    {
+        return reference.transform.worldToLocalMatrix.MultiplyPoint(worldPos);
+    }
+
     private void HandlePointerPress()
     {
         EventData.pointerPressRaycast = EventData.pointerCurrentRaycast;
@@ -91,7 +106,7 @@ public class VRPointerInputModule : BaseInputModule
 
         if (pointerPress == null)
         {
-            pointerPress = ExecuteEvents.GetEventHandler<IPointerClickHandler>(hoveredGameObject);
+            pointerPress = ExecuteEvents.ExecuteHierarchy(hoveredGameObject, EventData, ExecuteEvents.pointerClickHandler);
         }
 
         EventData.pressPosition = EventData.position;
@@ -99,10 +114,54 @@ public class VRPointerInputModule : BaseInputModule
         EventData.rawPointerPress = hoveredGameObject;
 
         eventSystem.SetSelectedGameObject(hoveredGameObject);
+
+        if (hoveredGameObject != null)
+        {
+            pressedGameObject = hoveredGameObject;
+            pressedPosition = EventData.pointerCurrentRaycast.worldPosition;
+        }
+        else
+        {
+            pressedGameObject = null;
+            pressedPosition = Vector3.zero;
+        }
+    }
+
+    private void HandlePointerHeld()
+    {
+        if (pressedGameObject != null)
+        {
+            if (!EventData.dragging)
+            {
+                if ((EventData.pointerCurrentRaycast.worldPosition - pressedPosition).magnitude > dragThreshold)
+                {
+                    GameObject pointerDrag = ExecuteEvents.ExecuteHierarchy(hoveredGameObject, EventData, ExecuteEvents.beginDragHandler);
+
+                    if (pointerDrag == null)
+                    {
+                        pointerDrag = ExecuteEvents.ExecuteHierarchy(hoveredGameObject, EventData, ExecuteEvents.dragHandler);
+                    }
+
+                    EventData.dragging = true;
+                    EventData.pointerDrag = pointerDrag;
+                }
+            }
+            else if (EventData.pointerDrag != null)
+            {
+                ExecuteEvents.Execute(EventData.pointerDrag, EventData, ExecuteEvents.dragHandler);
+            }
+        }
     }
 
     private void HandlePointerRelease()
     {
+        if (EventData.dragging)
+        {
+            EventData.dragging = false;
+            ExecuteEvents.Execute(EventData.pointerDrag, EventData, ExecuteEvents.endDragHandler);
+            EventData.pointerDrag = null;
+        }
+
         ExecuteEvents.Execute(EventData.pointerPress, EventData, ExecuteEvents.pointerUpHandler);
 
         if (EventData.rawPointerPress == hoveredGameObject)
