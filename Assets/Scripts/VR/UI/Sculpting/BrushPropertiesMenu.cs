@@ -44,6 +44,8 @@ public class BrushPropertiesMenu : MonoBehaviour
     [SerializeField] private Button undoButton;
     [SerializeField] private Button redoButton;
 
+    [SerializeField] private Button fixRotationButton;
+
     private bool initialized = false;
 
     private List<(GameObject, BrushMaterialButton, ButtonEventEffects, BrushMaterialType)> materialButtons = new List<(GameObject, BrushMaterialButton, ButtonEventEffects, BrushMaterialType)>();
@@ -75,21 +77,11 @@ public class BrushPropertiesMenu : MonoBehaviour
         materialPickButton.onClick.AddListener(OnMaterialPickButtonClick);
         undoButton.onClick.AddListener(OnUndoButtonClick);
         redoButton.onClick.AddListener(OnRedoButtonClick);
+        fixRotationButton.onClick.AddListener(OnFixRotationButtonClick);
 
         UpdateSelectedMaterial();
-    }
 
-    private void OnDestroy()
-    {
-        hsvManager.onColorChanged.RemoveListener(OnColorChanged);
-
-        unionButton.onClick.RemoveListener(OnUnionButtonClick);
-        differenceButton.onClick.RemoveListener(OnDifferenceButtonClick);
-        replaceButton.onClick.RemoveListener(OnReplaceButtonClick);
-        materialButton.onClick.RemoveListener(OnMaterialButtonClick);
-        materialPickButton.onClick.RemoveListener(OnMaterialPickButtonClick);
-        undoButton.onClick.RemoveListener(OnUndoButtonClick);
-        redoButton.onClick.RemoveListener(OnRedoButtonClick);
+        fixRotationButton.GetComponent<ButtonEventEffects>().PermanentHover = VRSculpting.FixateBrushRotation;
     }
 
     private void Update()
@@ -243,5 +235,11 @@ public class BrushPropertiesMenu : MonoBehaviour
     private void OnRedoButtonClick()
     {
         VRSculpting.VoxelEditsManager.Instance.Redo();
+    }
+
+    private void OnFixRotationButtonClick()
+    {
+        VRSculpting.FixateBrushRotation = !VRSculpting.FixateBrushRotation;
+        fixRotationButton.GetComponent<ButtonEventEffects>().PermanentHover = VRSculpting.FixateBrushRotation;
     }
 }

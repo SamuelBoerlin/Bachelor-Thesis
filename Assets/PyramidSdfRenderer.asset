@@ -15,5 +15,5 @@ MonoBehaviour:
   mesh: {fileID: 13562882237320842, guid: 4ae47614a2ce06841ac5b4165934f42d, type: 3}
   material: {fileID: 2100000, guid: 8a416e5dbb206d54888673a8f2c87a3c, type: 2}
   sdfType: 2
-  translation: {x: 0, y: 0.5, z: 0}
+  translation: {x: 0, y: 10, z: 0}
   scale: {x: 1, y: 1, z: 1}

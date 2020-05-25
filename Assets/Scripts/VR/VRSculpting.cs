@@ -47,22 +47,29 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
     [SerializeField] private SteamVR_Action_Boolean placeAction;
 
+    [SerializeField] private SteamVR_Action_Boolean lineGuideAction;
+    [SerializeField] private GameObject lineGuidePrefab;
+
     [SerializeField] private Camera eventCamera;
 
-    [SerializeField] private SteamVR_Action_Boolean brushSelectionAction;
-    [SerializeField] private GameObject controllerBrushSelectionMenu;
-    [SerializeField] private GameObject brushSelectionMenuPrefab;
+    [SerializeField] private bool _fixateBrushRotation;
+    public bool FixateBrushRotation
+    {
+        get
+        {
+            return _fixateBrushRotation;
+        }
+        set
+        {
+            _fixateBrushRotation = value;
+        }
+    }
 
     [SerializeField] private SteamVR_Action_Vector2 brushRotateAction;
     [SerializeField] private float brushRotateSpeed = 45.0f;
     [SerializeField] private float brushRotateDeadzone = 0.1f;
     [SerializeField] private SteamVR_Action_Boolean brushResetAction;
 
-    [SerializeField] private SteamVR_Action_Boolean queryMenuAction;
-    [SerializeField] private GameObject controllerQueryMenu;
-    [SerializeField] private GameObject queryMenuPrefab;
-
-    [SerializeField] private GameObject controller;
     [SerializeField] private GameObject controllerBrush;
 
     [SerializeField] private DefaultVoxelWorldContainer _voxelWorld;
@@ -210,8 +217,13 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
         }
     }
 
+    private Vector3 lineGuideStart = Vector3.zero;
+    private Vector3 lineGuideDirection = Vector3.zero;
+    private GameObject lineGuideObject = null;
+
     private Vector2 brushRotateStart = Vector2.zero;
     private Quaternion brushRotation = Quaternion.identity;
+    private Quaternion brushControllerRotation = Quaternion.identity;
 
     private ISdf previewSdf;
 
@@ -224,15 +236,15 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
         }
     }
 
-    private GameObject brushSelectionMenuObject;
-    private GameObject queryMenuObject;
+    [SerializeField] private MenuEntry[] _menuEntries;
+
+    private List<Menu> openMenus = new List<Menu>();
 
     public bool IsPointerActive
     {
         get
         {
-            return brushSelectionMenuObject != null ||
-                (InputModule != null && InputModule.EventData != null && InputModule.EventData.pointerCurrentRaycast.gameObject != null && InputModule.EventData.pointerCurrentRaycast.gameObject.GetComponentInParent<Canvas>() != null);
+            return openMenus.Count > 0 || (InputModule != null && InputModule.EventData != null && InputModule.EventData.pointerCurrentRaycast.gameObject != null && InputModule.EventData.pointerCurrentRaycast.gameObject.GetComponentInParent<Canvas>() != null);
         }
     }
 
@@ -264,10 +276,15 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
         _brushRenderer = GetComponent<SdfShapeRenderHandler>();
     }
 
-    public GameObject InstantiateUI(GameObject prefab)
+    public Menu InstantiateUI(MenuEntry entry)
     {
-        var ui = Instantiate(prefab);
-        var script = ui.GetComponent<VRUI>();
+        var instance = Instantiate(entry.Prefab);
+
+        instance.transform.position = entry.Spawner.transform.position;
+        instance.transform.rotation = entry.Spawner.transform.rotation;
+        instance.transform.rotation = Quaternion.LookRotation(new Vector3(instance.transform.forward.x, 0, instance.transform.forward.z), new Vector3(0, 1, 0));
+
+        var script = instance.GetComponent<VRUI>();
         if (script != null)
         {
             script.InitializeUI(this, InputModule, eventCamera);
@@ -276,41 +293,53 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
         {
             throw new InvalidOperationException("VR UI prefab instance does not have VRUI MonoBehaviour");
         }
-        return ui;
+
+        return new Menu(entry, instance);
     }
 
     public void Update()
     {
-        if (queryMenuAction != null && queryMenuAction.stateDown)
+        List<Menu> closedMenus = null;
+        foreach (var menu in openMenus)
         {
-            if (queryMenuObject == null)
+            if ((menu.entry.Toggle && menu.entry.Action.GetStateDown(menu.entry.InputSource)) || (!menu.entry.Toggle && !menu.entry.Action.GetState(menu.entry.InputSource)))
             {
-                queryMenuObject = InstantiateUI(queryMenuPrefab);
-                queryMenuObject.transform.position = controllerQueryMenu.transform.position;
-                queryMenuObject.transform.rotation = controllerQueryMenu.transform.rotation;
-                queryMenuObject.transform.rotation = Quaternion.LookRotation(new Vector3(queryMenuObject.transform.forward.x, 0, queryMenuObject.transform.forward.z), new Vector3(0, 1, 0));
+                if (closedMenus == null)
+                {
+                    closedMenus = new List<Menu>();
+                }
+                closedMenus.Add(menu);
+                Destroy(menu.instance);
             }
-            else
+        }
+        if (closedMenus != null)
+        {
+            foreach (var closedMenu in closedMenus)
             {
-                Destroy(queryMenuObject);
-                queryMenuObject = null;
+                openMenus.Remove(closedMenu);
             }
         }
 
-        if (brushSelectionAction != null && brushSelectionAction.state)
+        foreach (var entry in _menuEntries)
         {
-            if (brushSelectionMenuObject == null)
+            if (entry.Action.GetStateDown(entry.InputSource))
             {
-                brushSelectionMenuObject = InstantiateUI(brushSelectionMenuPrefab);
-                brushSelectionMenuObject.transform.position = controllerBrushSelectionMenu.transform.position;
-                brushSelectionMenuObject.transform.rotation = controllerBrushSelectionMenu.transform.rotation;
-                brushSelectionMenuObject.transform.rotation = Quaternion.LookRotation(new Vector3(brushSelectionMenuObject.transform.forward.x, 0, brushSelectionMenuObject.transform.forward.z), new Vector3(0, 1, 0));
+                bool canOpen = true;
+
+                foreach (var menu in openMenus)
+                {
+                    if (menu.entry.InputSource == entry.InputSource || menu.entry.Equals(entry))
+                    {
+                        canOpen = false;
+                        break;
+                    }
+                }
+
+                if (canOpen)
+                {
+                    openMenus.Add(InstantiateUI(entry));
+                }
             }
-        }
-        else if (brushSelectionMenuObject != null)
-        {
-            Destroy(brushSelectionMenuObject);
-            brushSelectionMenuObject = null;
         }
 
         if (brushResetAction != null && brushResetAction.active && brushResetAction.stateDown)
@@ -335,13 +364,72 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             brushRotateStart = Vector2.zero;
         }
 
-        if (placeAction != null && placeAction.active && placeAction.state && !IsPointerActive)
+        bool isPlacing = placeAction != null && placeAction.active && placeAction.state && !IsPointerActive;
+        bool isLineGuiding = lineGuideAction != null && lineGuideAction.active && lineGuideAction.state && !IsPointerActive;
+
+        if (isLineGuiding)
+        {
+            if (!isPlacing)
+            {
+                if (lineGuideStart == Vector3.zero)
+                {
+                    lineGuideStart = controllerBrush.transform.position;
+                }
+                else
+                {
+                    lineGuideDirection = (controllerBrush.transform.position - lineGuideStart).normalized;
+                }
+            }
+
+            if (lineGuideObject == null)
+            {
+                lineGuideObject = Instantiate(lineGuidePrefab);
+            }
+        }
+        else
+        {
+            lineGuideStart = Vector3.zero;
+            lineGuideDirection = Vector3.zero;
+
+            if (lineGuideObject != null)
+            {
+                Destroy(lineGuideObject);
+                lineGuideObject = null;
+            }
+        }
+
+
+        Vector3 brushPosition;
+        if (isLineGuiding)
+        {
+            var diff = controllerBrush.transform.position - lineGuideStart;
+            var projection = Vector3.Dot(diff, lineGuideDirection);
+            brushPosition = lineGuideStart + lineGuideDirection * projection;
+        }
+        else
+        {
+            brushPosition = controllerBrush.transform.position;
+        }
+
+        if (lineGuideObject != null)
+        {
+            var lineRenderer = lineGuideObject.GetComponent<LineRenderer>();
+            lineRenderer.SetPosition(0, lineGuideStart);
+            lineRenderer.SetPosition(1, brushPosition);
+        }
+
+        if(!FixateBrushRotation && !IsPointerActive)
+        {
+            brushControllerRotation = controllerBrush.transform.rotation;
+        }
+
+        if (isPlacing)
         {
             //Merge edits while holding down
             VoxelEditsManager.Instance.Merge = true;
 
             //Apply SDF
-            CreateSdf(BrushType, new PlacementSdfConsumer(VoxelWorld, VoxelEditsManager, controllerBrush.transform.position, controllerBrush.transform.rotation * brushRotation,
+            CreateSdf(BrushType, new PlacementSdfConsumer(VoxelWorld, VoxelEditsManager, brushPosition, brushControllerRotation * brushRotation,
                 BrushOperation == BrushOperation.Difference ? 0 : MaterialColors.ToInteger((int)Mathf.Round(BrushColor.r * 255), (int)Mathf.Round(BrushColor.g * 255), (int)Mathf.Round(BrushColor.b * 255), BrushMaterial.ID),
                 BrushOperation == BrushOperation.Replace));
         }
@@ -352,7 +440,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
         if (previewSdf != null && !IsPointerActive)
         {
-            _brushRenderer.Render(Matrix4x4.TRS(controllerBrush.transform.position, controllerBrush.transform.rotation * brushRotation, VoxelWorld.transform.localScale), previewSdf);
+            _brushRenderer.Render(Matrix4x4.TRS(brushPosition, brushControllerRotation * brushRotation, VoxelWorld.transform.localScale), previewSdf);
         }
     }
 
@@ -388,9 +476,9 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
     public BrushMaterialType? FindBrushMaterialTypeForId(int id)
     {
-        foreach(var type in BrushMaterials)
+        foreach (var type in BrushMaterials)
         {
-            if(type.ID == id)
+            if (type.ID == id)
             {
                 return type;
             }

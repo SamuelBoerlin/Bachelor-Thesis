@@ -74,6 +74,14 @@
       "type": "boolean"
     },
     {
+      "name": "/actions/default/in/BrushPropertiesMenu",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/default/in/LineGuide",
+      "type": "boolean"
+    },
+    {
       "name": "/actions/default/out/Haptic",
       "type": "vibration"
     },
@@ -195,7 +203,9 @@
       "/actions/default/in/PlaceBrush": "Place Brush",
       "/actions/default/in/SelectBrush": "Select Brush",
       "/actions/default/in/QueryMenu": "Query Menu",
-      "/actions/default/in/PickMaterial": "Pick Material"
+      "/actions/default/in/PickMaterial": "Pick Material",
+      "/actions/default/in/BrushPropertiesMenu": "Brush Properties Menu",
+      "/actions/default/in/LineGuide": "Line Guide"
     }
   ]
 }

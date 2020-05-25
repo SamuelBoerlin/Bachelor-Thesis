@@ -303,12 +303,6 @@ Camera:
     type: 3}
   m_PrefabInstance: {fileID: 6534781875300606303}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &161941430 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 160596, guid: dc06161b6d97feb419f45f03b62e14b9,
-    type: 3}
-  m_PrefabInstance: {fileID: 2092360981}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &318157133 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 107946, guid: dc06161b6d97feb419f45f03b62e14b9,
@@ -350,13 +344,13 @@ MonoBehaviour:
   placeAction:
     actionPath: /actions/default/in/PlaceBrush
     needsReinit: 0
-  eventCamera: {fileID: 92739094}
-  brushSelectionAction:
-    actionPath: /actions/default/in/SelectBrush
+  lineGuideAction:
+    actionPath: /actions/default/in/LineGuide
     needsReinit: 0
-  controllerBrushSelectionMenu: {fileID: 48126978}
-  brushSelectionMenuPrefab: {fileID: 3106801376209204422, guid: 81c055d2589a51848b24ffc493db326b,
+  lineGuidePrefab: {fileID: 1339824122965441657, guid: 9c29c5cbd607e864caa0b2a0ea39376f,
     type: 3}
+  eventCamera: {fileID: 92739094}
+  _fixateBrushRotation: 0
   brushRotateAction:
     actionPath: /actions/default/in/RotateBrush
     needsReinit: 0
@@ -365,13 +359,6 @@ MonoBehaviour:
   brushResetAction:
     actionPath: /actions/default/in/ResetBrush
     needsReinit: 0
-  queryMenuAction:
-    actionPath: /actions/default/in/QueryMenu
-    needsReinit: 0
-  controllerQueryMenu: {fileID: 820866435}
-  queryMenuPrefab: {fileID: 3106801376209204422, guid: 78ce5ee43975baf4eaa1b440f13f5e75,
-    type: 3}
-  controller: {fileID: 161941430}
   controllerBrush: {fileID: 2108839681}
   _voxelWorld: {fileID: 1716027542}
   _voxelEditsManager: {fileID: 1881449113}
@@ -392,6 +379,23 @@ MonoBehaviour:
     _name: Grass
     _id: 0
     _texture: {fileID: 2800000, guid: 34a39a5c02a1c504297e59f7286779e9, type: 3}
+  _menuEntries:
+  - _inputSource: 2
+    _action:
+      actionPath: /actions/default/in/SelectBrush
+      needsReinit: 0
+    _prefab: {fileID: 6888348797581497199, guid: 596f4947dce6a7d40a33c5a6ffb5bc27,
+      type: 3}
+    _spawner: {fileID: 48126978}
+    _toggle: 0
+  - _inputSource: 2
+    _action:
+      actionPath: /actions/default/in/BrushPropertiesMenu
+      needsReinit: 0
+    _prefab: {fileID: 3106801376209204422, guid: 81c055d2589a51848b24ffc493db326b,
+      type: 3}
+    _spawner: {fileID: 2051880338}
+    _toggle: 0
 --- !u!1 &420546069 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 110716, guid: dc06161b6d97feb419f45f03b62e14b9,
@@ -1395,6 +1399,36 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d302b0ca11d73e348999b7efd20932e6, type: 3}
+--- !u!1 &2051880338
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2051880339}
+  m_Layer: 14
+  m_Name: BrushPropertiesMenu
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2051880339
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2051880338}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1184201389}
+  m_RootOrder: 7
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2092360981
 PrefabInstance:
   m_ObjectHideFlags: 0

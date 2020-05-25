@@ -103,15 +103,6 @@
             {
                "inputs" : {
                   "click" : {
-                     "output" : "/actions/default/in/interactui"
-                  }
-               },
-               "mode" : "button",
-               "path" : "/user/hand/left/input/trigger"
-            },
-            {
-               "inputs" : {
-                  "click" : {
                      "output" : "/actions/default/in/grabgrip"
                   }
                },
@@ -146,7 +137,7 @@
                      "output" : "/actions/default/in/snapturnright"
                   },
                   "north" : {
-                     "output" : "/actions/default/in/querymenu"
+                     "output" : "/actions/default/in/teleport"
                   },
                   "south" : {
                      "output" : "/actions/default/in/teleport"
@@ -175,7 +166,7 @@
             {
                "inputs" : {
                   "click" : {
-                     "output" : "/actions/default/in/grabgrip"
+                     "output" : "/actions/default/in/lineguide"
                   }
                },
                "mode" : "button",
@@ -187,16 +178,10 @@
                      "output" : "/actions/default/in/resetbrush"
                   },
                   "east" : {
-                     "output" : "/actions/default/in/snapturnright"
-                  },
-                  "north" : {
                      "output" : "/actions/default/in/selectbrush"
                   },
-                  "south" : {
-                     "output" : "/actions/default/in/teleport"
-                  },
-                  "west" : {
-                     "output" : "/actions/default/in/snapturnleft"
+                  "north" : {
+                     "output" : "/actions/default/in/brushpropertiesmenu"
                   }
                },
                "mode" : "dpad",

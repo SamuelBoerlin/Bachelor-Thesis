@@ -153,6 +153,22 @@ namespace Valve.VR
             }
         }
         
+        public virtual SteamVR_Action_Boolean BrushPropertiesMenu
+        {
+            get
+            {
+                return SteamVR_Actions.default_BrushPropertiesMenu;
+            }
+        }
+        
+        public virtual SteamVR_Action_Boolean LineGuide
+        {
+            get
+            {
+                return SteamVR_Actions.default_LineGuide;
+            }
+        }
+        
         public virtual SteamVR_Action_Vibration Haptic
         {
             get
