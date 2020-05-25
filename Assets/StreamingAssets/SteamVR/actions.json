@@ -70,6 +70,10 @@
       "type": "boolean"
     },
     {
+      "name": "/actions/default/in/PickMaterial",
+      "type": "boolean"
+    },
+    {
       "name": "/actions/default/out/Haptic",
       "type": "vibration"
     },
@@ -190,7 +194,8 @@
       "/actions/default/in/ResetBrush": "Reset Brush",
       "/actions/default/in/PlaceBrush": "Place Brush",
       "/actions/default/in/SelectBrush": "Select Brush",
-      "/actions/default/in/QueryMenu": "Query Menu"
+      "/actions/default/in/QueryMenu": "Query Menu",
+      "/actions/default/in/PickMaterial": "Pick Material"
     }
   ]
 }

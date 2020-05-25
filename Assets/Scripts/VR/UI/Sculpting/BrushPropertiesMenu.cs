@@ -41,6 +41,9 @@ public class BrushPropertiesMenu : MonoBehaviour
     [SerializeField] private Button materialPickButton;
     [SerializeField] private SteamVR_Action_Boolean materialPickAction;
 
+    [SerializeField] private Button undoButton;
+    [SerializeField] private Button redoButton;
+
     private bool initialized = false;
 
     private List<(GameObject, BrushMaterialButton, ButtonEventEffects, BrushMaterialType)> materialButtons = new List<(GameObject, BrushMaterialButton, ButtonEventEffects, BrushMaterialType)>();
@@ -70,6 +73,8 @@ public class BrushPropertiesMenu : MonoBehaviour
         replaceButton.onClick.AddListener(OnReplaceButtonClick);
         materialButton.onClick.AddListener(OnMaterialButtonClick);
         materialPickButton.onClick.AddListener(OnMaterialPickButtonClick);
+        undoButton.onClick.AddListener(OnUndoButtonClick);
+        redoButton.onClick.AddListener(OnRedoButtonClick);
 
         UpdateSelectedMaterial();
     }
@@ -83,6 +88,8 @@ public class BrushPropertiesMenu : MonoBehaviour
         replaceButton.onClick.RemoveListener(OnReplaceButtonClick);
         materialButton.onClick.RemoveListener(OnMaterialButtonClick);
         materialPickButton.onClick.RemoveListener(OnMaterialPickButtonClick);
+        undoButton.onClick.RemoveListener(OnUndoButtonClick);
+        redoButton.onClick.RemoveListener(OnRedoButtonClick);
     }
 
     private void Update()
@@ -226,5 +233,15 @@ public class BrushPropertiesMenu : MonoBehaviour
             isMaterialPicking = true;
             materialPickButton.GetComponent<ButtonEventEffects>().PermanentHover = true;
         }
+    }
+
+    private void OnUndoButtonClick()
+    {
+        VRSculpting.VoxelEditsManager.Instance.Undo();
+    }
+
+    private void OnRedoButtonClick()
+    {
+        VRSculpting.VoxelEditsManager.Instance.Redo();
     }
 }

@@ -22,14 +22,16 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
     public class PlacementSdfConsumer : SdfConsumer
     {
         private DefaultVoxelWorldContainer voxelWorld;
+        private DefaultVoxelEditManagerContainer voxelEditsManager;
         private Vector3 position;
         private Quaternion rotation;
         private int material;
         private bool replace;
 
-        public PlacementSdfConsumer(DefaultVoxelWorldContainer voxelWorld, Vector3 position, Quaternion rotation, int material, bool replace)
+        public PlacementSdfConsumer(DefaultVoxelWorldContainer voxelWorld, DefaultVoxelEditManagerContainer voxelEditsManager, Vector3 position, Quaternion rotation, int material, bool replace)
         {
             this.voxelWorld = voxelWorld;
+            this.voxelEditsManager = voxelEditsManager;
             this.position = position;
             this.rotation = rotation;
             this.material = material;
@@ -38,7 +40,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
         public override TSdf Consume<TSdf>(TSdf sdf)
         {
-            voxelWorld.Instance.ApplySdf(position, rotation, sdf, material, replace, null); //TODO Edit manager
+            voxelWorld.Instance.ApplySdf(position, rotation, sdf, material, replace, voxelEditsManager.Instance.Consumer());
             return sdf;
         }
     }
@@ -63,7 +65,31 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
     [SerializeField] private GameObject controller;
     [SerializeField] private GameObject controllerBrush;
 
-    [SerializeField] private DefaultVoxelWorldContainer voxelWorld;
+    [SerializeField] private DefaultVoxelWorldContainer _voxelWorld;
+    public DefaultVoxelWorldContainer VoxelWorld
+    {
+        get
+        {
+            return _voxelWorld;
+        }
+        set
+        {
+            _voxelWorld = value;
+        }
+    }
+
+    [SerializeField] private DefaultVoxelEditManagerContainer _voxelEditsManager;
+    public DefaultVoxelEditManagerContainer VoxelEditsManager
+    {
+        get
+        {
+            return _voxelEditsManager;
+        }
+        set
+        {
+            _voxelEditsManager = value;
+        }
+    }
 
     [SerializeField] private BrushType _brushType = BrushType.None;
     public BrushType BrushType
@@ -311,14 +337,22 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
         if (placeAction != null && placeAction.active && placeAction.state && !IsPointerActive)
         {
-            CreateSdf(BrushType, new PlacementSdfConsumer(voxelWorld, controllerBrush.transform.position, controllerBrush.transform.rotation * brushRotation,
+            //Merge edits while holding down
+            VoxelEditsManager.Instance.Merge = true;
+
+            //Apply SDF
+            CreateSdf(BrushType, new PlacementSdfConsumer(VoxelWorld, VoxelEditsManager, controllerBrush.transform.position, controllerBrush.transform.rotation * brushRotation,
                 BrushOperation == BrushOperation.Difference ? 0 : MaterialColors.ToInteger((int)Mathf.Round(BrushColor.r * 255), (int)Mathf.Round(BrushColor.g * 255), (int)Mathf.Round(BrushColor.b * 255), BrushMaterial.ID),
                 BrushOperation == BrushOperation.Replace));
+        }
+        else
+        {
+            VoxelEditsManager.Instance.Merge = false;
         }
 
         if (previewSdf != null && !IsPointerActive)
         {
-            _brushRenderer.Render(Matrix4x4.TRS(controllerBrush.transform.position, controllerBrush.transform.rotation * brushRotation, voxelWorld.transform.localScale), previewSdf);
+            _brushRenderer.Render(Matrix4x4.TRS(controllerBrush.transform.position, controllerBrush.transform.rotation * brushRotation, VoxelWorld.transform.localScale), previewSdf);
         }
     }
 

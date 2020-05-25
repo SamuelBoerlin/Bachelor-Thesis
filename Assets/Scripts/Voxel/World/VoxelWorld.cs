@@ -85,9 +85,7 @@ namespace Voxel
             }
         }
 
-        public delegate void VoxelEditConsumer<TEditIndexer>(VoxelEdit<TEditIndexer> edit) where TEditIndexer : struct, IIndexer;
-
-        public void ApplyGrid<TGridIndexer>(int x, int y, int z, NativeArray3D<Voxel, TGridIndexer> grid, bool propagatePadding, bool includePadding, VoxelEditConsumer<TIndexer> edits, bool writeToChunks = true, bool writeUnsetVoxels = false)
+        public void ApplyGrid<TGridIndexer>(int x, int y, int z, NativeArray3D<Voxel, TGridIndexer> grid, bool propagatePadding, bool includePadding, IVoxelEditConsumer<TIndexer> edits, bool writeToChunks = true, bool writeUnsetVoxels = false)
             where TGridIndexer : struct, IIndexer
         {
             int minX = Mathf.FloorToInt((float)x / ChunkSize);
@@ -125,14 +123,17 @@ namespace Voxel
                         {
                             ChunkPos chunkPos = ChunkPos.FromChunk(cx, cy, cz);
 
-                            chunks.TryGetValue(chunkPos, out VoxelChunk<TIndexer> chunk);
-                            if (chunk != null)
+                            if(!edits.IgnoreChunk(chunkPos))
                             {
-                                snapshots.Add(chunk.ScheduleSnapshot());
-                            }
-                            else
-                            {
-                                snapshotChunks.Add(new VoxelChunk<TIndexer>(this, chunkPos, ChunkSize, IndexerFactory));
+                                chunks.TryGetValue(chunkPos, out VoxelChunk<TIndexer> chunk);
+                                if (chunk != null)
+                                {
+                                    snapshots.Add(chunk.ScheduleSnapshot());
+                                }
+                                else
+                                {
+                                    snapshotChunks.Add(new VoxelChunk<TIndexer>(this, chunkPos, ChunkSize, IndexerFactory));
+                                }
                             }
                         }
                     }
@@ -146,7 +147,7 @@ namespace Voxel
                 }
 
                 //Produce edit
-                edits(new VoxelEdit<TIndexer>(this, snapshotChunks));
+                edits.Consume(new VoxelEdit<TIndexer>(this, snapshotChunks));
             }
 
             if (writeToChunks)
@@ -202,7 +203,7 @@ namespace Voxel
         /// <param name="material">Material to be added</param>
         /// <param name="replace">Whether only solid material should be replaced</param>
         /// <param name="edits">Consumes the voxel edit. Can be null if no voxel edits should be stored</param>
-        public void ApplySdf<TSdf>(Vector3 pos, Quaternion rot, TSdf sdf, int material, bool replace, VoxelEditConsumer<TIndexer> edits)
+        public void ApplySdf<TSdf>(Vector3 pos, Quaternion rot, TSdf sdf, int material, bool replace, IVoxelEditConsumer<TIndexer> edits)
             where TSdf : struct, ISdf
         {
             pos = TransformPointToLocalSpace(pos);
@@ -250,14 +251,17 @@ namespace Voxel
                         {
                             ChunkPos chunkPos = ChunkPos.FromChunk(cx, cy, cz);
 
-                            chunks.TryGetValue(chunkPos, out VoxelChunk<TIndexer> chunk);
-                            if (chunk != null)
+                            if(!edits.IgnoreChunk(chunkPos))
                             {
-                                snapshots.Add(chunk.ScheduleSnapshot());
-                            }
-                            else
-                            {
-                                snapshotChunks.Add(new VoxelChunk<TIndexer>(this, chunkPos, ChunkSize, IndexerFactory));
+                                chunks.TryGetValue(chunkPos, out VoxelChunk<TIndexer> chunk);
+                                if (chunk != null)
+                                {
+                                    snapshots.Add(chunk.ScheduleSnapshot());
+                                }
+                                else
+                                {
+                                    snapshotChunks.Add(new VoxelChunk<TIndexer>(this, chunkPos, ChunkSize, IndexerFactory));
+                                }
                             }
                         }
                     }
@@ -271,7 +275,7 @@ namespace Voxel
                 }
 
                 //Produce edit
-                edits(new VoxelEdit<TIndexer>(this, snapshotChunks));
+                edits.Consume(new VoxelEdit<TIndexer>(this, snapshotChunks));
             }
 
             //Schedule all jobs
@@ -370,7 +374,7 @@ namespace Voxel
                                     if (material != 0)
                                     {
                                         var baseChunk = GetChunk(ChunkPos.FromVoxel(x, y, z, ChunkSize));
-                                        int baseMaterial = baseChunk.GetMaterial(((x % ChunkSize) + ChunkSize) % ChunkSize, ((y % ChunkSize) + ChunkSize) % ChunkSize, ((z % ChunkSize) + ChunkSize) % ChunkSize);
+                                        int baseMaterial = baseChunk == null ? 0 : baseChunk.GetMaterial(((x % ChunkSize) + ChunkSize) % ChunkSize, ((y % ChunkSize) + ChunkSize) % ChunkSize, ((z % ChunkSize) + ChunkSize) % ChunkSize);
                                         result = new RayCastResult(baseMaterial == 0, new Vector3Int(x, y, z), new Vector3Int(prevX, prevY, prevZ), new Vector3Int(bx, by, bz), chunk);
                                         return true;
                                     }

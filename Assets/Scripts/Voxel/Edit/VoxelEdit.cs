@@ -40,7 +40,7 @@ namespace Voxel
         /// Restores the voxels to before the edit was applied
         /// </summary>
         /// <param name="edits">Consumes the voxel edit. Can be null if no voxel edits should be stored</param>
-        public void Restore(VoxelWorld<TIndexer>.VoxelEditConsumer<TIndexer> edits)
+        public void Restore(IVoxelEditConsumer<TIndexer> edits)
         {
             if (edits != null)
             {
@@ -55,6 +55,19 @@ namespace Voxel
             {
                 //TODO Queue all jobs at once
                 world.ApplyGrid(snapshot.Pos.x * snapshot.ChunkSize, snapshot.Pos.y * snapshot.ChunkSize, snapshot.Pos.z * snapshot.ChunkSize, snapshot.Voxels, false, true, null, true, true);
+            }
+        }
+
+        /// <summary>
+        /// Allows this edit to mark chunks to be ignored in future edits.
+        /// Used to merge multiple edits into one single edit.
+        /// </summary>
+        /// <param name="set"></param>
+        public void IgnoreChunks(HashSet<ChunkPos> set)
+        {
+            foreach(VoxelChunk<TIndexer> snapshot in snapshots)
+            {
+                set.Add(snapshot.Pos);
             }
         }
 

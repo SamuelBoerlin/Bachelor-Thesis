@@ -373,7 +373,8 @@ MonoBehaviour:
     type: 3}
   controller: {fileID: 161941430}
   controllerBrush: {fileID: 2108839681}
-  voxelWorld: {fileID: 1716027542}
+  _voxelWorld: {fileID: 1716027542}
+  _voxelEditsManager: {fileID: 1881449113}
   _brushType: 0
   _brushColor: {r: 1, g: 1, b: 1, a: 1}
   _brushOperation: 0
@@ -630,7 +631,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   eventCamera: {fileID: 92739094}
-  inputSource: 0
+  inputSource: 2
   clickAction:
     actionPath: /actions/default/in/InteractUI
     needsReinit: 0
@@ -1303,6 +1304,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ad86fc32dcf349046912f9a1bb35f69b, type: 3}
+--- !u!114 &1881449113 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 444754939, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
+    type: 3}
+  m_PrefabInstance: {fileID: 1532042239}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 809c63180727ca647963a97e5df1d914, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &2047339960
 PrefabInstance:
   m_ObjectHideFlags: 0
