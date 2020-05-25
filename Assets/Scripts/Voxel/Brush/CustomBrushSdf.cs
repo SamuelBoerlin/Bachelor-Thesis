@@ -96,7 +96,7 @@ namespace Voxel
                 }
             }
 
-            return max;
+            return max + 1;
         }
 
         public float3 Min()
@@ -137,7 +137,7 @@ namespace Voxel
                 }
             }
 
-            return min;
+            return min - 1;
         }
 
         public ISdf RenderChild()

@@ -72,6 +72,19 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
     [SerializeField] private GameObject controllerBrush;
 
+    [SerializeField] private DefaultCustomBrushContainer _customBrush;
+    public DefaultCustomBrushContainer CustomBrush
+    {
+        get
+        {
+            return _customBrush;
+        }
+        set
+        {
+            _customBrush = value;
+        }
+    }
+
     [SerializeField] private DefaultVoxelWorldContainer _voxelWorld;
     public DefaultVoxelWorldContainer VoxelWorld
     {

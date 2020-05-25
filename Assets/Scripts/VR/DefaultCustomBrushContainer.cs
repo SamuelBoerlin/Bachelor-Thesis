@@ -9,10 +9,8 @@ public class DefaultCustomBrushContainer : CustomBrushContainer<LinearIndexer, D
         return new DefaultCustomBrushSdfEvaluator();
     }
 
-    protected override void Start()
+    private void Start()
     {
-        base.Start();
-
         Matrix4x4 globalTransform = Matrix4x4.Translate(new Vector3(0.2f, 0.2f, 0.2f));
 
         Instance.Primitives.Clear();
@@ -34,9 +32,9 @@ public class DefaultCustomBrushContainer : CustomBrushContainer<LinearIndexer, D
         /*Instance.AddPrimitive(DefaultCustomBrushType.BOX, BrushOperation.Union, 5f, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 0.5f, 0.5f)));
         Instance.AddPrimitive(DefaultCustomBrushType.SPHERE, BrushOperation.Union, (Mathf.Sin(Time.time) + 1) * 6, globalTransform * Matrix4x4.Translate(new Vector3(0.5f, 7.5f, 0.5f)));*/
 
-        if (customBrushRenderer != null)
+        if (_customBrushRenderer != null)
         {
-            customBrushRenderer.NeedsRebuild = true;
+            _customBrushRenderer.NeedsRebuild = true;
         }
     }
 }

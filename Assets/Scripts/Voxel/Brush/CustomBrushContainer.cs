@@ -25,13 +25,20 @@ namespace Voxel
             }
         }
 
-        protected CustomBrushSdfRenderer<TIndexer, TBrushType, TEvaluator> customBrushRenderer;
+        protected CustomBrushSdfRenderer<TIndexer, TBrushType, TEvaluator> _customBrushRenderer;
+        public CustomBrushSdfRenderer<TIndexer, TBrushType, TEvaluator> CustomBrushRenderer
+        {
+            get
+            {
+                return _customBrushRenderer;
+            }
+        }
 
         protected abstract TEvaluator CreateBrushSdfEvaluator();
 
-        protected virtual void Start()
+        protected virtual void Awake()
         {
-            customBrushRenderer = GetComponent<CustomBrushSdfRenderer<TIndexer, TBrushType, TEvaluator>>();
+            _customBrushRenderer = GetComponent<CustomBrushSdfRenderer<TIndexer, TBrushType, TEvaluator>>();
         }
     }
 }
