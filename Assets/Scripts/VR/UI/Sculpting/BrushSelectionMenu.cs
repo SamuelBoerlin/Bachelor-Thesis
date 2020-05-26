@@ -64,27 +64,31 @@ public class BrushSelectionMenu : MonoBehaviour
 
     private void LateUpdate()
     {
-        ISdf renderSdf = VRSculpting.CreateSdf(VRSculpting.BrushType);
-        if (renderSdf != null)
+        using (var renderSdf = VRSculpting.CreateSdf(VRSculpting.BrushType))
         {
-            Matrix4x4 renderTransform = Matrix4x4.TRS(transform.localToWorldMatrix.MultiplyPoint(new Vector3(wheelCenter.x, wheelCenter.y, 0)), transform.rotation, Vector3.one * brushPreviewScale);
-            VRSculpting.BrushRenderer.Render(renderTransform, renderSdf);
+            if (renderSdf != null)
+            {
+                Matrix4x4 renderTransform = Matrix4x4.TRS(transform.localToWorldMatrix.MultiplyPoint(new Vector3(wheelCenter.x, wheelCenter.y, 0)), transform.rotation, Vector3.one * brushPreviewScale);
+                VRSculpting.BrushRenderer.Render(renderTransform, renderSdf);
+            }
         }
 
         foreach (var entry in buttons)
         {
-            renderSdf = VRSculpting.CreateSdf(entry.Value);
-            if (renderSdf != null)
+            using (var renderSdf = VRSculpting.CreateSdf(entry.Value))
             {
-                Matrix4x4 renderTransform = Matrix4x4.TRS(entry.Key.transform.position + entry.Key.transform.rotation * brushPreviewOffset, entry.Key.transform.rotation, brushPreviewScale * entry.Key.transform.localScale);
+                if (renderSdf != null)
+                {
+                    Matrix4x4 renderTransform = Matrix4x4.TRS(entry.Key.transform.position + entry.Key.transform.rotation * brushPreviewOffset, entry.Key.transform.rotation, brushPreviewScale * entry.Key.transform.localScale);
 
-                if (brushPreviewHightlightMaterial != null && entry.Key.Hovered)
-                {
-                    VRSculpting.BrushRenderer.Render(renderTransform, renderSdf, brushPreviewHightlightMaterial);
-                }
-                else
-                {
-                    VRSculpting.BrushRenderer.Render(renderTransform, renderSdf);
+                    if (brushPreviewHightlightMaterial != null && entry.Key.Hovered)
+                    {
+                        VRSculpting.BrushRenderer.Render(renderTransform, renderSdf, brushPreviewHightlightMaterial);
+                    }
+                    else
+                    {
+                        VRSculpting.BrushRenderer.Render(renderTransform, renderSdf);
+                    }
                 }
             }
         }

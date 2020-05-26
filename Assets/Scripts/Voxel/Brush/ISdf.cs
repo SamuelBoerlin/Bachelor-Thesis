@@ -1,4 +1,5 @@
-﻿using Unity.Burst;
+﻿using System;
+using Unity.Burst;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace Voxel
     /// the surface are positive.
     /// Additionally this interface also provides the axis aligned min and max bounds of the SDF.
     /// </summary>
-    public interface ISdf
+    public interface ISdf : IDisposable
     {
         float Eval(float3 pos);
         float3 Min();

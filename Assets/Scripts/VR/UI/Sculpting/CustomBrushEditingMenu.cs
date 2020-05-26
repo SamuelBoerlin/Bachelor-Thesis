@@ -287,7 +287,7 @@ public class CustomBrushEditingMenu : MonoBehaviour
 
             if (RenderSurface)
             {
-                using (var sdf = brush.CreateSdf(Allocator.Persistent))
+                using (var sdf = brush.CreateSdf(Allocator.TempJob))
                 {
                     VRSculpting.BrushRenderer.Render(Matrix4x4.TRS(customBrushCenter.position, Quaternion.identity, Vector3.one) * brushBaseTransform, sdf);
                 }
@@ -310,18 +310,20 @@ public class CustomBrushEditingMenu : MonoBehaviour
         {
             foreach (var entry in primitiveButtons)
             {
-                var renderSdf = VRSculpting.CreateSdf(entry.Value.type);
-                if (renderSdf != null)
+                using (var renderSdf = VRSculpting.CreateSdf(entry.Value.type))
                 {
-                    Matrix4x4 renderTransform = Matrix4x4.TRS(entry.Key.transform.position + entry.Key.transform.rotation * primitivePreviewOffset, entry.Key.transform.rotation, primitivePreviewScale * entry.Key.transform.localScale);
+                    if (renderSdf != null)
+                    {
+                        Matrix4x4 renderTransform = Matrix4x4.TRS(entry.Key.transform.position + entry.Key.transform.rotation * primitivePreviewOffset, entry.Key.transform.rotation, primitivePreviewScale * entry.Key.transform.localScale);
 
-                    if (primitivePreviewHightlightMaterial != null && entry.Key.Hovered)
-                    {
-                        VRSculpting.BrushRenderer.Render(renderTransform, renderSdf, primitivePreviewHightlightMaterial);
-                    }
-                    else
-                    {
-                        VRSculpting.BrushRenderer.Render(renderTransform, renderSdf);
+                        if (primitivePreviewHightlightMaterial != null && entry.Key.Hovered)
+                        {
+                            VRSculpting.BrushRenderer.Render(renderTransform, renderSdf, primitivePreviewHightlightMaterial);
+                        }
+                        else
+                        {
+                            VRSculpting.BrushRenderer.Render(renderTransform, renderSdf);
+                        }
                     }
                 }
             }

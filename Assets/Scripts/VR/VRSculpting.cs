@@ -277,6 +277,12 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
     private void OnDestroy()
     {
         VRPointerInputModule.OnVRPointerInputModuleInitialized -= OnVRPointerInputModuleInitialized;
+
+        if(previewSdf != null)
+        {
+            previewSdf.Dispose();
+            previewSdf = null;
+        }
     }
 
     private void OnVRPointerInputModuleInitialized(object sender, VRPointerInputModule.Args args)
@@ -454,9 +460,10 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             VoxelEditsManager.Instance.Merge = true;
 
             //Apply SDF
-            CreateSdf(BrushType, new PlacementSdfConsumer(VoxelWorld, VoxelEditsManager, brushPosition, brushControllerRotation * brushRotation,
+            var sdf = CreateSdf(BrushType, new PlacementSdfConsumer(VoxelWorld, VoxelEditsManager, brushPosition, brushControllerRotation * brushRotation,
                 BrushOperation == BrushOperation.Difference ? 0 : MaterialColors.ToInteger((int)Mathf.Round(BrushColor.r * 255), (int)Mathf.Round(BrushColor.g * 255), (int)Mathf.Round(BrushColor.b * 255), BrushMaterial.ID),
                 BrushOperation == BrushOperation.Replace));
+            sdf?.Dispose();
         }
         else
         {
@@ -471,10 +478,21 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
     private void OnBrushTypeChange()
     {
+        if(previewSdf != null)
+        {
+            //Dispose the previous SDF
+            previewSdf.Dispose();
+        }
         previewSdf = CreateSdf(BrushType);
     }
 
-    //TODO Disposing
+    /// <summary>
+    /// Creates an SDF for the given brush type and runs it through the specified consumer, if not null.
+    /// The SDF is a disposable object and must be disposed of by the caller!
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="consumer"></param>
+    /// <returns></returns>
     public ISdf CreateSdf(BrushType type, SdfConsumer consumer = null)
     {
         if (consumer == null)
@@ -494,6 +512,8 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
                 return consumer.Consume(new CylinderSDF(BrushProperties.DEFAULT.cylinderHeight, BrushProperties.DEFAULT.cylinderRadius));
             case BrushType.Pyramid:
                 return consumer.Consume(new PyramidSDF(BrushProperties.DEFAULT.pyramidHeight, BrushProperties.DEFAULT.pyramidBase));
+            case BrushType.Custom:
+                return consumer.Consume(CustomBrush.Instance.CreateSdf(Unity.Collections.Allocator.Persistent));
         }
     }
 

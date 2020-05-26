@@ -39,6 +39,10 @@ namespace Voxel
         {
             return null;
         }
+
+        public void Dispose()
+        {
+        }
     }
 
     readonly struct BoxSDF : ISdf
@@ -77,6 +81,10 @@ namespace Voxel
         {
             return null;
         }
+
+        public void Dispose()
+        {
+        }
     }
 
     readonly struct SphereSDF : ISdf
@@ -111,6 +119,10 @@ namespace Voxel
         public ISdf RenderChild()
         {
             return null;
+        }
+
+        public void Dispose()
+        {
         }
     }
 
@@ -148,6 +160,10 @@ namespace Voxel
         public ISdf RenderChild()
         {
             return null;
+        }
+
+        public void Dispose()
+        {
         }
     }
 
@@ -214,6 +230,10 @@ namespace Voxel
         public ISdf RenderChild()
         {
             return null;
+        }
+
+        public void Dispose()
+        {
         }
     }
 
@@ -323,6 +343,10 @@ namespace Voxel
         {
             return sdf;
         }
+
+        public void Dispose()
+        {
+        }
     }
 
     readonly struct ScaleSDF<TSdf> : ISdf
@@ -360,6 +384,10 @@ namespace Voxel
         public ISdf RenderChild()
         {
             return sdf;
+        }
+
+        public void Dispose()
+        {
         }
     }
 
@@ -426,6 +454,10 @@ namespace Voxel
         public ISdf RenderChild()
         {
             return null;
+        }
+
+        public void Dispose()
+        {
         }
     }
 }
