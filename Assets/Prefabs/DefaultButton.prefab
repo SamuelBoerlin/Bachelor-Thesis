@@ -397,3 +397,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hoverImage: {fileID: 5158444294382481807}
+  _permanentHover: 0

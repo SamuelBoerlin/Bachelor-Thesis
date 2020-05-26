@@ -215,7 +215,7 @@ public class CustomBrushEditingMenu : MonoBehaviour
 
     private GameObject InstantiatePrimitive(bool setToSpawner, DefaultCustomBrushType type, BrushOperation operation, float blend, Vector3 position, Quaternion rotation, Vector3 scale)
     {
-        var instance = Instantiate(customBrushPrimitivePrefab);
+        var instance = Instantiate(customBrushPrimitivePrefab, customBrushCenter.transform);
         if(setToSpawner)
         {
             instance.transform.position = primitiveSpawner.transform.position;
