@@ -348,6 +348,18 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
                     }
                 }
 
+                if(closedMenus != null)
+                {
+                    foreach (var menu in closedMenus)
+                    {
+                        if (menu.entry.Equals(entry))
+                        {
+                            canOpen = false;
+                            break;
+                        }
+                    }
+                }
+
                 if (canOpen)
                 {
                     openMenus.Add(InstantiateUI(entry));
@@ -431,7 +443,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             lineRenderer.SetPosition(1, brushPosition);
         }
 
-        if(!FixateBrushRotation && !IsPointerActive)
+        if (!FixateBrushRotation && !IsPointerActive)
         {
             brushControllerRotation = controllerBrush.transform.rotation;
         }
@@ -470,20 +482,18 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             consumer = SdfConsumer.NONE;
         }
 
-        float baseSize = 10.0f;
-
         switch (type)
         {
             default:
                 return null;
             case BrushType.Box:
-                return consumer.Consume(new BoxSDF(baseSize));
+                return consumer.Consume(new BoxSDF(BrushProperties.DEFAULT.boxSize));
             case BrushType.Sphere:
-                return consumer.Consume(new SphereSDF(baseSize));
+                return consumer.Consume(new SphereSDF(BrushProperties.DEFAULT.sphereRadius));
             case BrushType.Cylinder:
-                return consumer.Consume(new CylinderSDF(baseSize, baseSize));
+                return consumer.Consume(new CylinderSDF(BrushProperties.DEFAULT.cylinderHeight, BrushProperties.DEFAULT.cylinderRadius));
             case BrushType.Pyramid:
-                return consumer.Consume(new PyramidSDF(baseSize * 2, baseSize * 2));
+                return consumer.Consume(new PyramidSDF(BrushProperties.DEFAULT.pyramidHeight, BrushProperties.DEFAULT.pyramidBase));
         }
     }
 

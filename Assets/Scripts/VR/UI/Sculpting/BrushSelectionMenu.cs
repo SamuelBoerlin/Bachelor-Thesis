@@ -41,8 +41,6 @@ public class BrushSelectionMenu : MonoBehaviour
 
     private void Start()
     {
-        var canvas = GetComponent<Canvas>();
-
         float step = Mathf.PI * 2 / selectableBrushTypes.Length;
         float angle = Mathf.PI / 2;
 

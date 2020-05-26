@@ -85,9 +85,9 @@ namespace Voxel
                         for (int mz = 0; mz < 2; mz++)
                         {
                             float3 corner = math.mul(primitive.transform, new float4(
-                                (mx == 0 ? localMin.x : localMax.x) + maxBlend,
-                                (my == 0 ? localMin.y : localMax.y) + maxBlend,
-                                (mz == 0 ? localMin.z : localMax.z) + maxBlend,
+                                (mx == 0 ? localMin.x - maxBlend : localMax.x + maxBlend),
+                                (my == 0 ? localMin.y - maxBlend : localMax.y + maxBlend),
+                                (mz == 0 ? localMin.z - maxBlend : localMax.z + maxBlend),
                                 1.0f
                                 )).xyz;
                             max = math.max(max, corner);
@@ -96,7 +96,7 @@ namespace Voxel
                 }
             }
 
-            return max + 1;
+            return max;
         }
 
         public float3 Min()
@@ -126,9 +126,9 @@ namespace Voxel
                         for (int mz = 0; mz < 2; mz++)
                         {
                             float3 corner = math.mul(primitive.transform, new float4(
-                                (mx == 0 ? localMin.x : localMax.x) - maxBlend,
-                                (my == 0 ? localMin.y : localMax.y) - maxBlend,
-                                (mz == 0 ? localMin.z : localMax.z) - maxBlend,
+                                (mx == 0 ? localMin.x - maxBlend : localMax.x + maxBlend),
+                                (my == 0 ? localMin.y - maxBlend : localMax.y + maxBlend),
+                                (mz == 0 ? localMin.z - maxBlend : localMax.z + maxBlend),
                                 1.0f
                                 )).xyz;
                             min = math.min(min, corner);
@@ -137,7 +137,7 @@ namespace Voxel
                 }
             }
 
-            return min - 1;
+            return min;
         }
 
         public ISdf RenderChild()

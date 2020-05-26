@@ -82,6 +82,10 @@
       "type": "boolean"
     },
     {
+      "name": "/actions/default/in/CustomBrushEditingMenu",
+      "type": "boolean"
+    },
+    {
       "name": "/actions/default/out/Haptic",
       "type": "vibration"
     },
@@ -205,7 +209,8 @@
       "/actions/default/in/QueryMenu": "Query Menu",
       "/actions/default/in/PickMaterial": "Pick Material",
       "/actions/default/in/BrushPropertiesMenu": "Brush Properties Menu",
-      "/actions/default/in/LineGuide": "Line Guide"
+      "/actions/default/in/LineGuide": "Line Guide",
+      "/actions/default/in/CustomBrushEditingMenu": "Custom Brush Editing Menu"
     }
   ]
 }

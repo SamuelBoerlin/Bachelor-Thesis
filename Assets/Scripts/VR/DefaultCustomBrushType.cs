@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unity.Burst;
 using Voxel;
 using static CreateVoxelTerrain;
 
@@ -10,6 +11,17 @@ public readonly struct DefaultCustomBrushType : IEquatable<DefaultCustomBrushTyp
 {
     public static readonly DefaultCustomBrushType BOX = new DefaultCustomBrushType(BrushType.Box);
     public static readonly DefaultCustomBrushType SPHERE = new DefaultCustomBrushType(BrushType.Sphere);
+
+    [BurstDiscard]
+    public static DefaultCustomBrushType[] ALL
+    {
+        get
+        {
+            return new DefaultCustomBrushType[] {
+                BOX, SPHERE
+            };
+        }
+    }
 
     public readonly BrushType type;
 

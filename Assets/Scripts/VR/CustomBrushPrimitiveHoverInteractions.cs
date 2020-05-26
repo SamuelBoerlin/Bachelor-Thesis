@@ -13,9 +13,36 @@ public class CustomBrushPrimitiveHoverInteractions : VRPointerRaycastHandler
     private bool externalHighlight = false;
     private bool internalHighlight = false;
 
-    public void Start()
+    public bool HasMoved
+    {
+        private set;
+        get;
+    }
+
+    [SerializeField] private float positionUpdateThreshold = 0.001f;
+    [SerializeField] private float angleUpdateThreshold = 0.1f;
+
+    private Vector3 lastCheckPosition;
+    private Vector3 lastCheckRotation;
+
+    private void Start()
     {
         outlineRenderer.enabled = false;
+        lastCheckPosition = transform.position;
+        lastCheckRotation = transform.rotation.eulerAngles;
+    }
+
+    private void Update()
+    {
+        HasMoved = false;
+
+        var angleDiff = lastCheckRotation - transform.root.eulerAngles;
+        if (Mathf.Abs(angleDiff.x) >= angleUpdateThreshold || Mathf.Abs(angleDiff.y) >= angleUpdateThreshold || Mathf.Abs(angleDiff.z) >= angleUpdateThreshold || (lastCheckPosition - transform.position).magnitude >= positionUpdateThreshold)
+        {
+            HasMoved = true;
+            lastCheckPosition = transform.position;
+            lastCheckRotation = transform.rotation.eulerAngles;
+        }
     }
 
     private void OnHandHoverBegin(Hand hand)

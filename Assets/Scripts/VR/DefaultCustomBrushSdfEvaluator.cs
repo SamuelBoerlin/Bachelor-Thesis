@@ -9,17 +9,22 @@ using Voxel;
 
 public struct DefaultCustomBrushSdfEvaluator : IBrushSdfEvaluator<DefaultCustomBrushType>
 {
-    private static readonly float BASE_SIZE = 5.0f;
+    private readonly BrushProperties properties;
+
+    public DefaultCustomBrushSdfEvaluator(BrushProperties properties)
+    {
+        this.properties = properties;
+    }
 
     public float Eval(CustomBrushPrimitive<DefaultCustomBrushType> primitive, float3 pos)
     {
         if (primitive.type == DefaultCustomBrushType.BOX)
         {
-            return new BoxSDF(BASE_SIZE).Eval(pos);
+            return new BoxSDF(properties.boxSize).Eval(pos);
         }
         else if (primitive.type == DefaultCustomBrushType.SPHERE)
         {
-            return new SphereSDF(BASE_SIZE).Eval(pos);
+            return new SphereSDF(properties.sphereRadius).Eval(pos);
         }
         return 0.0f;
     }
@@ -28,11 +33,11 @@ public struct DefaultCustomBrushSdfEvaluator : IBrushSdfEvaluator<DefaultCustomB
     {
         if (primitive.type == DefaultCustomBrushType.BOX)
         {
-            return new BoxSDF(BASE_SIZE).Max();
+            return new BoxSDF(properties.boxSize).Max();
         }
         else if (primitive.type == DefaultCustomBrushType.SPHERE)
         {
-            return new SphereSDF(BASE_SIZE).Max();
+            return new SphereSDF(properties.sphereRadius).Max();
         }
         return 0;
     }
@@ -41,11 +46,11 @@ public struct DefaultCustomBrushSdfEvaluator : IBrushSdfEvaluator<DefaultCustomB
     {
         if (primitive.type == DefaultCustomBrushType.BOX)
         {
-            return new BoxSDF(BASE_SIZE).Min();
+            return new BoxSDF(properties.boxSize).Min();
         }
         else if (primitive.type == DefaultCustomBrushType.SPHERE)
         {
-            return new SphereSDF(BASE_SIZE).Min();
+            return new SphereSDF(properties.sphereRadius).Min();
         }
         return 0;
     }
@@ -55,11 +60,11 @@ public struct DefaultCustomBrushSdfEvaluator : IBrushSdfEvaluator<DefaultCustomB
     {
         if (primitive.type == DefaultCustomBrushType.BOX)
         {
-            return new BoxSDF(BASE_SIZE);
+            return new BoxSDF(properties.boxSize);
         }
         else if (primitive.type == DefaultCustomBrushType.SPHERE)
         {
-            return new SphereSDF(BASE_SIZE);
+            return new SphereSDF(properties.sphereRadius);
         }
         return null;
     }

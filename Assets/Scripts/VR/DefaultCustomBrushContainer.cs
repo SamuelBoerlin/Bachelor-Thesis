@@ -6,7 +6,7 @@ public class DefaultCustomBrushContainer : CustomBrushContainer<LinearIndexer, D
 {
     protected override DefaultCustomBrushSdfEvaluator CreateBrushSdfEvaluator()
     {
-        return new DefaultCustomBrushSdfEvaluator();
+        return new DefaultCustomBrushSdfEvaluator(BrushProperties.DEFAULT);
     }
 
     private void Start()

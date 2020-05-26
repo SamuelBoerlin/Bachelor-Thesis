@@ -182,6 +182,9 @@
                   },
                   "north" : {
                      "output" : "/actions/default/in/brushpropertiesmenu"
+                  },
+                  "west" : {
+                     "output" : "/actions/default/in/custombrusheditingmenu"
                   }
                },
                "mode" : "dpad",

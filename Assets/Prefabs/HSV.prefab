@@ -1049,7 +1049,12 @@ MonoBehaviour:
   hueSlider: {fileID: 3840720239843158040}
   saturationSlider: {fileID: 910392429112816504}
   valueSlider: {fileID: 3726830065177218242}
+  usePreviewTexture: 0
   image: {fileID: 5207394957873453066}
+  rawImage: {fileID: 0}
+  onColorChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &6522053868545665662
 GameObject:
   m_ObjectHideFlags: 0
