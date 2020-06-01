@@ -773,12 +773,12 @@ PrefabInstance:
     - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
       propertyPath: placeSdf
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
       propertyPath: brushType
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5467410061661521435, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}

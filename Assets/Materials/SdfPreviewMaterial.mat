@@ -80,13 +80,13 @@ Material:
     m_Floats:
     - Vector1_5B529E6F: 0
     - Vector1_771CC9C7: 1
-    - Vector1_85F3E986: -0.5
+    - Vector1_85F3E986: -0.002
     - Vector1_BCBA42D: 8
     - Vector1_CB351F1B: 0.3
     - Vector1_D940EFDE: 0.1
     - Vector1_E23DD532: 0.4
     - Vector1_E4B4BDBA: 0.1
-    - Vector1_FAC0400B: 0.8
+    - Vector1_FAC0400B: 0.015
     - _AlphaClip: 0
     - _Blend: 0
     - _BumpScale: 1
