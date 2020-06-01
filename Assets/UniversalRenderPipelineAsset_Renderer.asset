@@ -1,5 +1,45 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-4016530669703006124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b3d386ba5cd94485973aee1479b272e, type: 3}
+  m_Name: Hightlight Front Pass
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings:
+    passTag: Hightlight Front Pass
+    Event: 500
+    filterSettings:
+      RenderQueueType: 1
+      LayerMask:
+        serializedVersion: 2
+        m_Bits: 4294967295
+      PassNames:
+      - HighlightFrontPass
+    overrideMaterial: {fileID: 0}
+    overrideMaterialPassIndex: 0
+    overrideDepthState: 1
+    depthCompareFunction: 4
+    enableWrite: 0
+    stencilSettings:
+      overrideStencilState: 0
+      stencilReference: 0
+      stencilCompareFunction: 8
+      passOperation: 0
+      failOperation: 0
+      zFailOperation: 0
+    cameraSettings:
+      overrideCamera: 0
+      restoreCamera: 1
+      offset: {x: 0, y: 0, z: 0, w: 0}
+      cameraFieldOfView: 60
 --- !u!114 &-1559299356064704811
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -57,7 +97,9 @@ MonoBehaviour:
   - {fileID: 1520196814181221365}
   - {fileID: -1559299356064704811}
   - {fileID: 7038951696789757403}
-  m_RendererFeatureMap: f5c3f3b9f2d21815d59644477f415ceadb5d49364661af61
+  - {fileID: 3650440403752501136}
+  - {fileID: -4016530669703006124}
+  m_RendererFeatureMap: f5c3f3b9f2d21815d59644477f415ceadb5d49364661af6190bf66d334f8a83254f8e3eaa26a42c8
   postProcessData: {fileID: 11400000, guid: d96fc8fa4248d0b4587096170402c5ea, type: 2}
   shaders:
     blitPS: {fileID: 4800000, guid: c17132b1f77d20942aa75f8429c0f8bc, type: 3}
@@ -114,6 +156,46 @@ MonoBehaviour:
       stencilReference: 1
       stencilCompareFunction: 8
       passOperation: 2
+      failOperation: 0
+      zFailOperation: 0
+    cameraSettings:
+      overrideCamera: 0
+      restoreCamera: 1
+      offset: {x: 0, y: 0, z: 0, w: 0}
+      cameraFieldOfView: 60
+--- !u!114 &3650440403752501136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b3d386ba5cd94485973aee1479b272e, type: 3}
+  m_Name: Highlight Behind Pass
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  settings:
+    passTag: Highlight Behind Pass
+    Event: 500
+    filterSettings:
+      RenderQueueType: 1
+      LayerMask:
+        serializedVersion: 2
+        m_Bits: 4294967295
+      PassNames:
+      - HighlightBehindPass
+    overrideMaterial: {fileID: 0}
+    overrideMaterialPassIndex: 0
+    overrideDepthState: 1
+    depthCompareFunction: 5
+    enableWrite: 0
+    stencilSettings:
+      overrideStencilState: 0
+      stencilReference: 0
+      stencilCompareFunction: 8
+      passOperation: 0
       failOperation: 0
       zFailOperation: 0
     cameraSettings:
