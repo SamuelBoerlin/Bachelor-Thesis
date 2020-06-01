@@ -1,5 +1,6 @@
 ﻿using Cineast_OpenAPI_Implementation;
 using IO.Swagger.Model;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +14,7 @@ public class UnityCineastApi : MonoBehaviour
     private struct TestSettings
     {
         public bool runTest;
-        public TextAsset testModel;
+        public DefaultVoxelWorldContainer voxels;
         public bool debugLog;
     }
     [SerializeField] private TestSettings testSettings = new TestSettings();
@@ -43,11 +44,11 @@ public class UnityCineastApi : MonoBehaviour
         defaultSuffix = "jpg"
     };
 
-    [SerializeField] private bool continuousOutputs = true;
-
     private int queryIdCounter = 0;
 
-    public UnityEvent<int, List<QueryResult>> onQueryCompleted;
+    [Serializable]
+    public class QueryCompletedEvent : UnityEvent<int, List<QueryResult>> { }
+    public QueryCompletedEvent onQueryCompleted;
 
     public struct QueryResult
     {
@@ -171,14 +172,12 @@ public class UnityCineastApi : MonoBehaviour
         {
             testSettings.runTest = false;
 
-            using (Stream stream = new MemoryStream(testSettings.testModel.bytes))
-            {
-                StartQuery(ObjToJsonConverter.Convert(stream));
-            }
+            var modelData = SculptureToJsonConverter.Convert(testSettings.voxels);
+            StartQuery(modelData, false);
         }
     }
 
-    public int StartQuery(string modelJson)
+    public int StartQuery(string modelJson, bool continuousOutputs)
     {
         var queryId = queryIdCounter++;
 
@@ -229,18 +228,30 @@ public class UnityCineastApi : MonoBehaviour
         }
 
         //Create query task
-        var queryTask = query.PerformAsync(categories, modelJson, queryCallback, null);
+        Task queryTask = null;
 
         //Run query task in another thread
-        Task.Run(async () => await queryTask);
+        var task = Task.Run(async () =>
+            {
+                try
+                {
+                    queryTask = query.PerformAsync(categories, modelJson, queryCallback, queryCallback is Complete3DSimilarityQuery.Handler ? (Complete3DSimilarityQuery.Handler)queryCallback : null);
+                    await queryTask;
+                }
+                catch(Exception e)
+                {
+                    Debug.LogError(e.Message);
+                }
+            }
+        );
 
         //Check if task is completed, otherwise make the coroutine wait
-        while (!queryTask.IsCompleted)
+        while (queryTask == null || !queryTask.IsCompleted)
         {
-            if(continuous)
+            if (continuous)
             {
                 //Call callback with intermediate query results
-                lock(results)
+                lock (results)
                 {
                     callback(results);
                     results.Clear();
@@ -253,7 +264,10 @@ public class UnityCineastApi : MonoBehaviour
         if (!continuous)
         {
             //Call callback with query results
-            callback(results);
+            lock (results)
+            {
+                callback(results);
+            }
         }
     }
 }

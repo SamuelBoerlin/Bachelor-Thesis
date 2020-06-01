@@ -1,34 +1,27 @@
-﻿using IO.Swagger.Api;
+﻿using Cineast_OpenAPI_Implementation;
+using IO.Swagger.Api;
 using IO.Swagger.Client;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Cineast_OpenAPI_Implementation
+public class CompleteCineastQuery
 {
-    public class CompleteCineastQuery
+    public Apiv1Api Api
     {
-        public Apiv1Api Api
-        {
-            get;
-            private set;
-        }
+        get;
+        private set;
+    }
 
-        public CineastObjectDownloader ObjectDownloader
-        {
-            get;
-            private set;
-        }
+    public CineastObjectDownloader ObjectDownloader
+    {
+        get;
+        private set;
+    }
 
-        public CompleteCineastQuery(string cineastApiUrl)
+    public CompleteCineastQuery(string cineastApiUrl)
+    {
+        Api = new Apiv1Api(new Configuration
         {
-            Api = new Apiv1Api(new Configuration
-            {
-                BasePath = cineastApiUrl
-            });
-            ObjectDownloader = new CineastObjectDownloader();
-        }
+            BasePath = cineastApiUrl
+        });
+        ObjectDownloader = new CineastObjectDownloader();
     }
 }

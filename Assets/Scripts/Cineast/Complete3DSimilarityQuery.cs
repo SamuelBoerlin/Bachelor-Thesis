@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -90,7 +91,7 @@ namespace Cineast_OpenAPI_Implementation
 
         public async Task PerformAsync(List<string> categories, string modelJson, Callback callback, Handler handler)
         {
-            var testModelData = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(modelJson));
+            var queryModelData = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(modelJson));
 
             var terms = new List<QueryTerm>
             {
@@ -98,7 +99,7 @@ namespace Cineast_OpenAPI_Implementation
                 {
                     Categories = categories,
                     Type = QueryTerm.TypeEnum.MODEL3D,
-                    Data = "data:application/3d-json," + testModelData
+                    Data = "data:application/3d-json," + queryModelData
                 }
             };
 
@@ -130,7 +131,7 @@ namespace Cineast_OpenAPI_Implementation
             }
 
             var segmentQueries = new List<Task<MediaSegmentQueryResult>>();
-            var segmentQueryContext = new Dictionary<Task<MediaSegmentQueryResult>, Tuple<SimilarityQueryResult, StringDoublePair>>();
+            var segmentQueryContext = new Dictionary<Task<MediaSegmentQueryResult>, (SimilarityQueryResult, StringDoublePair)>();
 
             foreach (var similarityResult in response.Results)
             {
@@ -145,9 +146,12 @@ namespace Cineast_OpenAPI_Implementation
                     var segmentQuery = Api.OrgVitrivrCineastApiRestHandlersActionsFindSegmentsByIdActionHandlerPOSTAsync(segmentsIdList);
 
                     segmentQueries.Add(segmentQuery);
-                    segmentQueryContext[segmentQuery] = Tuple.Create(similarityResult, similarityContent);
+                    segmentQueryContext[segmentQuery] = (similarityResult, similarityContent);
                 }
             }
+
+            var downloads = new List<Task<(Stream, HttpClient)>>();
+            var downloadsContext = new Dictionary<Task<(Stream, HttpClient)>, (StringDoublePair, MediaSegmentDescriptor, MediaObjectDescriptor)>();
 
             while (segmentQueries.Count > 0)
             {
@@ -181,15 +185,10 @@ namespace Cineast_OpenAPI_Implementation
                     {
                         foreach (var mediaObjectContent in mediaObjectResult.Content)
                         {
-                            string objModel;
-
-                            using (var stream = await ObjectDownloader.RequestContentAsync(Api, mediaObjectContent, segmentContent))
-                            using (var reader = new StreamReader(stream))
-                            {
-                                objModel = reader.ReadToEnd();
-                            }
-
-                            callback.OnFullQueryResult(similarityContent, segmentContent, mediaObjectContent, objModel);
+                            //Start download and queue up
+                            var downloadTask = ObjectDownloader.RequestContentAsync(Api, mediaObjectContent, segmentContent);
+                            downloads.Add(downloadTask);
+                            downloadsContext[downloadTask] = (similarityContent, segmentContent, mediaObjectContent);
 
                             //Just one result expected
                             break;
@@ -199,6 +198,57 @@ namespace Cineast_OpenAPI_Implementation
                     //Just one result expected
                     break;
                 }
+            }
+
+            var reads = new List<Task<string>>();
+            var readsContext = new Dictionary<Task<string>, (HttpClient, StringDoublePair, MediaSegmentDescriptor, MediaObjectDescriptor, Stream, StreamReader)>();
+
+            while (downloads.Count > 0)
+            {
+                var task = await Task.WhenAny(downloads);
+                var taskResult = await task;
+                var stream = taskResult.Item1;
+                var client = taskResult.Item2;
+
+                var sw = new System.Diagnostics.Stopwatch();
+                sw.Start();
+
+                downloads.Remove(task);
+
+                var context = downloadsContext[task];
+                var similarityContent = context.Item1;
+                var segmentContent = context.Item2;
+                var mediaObjectContent = context.Item3;
+
+                var reader = new StreamReader(stream);
+
+                var readTask = reader.ReadToEndAsync();
+                reads.Add(readTask);
+                readsContext[readTask] = (client, similarityContent, segmentContent, mediaObjectContent, stream, reader);
+
+                sw.Stop();
+            }
+
+            while (reads.Count > 0)
+            {
+                var task = await Task.WhenAny(reads);
+                var objModel = await task;
+
+                reads.Remove(task);
+
+                var context = readsContext[task];
+                var client = context.Item1;
+                var similarityContent = context.Item2;
+                var segmentContent = context.Item3;
+                var mediaObjectContent = context.Item4;
+                var stream = context.Item5;
+                var reader = context.Item6;
+
+                reader.Dispose();
+                stream.Dispose();
+                client.Dispose();
+
+                callback.OnFullQueryResult(similarityContent, segmentContent, mediaObjectContent, objModel);
             }
         }
     }

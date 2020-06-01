@@ -183,6 +183,9 @@
                   "north" : {
                      "output" : "/actions/default/in/brushpropertiesmenu"
                   },
+                  "south" : {
+                     "output" : "/actions/default/in/querymenu"
+                  },
                   "west" : {
                      "output" : "/actions/default/in/custombrusheditingmenu"
                   }

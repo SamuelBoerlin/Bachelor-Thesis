@@ -12,8 +12,6 @@ namespace Cineast_OpenAPI_Implementation
 {
     public class CineastObjectDownloader
     {
-        private static readonly HttpClient httpClient = new HttpClient();
-
         public bool UseCineastServer { get; set; } = true;
 
         public string HostBaseUrl { get; set; }
@@ -33,7 +31,12 @@ namespace Cineast_OpenAPI_Implementation
             suffices[type] = suffix;
         }
 
-        public async Task<Stream> RequestThumbnailAsync(Apiv1Api api, MediaObjectDescriptor objectDescriptor, MediaSegmentDescriptor segmentDescriptor)
+        // Note on creating a new HttpClient for each request:
+        // For some reason HttpClientHandler.MaxConnectionsPerServer causes a "the method or operation is not implemented" exception
+        // when changing the value. Only one or a few downloads would be able to be started and run at once causing a slow down.
+        // Hence the workaround of creating a new client for each request and then disposing it after finishing.
+
+        public async Task<(Stream, HttpClient)> RequestThumbnailAsync(Apiv1Api api, MediaObjectDescriptor objectDescriptor, MediaSegmentDescriptor segmentDescriptor)
         {
             if (UseCineastServer)
             {
@@ -44,25 +47,29 @@ namespace Cineast_OpenAPI_Implementation
             {
                 throw new InvalidOperationException("HostBaseUrl is null");
             }
-            return await httpClient.GetStreamAsync(HostBaseUrl + CompletePath(HostThumbnailsPath, objectDescriptor, segmentDescriptor));
+            HttpClient client = new HttpClient();
+            return (await client.GetStreamAsync(HostBaseUrl + CompletePath(HostThumbnailsPath, objectDescriptor, segmentDescriptor)), client);
         }
 
-        public async Task<Stream> RequestContentAsync(Apiv1Api api, MediaObjectDescriptor objectDescriptor, MediaSegmentDescriptor segmentDescriptor)
+        public async Task<(Stream, HttpClient)> RequestContentAsync(Apiv1Api api, MediaObjectDescriptor objectDescriptor, MediaSegmentDescriptor segmentDescriptor)
         {
             if (UseCineastServer)
             {
                 //TODO Currently not supported
                 //return await api.ApiV1GetObjectsIdGetAsync(objectDescriptor.ObjectId);
             }
+            HttpClient client;
             if (UseDescriptorContentPath)
             {
-                return await httpClient.GetStreamAsync(HostBaseUrl + objectDescriptor.ContentURL);
+                client = new HttpClient();
+                return (await client.GetStreamAsync(HostBaseUrl + objectDescriptor.ContentURL), client);
             }
             if (HostBaseUrl == null)
             {
                 throw new InvalidOperationException("HostBaseUrl is null");
             }
-            return await httpClient.GetStreamAsync(HostBaseUrl + CompletePath(HostContentPath, objectDescriptor, segmentDescriptor));
+            client = new HttpClient();
+            return (await client.GetStreamAsync(HostBaseUrl + CompletePath(HostContentPath, objectDescriptor, segmentDescriptor)), client);
         }
 
         private string CompletePath(string path, MediaObjectDescriptor objectDescriptor, MediaSegmentDescriptor segmentDescriptor)
@@ -77,7 +84,7 @@ namespace Cineast_OpenAPI_Implementation
             path = path.Replace(":o", objectDescriptor.ObjectId);
             path = path.Replace(":n", objectDescriptor.Name);
             path = path.Replace(":p", objectDescriptor.Path);
-            if(objectDescriptor.Mediatype.HasValue)
+            if (objectDescriptor.Mediatype.HasValue)
             {
                 path = path.Replace(":t", Enum.GetName(typeof(MediaObjectDescriptor.MediatypeEnum), objectDescriptor.Mediatype.Value).ToLower());
                 path = path.Replace(":T", Enum.GetName(typeof(MediaObjectDescriptor.MediatypeEnum), objectDescriptor.Mediatype.Value).ToUpper());
