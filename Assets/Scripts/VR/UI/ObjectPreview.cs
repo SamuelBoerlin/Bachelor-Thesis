@@ -9,7 +9,18 @@ using UnityEngine.UI;
 
 public class ObjectPreview : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
-    [SerializeField] private ObjectToTextureRenderManager objectRenderer;
+    [SerializeField] private ObjectToTextureRenderManager _objectRenderer;
+    public ObjectToTextureRenderManager ObjectRenderer
+    {
+        get
+        {
+            return _objectRenderer;
+        }
+        set
+        {
+            _objectRenderer = value;
+        }
+    }
 
     [SerializeField] private GameObject _renderObject;
     public GameObject RenderObject
@@ -96,7 +107,7 @@ public class ObjectPreview : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         if (_renderObject != null && (UpdateTexture || updateTextureEveryFrame))
         {
             UpdateTexture = false;
-            objectRenderer.QueueRenderer(_renderObject, bakedTransform.position, Quaternion.Euler(bakedTransform.rotation1) * Quaternion.Euler(bakedTransform.rotation2), bakedTransform.scale, width, height, ref texture);
+            _objectRenderer.QueueRenderer(_renderObject, bakedTransform.position, Quaternion.Euler(bakedTransform.rotation1) * Quaternion.Euler(bakedTransform.rotation2), bakedTransform.scale, width, height, ref texture);
             image.texture = texture;
             image.enabled = true;
         }
@@ -198,6 +209,8 @@ public class ObjectPreview : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             {
                 rb.isKinematic = true;
             }
+
+            virtualPreviewObject.SetActive(true);
         }
 
         virtualPreviewAnimator.SetTrigger("PreviewRendererEnter");

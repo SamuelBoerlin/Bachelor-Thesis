@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3106801376209204423}
   - component: {fileID: 2314341681116941666}
+  - component: {fileID: 6880824827130648656}
   m_Layer: 0
   m_Name: QueryMenu
   m_TagString: Untagged
@@ -45,6 +46,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   setCanvasEventCameras: 1
+--- !u!114 &6880824827130648656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3106801376209204422}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7b6a7c18806f9b49b9170ed229947c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  queryTilePrefab: {fileID: 3106801376209204422, guid: d2f2364ac861ef640bfa47ddb1206064,
+    type: 3}
 --- !u!1001 &1664296950370764081
 PrefabInstance:
   m_ObjectHideFlags: 0

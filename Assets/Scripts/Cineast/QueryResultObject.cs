@@ -22,4 +22,9 @@ public class QueryResultObject : MonoBehaviour
             display.text = data.objectDescriptor.Name + "\nScore: " + data.score.ToString("0.00");
         }
     }
+
+    public void RemoveObject()
+    {
+        Destroy(gameObject);
+    }
 }

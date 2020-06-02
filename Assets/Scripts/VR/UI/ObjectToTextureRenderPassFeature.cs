@@ -40,6 +40,11 @@ public class ObjectToTextureRenderPassFeature : ScriptableRendererFeature
                             buffer.DrawRenderer(objectRenderer, objectRenderer.sharedMaterial, 0, 0);
                         }
                     }
+
+                    manager.RenderedTargets.Add(entry.Key);
+
+                    //TODO Set limit somewhere
+                    break;
                 }
 
                 context.ExecuteCommandBuffer(buffer);

@@ -80,22 +80,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57f27acad3a123042a5ba87414e167e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectRenderer: {fileID: 0}
+  _objectRenderer: {fileID: 0}
   _renderObject: {fileID: 0}
   image: {fileID: 7705957536262699416}
   bakedTransform:
     position: {x: 0, y: 0, z: 2}
     rotation1: {x: -22.5, y: 0, z: 0}
     rotation2: {x: 0, y: 45, z: 0}
-    scale: {x: 1, y: 1, z: 1}
+    scale: {x: 3, y: 3, z: 3}
   virtualTransform:
     position: {x: 0, y: 0, z: -1}
     rotation1: {x: 0, y: 0, z: 0}
     rotation2: {x: 0, y: 45, z: 0}
-    scale: {x: 0.25, y: 0.25, z: 0.25}
+    scale: {x: 1, y: 1, z: 1}
   width: 512
   height: 512
-  setKinematicToFalseOnRelease: 1
+  setKinematicToFalseOnRelease: 0
   setScaleToOriginalOnRelease: 0
   virtualPreviewAnimator: {fileID: 1702195343}
   updateTextureEveryFrame: 0
@@ -301,6 +301,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hoverImage: {fileID: 3149268716929960695}
+  _permanentHover: 0
 --- !u!1 &3149268716929960694
 GameObject:
   m_ObjectHideFlags: 0

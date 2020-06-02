@@ -51,6 +51,13 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
     [SerializeField] private GameObject lineGuidePrefab;
 
     [SerializeField] private Camera eventCamera;
+    public Camera EventCamera
+    {
+        get
+        {
+            return eventCamera;
+        }
+    }
 
     [SerializeField] private bool _fixateBrushRotation;
     public bool FixateBrushRotation
@@ -314,6 +321,18 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
         }
 
         return new Menu(entry, instance);
+    }
+
+    public TComponent GetUIWithComponent<TComponent>()
+    {
+        foreach(var menu in openMenus)
+        {
+            if(menu.instance.TryGetComponent<TComponent>(out var component))
+            {
+                return component;
+            }
+        }
+        return default;
     }
 
     public void Update()

@@ -34,6 +34,8 @@ public class ObjectToTextureRenderManager : MonoBehaviour
         }
     }
 
+    public List<GameObject> RenderedTargets = new List<GameObject>();
+
     public Dictionary<GameObject, RenderTexture> RenderTargets
     {
         get;
@@ -55,17 +57,18 @@ public class ObjectToTextureRenderManager : MonoBehaviour
         {
             Camera.Render();
 
-            foreach (var entry in RenderTargets)
+            foreach (var rendered in RenderedTargets)
             {
-                Destroy(entry.Key);
+                RenderTargets.Remove(rendered);
+                Destroy(rendered);
             }
-            RenderTargets.Clear();
+            RenderedTargets.Clear();
         }
     }
 
     public void QueueRenderer(GameObject obj, Vector3 position, Quaternion rotation, Vector3 scale, int width, int height, ref RenderTexture renderTexture)
     {
-        if (RenderTargets.Count > 32)
+        if (RenderTargets.Count > 128)
         {
             Debug.LogWarning("Too many render targets");
             return;
