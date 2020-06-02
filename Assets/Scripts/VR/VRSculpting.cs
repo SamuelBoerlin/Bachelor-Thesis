@@ -158,7 +158,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
     [Serializable]
     public struct BrushMaterialType
     {
-        [SerializeField] internal string _name;
+        [SerializeField] public string _name;
         public string Name
         {
             get
@@ -167,7 +167,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             }
         }
 
-        [SerializeField] internal int _id;
+        [SerializeField] public int _id;
         public int ID
         {
             get
@@ -176,7 +176,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             }
         }
 
-        [SerializeField] internal Texture2D _texture;
+        [SerializeField] public Texture2D _texture;
         public Texture2D Texture
         {
             get

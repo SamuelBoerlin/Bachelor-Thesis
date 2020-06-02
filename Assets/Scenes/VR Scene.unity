@@ -1184,12 +1184,12 @@ PrefabInstance:
     - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
       propertyPath: placeSdf
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
       propertyPath: brushType
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5467410061661521435, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
@@ -1682,8 +1682,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 290bab82f4bc2374a9c42604a0657a1f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  run: 0
-  sculpture: {fileID: 1716027542}
 --- !u!4 &2005186469
 Transform:
   m_ObjectHideFlags: 0
