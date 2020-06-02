@@ -1,0 +1,52 @@
+\chapter{Implementation}
+
+\section{Cineast}
+
+\subsection{Cineast core changes}
+UV + texture support in meshes and OBJ loader
+
+\subsection{ClusterD2+Color feature extraction}
+What, why (color support), explain assumptions made that were not covered by the paper
+
+\subsection{Comparing features for similarity}
+L2 distance, Jensen-Shannon divergence, $\chi^2$ distance
+
+\subsection{RESTful API}
+OpenAPI, swagger codegen
+
+\section{Voxels}
+
+\subsection{Voxel storage}
+Chunks, hermite data quantization
+
+\subsection{CMS}
+Main algorithm on regular grid
+
+\subsubsection{Multi-material extension for CMS}
+Algorithm
+
+\subsubsection{Lookup table based implementation}
+Lookup table generator, lookup table based algorithm, limitations (time, multi-material support)
+
+\subsection{CSG operations on hermite data}
+How union and difference operations work on hermite data, algorithm
+
+\subsection{Rendering}
+Vertex colors encode material (RGB, A=texture id), texture array, triplanar texturing shader
+
+\subsection{Voxelizer}
+Purpose, explain method used for voxelization (assigning triangles to bins, patching holes, etc.), use of job system
+
+\subsection{SDFs}
+Implementation, arbitrary linear transformations by using the inverse to transform space instead of SDF
+
+\section{VR Sculpting}
+
+\subsection{Sculpting features}
+General overview of capabilities and functionality, UIs, SteamVR Plugin, etc.
+
+\subsection{Brush properties menu}
+Functionalities, color selection (why HSV: you can see most colors at once, as opposed to RGB sliders)
+
+\subsection{Custom brush editing menu}
+Explain custom brush tool, why it exists, etc.

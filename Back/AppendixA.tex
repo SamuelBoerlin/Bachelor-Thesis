@@ -1,1 +1,258 @@
 \chapter{Appendix}
+
+\section{User Evaluation Questionnaire}
+
+% PDF stuff
+\ifx\pdfoutput\undefined
+\else
+    \pdfpagewidth=210mm
+    \pdfpageheight=297mm
+\fi
+
+\newif\ifbanner\bannerfalse
+\bannerfalse
+\advance\oddsidemargin-5mm
+\advance\textwidth1cm
+
+\font\manual=manfnt
+\def\shared{\noindent\llap{\manual\char'170\kern.15em}}
+
+\def\heading#1{
+    \ifhmode\par\fi
+    \removelastskip
+    \vskip1ex plus 0.5ex minus 0.3 ex%\goodbreak
+    \noindent
+    \hbox to \hsize{ #1\hfill}
+    \smallskip\par\nobreak}
+
+
+\def\nicefrac#1/#2{\leavevmode%
+    \raise.5ex\hbox{\the\scriptfont0 #1}%
+    \kern-.1em/\kern-.15em%
+    \lower.25ex\hbox{\the\scriptfont0 #2}}
+
+\newdimen\scalewidth
+\scalewidth=0.3\hsize 
+
+\def\xboxit#1{\hbox{\lower0.7ex\vbox{\hrule\hbox{\vrule\kern1pt
+    \vbox{\kern1pt\hbox{\strut\small #1}\kern1pt}\kern1pt\vrule}\hrule}}}
+
+\def\boxit#1{\hbox{\lower0.7ex\vbox{\hrule\hbox{\vrule\kern1pt
+    \vbox{\kern1pt\hbox to 1.4em
+    {\small\strut\hfil #1\hfil}\kern1pt}\kern1pt\vrule}\hrule}}}
+
+\def\sboxit{\hbox{\lower0.7ex\vbox{\hrule\hbox{\vrule\kern1pt
+    \vbox{\kern1pt\hbox to 1ex
+    {\small\strut\hfil}\kern1pt}\kern1pt\vrule}\hrule}}}
+
+
+\def\fiveboxes#1#2#3#4#5{\hbox to\scalewidth
+    {\boxit{#1}\hfil\boxit{#2}\hfil\boxit{#3}\hfil%
+     \boxit{#4}\hfil\boxit{#5}}}
+\def\manyboxes{\hbox to \scalewidth
+    {\sboxit\hfil\sboxit\hfil\sboxit\hfil\sboxit\hfil\sboxit\hfil%
+    \sboxit\hfil\sboxit\hfil\sboxit\hfil\sboxit\hfil\sboxit\hfil\sboxit}}
+
+
+\def\boxes{\fiveboxes{}{}{}{}{}\ignorespaces}
+
+\def\void{\boxit{}}
+
+\def\xscale#1#2{%
+    \setbox0=\hbox{\boxes}%
+    \setbox1=\hbox to \wd0{\small\strut\hfill #2 $\to$}%
+    \setbox2=\hbox to \wd0{\small\strut $\gets$ #1 \hfill}%
+    \vbox{\vbox to 0pt{\vss\box1\box2\kern2pt}\vbox{\box0}}}
+
+\def\scale#1#2{%
+    \setbox0=\hbox{\boxes}%
+    \setbox1=\hbox to \wd0{\small\strut\hfill #2 $\to$}%
+    \setbox2=\hbox to \wd0{\small\strut $\gets$ #1 \hfill}%
+    \vbox{\medskip\box1\box2\kern2pt\box0}}
+
+\def\xshortscale#1#2{%
+    \setbox0=\hbox{\boxes}%
+    \setbox1=\hbox to \wd0{\small\strut $\gets$ #1 \hfill #2 $\to$}%
+    \vbox{\vbox to 0pt{\vss\box1\kern2pt}\vbox{\box0}}}
+
+\def\shortscale#1#2{%
+    \setbox0=\hbox{\boxes}%
+    \setbox1=\hbox to \wd0{\small\strut $\gets$ #1 \hfill #2 $\to$}%
+    \vbox{\medskip\box1\kern2pt\box0}}
+
+\def\agree{\scale{strongly disagree}{agree completely}}
+\def\xagree{\xscale{strongly disagree}{agree completely}}
+\def\xquality{\xshortscale{poor}{outstanding}}
+\def\quality{\shortscale{poor}{outstanding}}
+
+\def\longquality{%
+    \setbox0=\hbox{\manyboxes}%
+    \setbox1=\hbox to \wd0{\small\strut $\gets$ poor \hfill outstanding $\to$}%
+    \vbox{\vbox to 0pt{\vss\box1\kern2pt}\vbox{\box0}}}
+
+\def\linscale{%
+    \def\tick{\vrule height 5pt\relax}%
+    \vbox{\hbox to \scalewidth{\tick\hfil\tick\hfil\tick\hfil\tick}\hrule}}
+
+\def\question#1\par#2\par{\hbox to \hsize
+    {\vbox{\hsize=0.72\hsize #1\dotfill}\quad#2\hfil}\medskip\goodbreak}
+
+\def\freequestion#1\par{#1\par\nobreak
+    \begingroup\nobreak
+    \advance\leftskip by 2pc
+    \hrule width 0pt height 1.7\baselineskip\hrulefill
+    \hrule width 0pt height 1.7\baselineskip\hrulefill
+    \par
+    \medskip
+    \endgroup
+    }
+		
+\def\longfreequestion#1\par{#1\par\nobreak
+    \begingroup\nobreak
+    \advance\leftskip by 2pc
+    \hrule width 0pt height 1.7\baselineskip\hrulefill
+    \hrule width 0pt height 1.7\baselineskip\hrulefill
+    \hrule width 0pt height 1.7\baselineskip\hrulefill
+    \hrule width 0pt height 1.7\baselineskip\hrulefill
+    \hrule width 0pt height 1.7\baselineskip\hrulefill
+    \hrule width 0pt height 1.7\baselineskip\hrulefill
+    \par
+    \medskip
+    \endgroup
+    }
+
+\parindent0pt
+\parskip5pt plus 0.2 ex minus 0.1ex
+
+
+\def\<#1>{\textsc{#1}}
+\parindent0pt
+\parskip5pt plus 0.2 ex minus 0.1ex
+
+%\begin{document} 
+
+
+\newcounter{questionnumber}
+
+\hfill \break
+\heading{\textbf{Background}}
+
+1: not at all, 2: slighty, 3: moderately, 4: very, 5: extremely \newline
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} How experienced are you with Virtual Reality? \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5} \par
+\end{minipage}
+\end{minipage}}
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} How experienced are you with 3D sculpting applications? \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5} \par
+\end{minipage}
+\end{minipage}}
+
+\hfill \break
+\heading{\textbf{Sculpting}}
+
+1: very easy, 2: easy, 3: neutral, 4: difficult, 5: very difficult \newline
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select the sphere brush and place it the world to create a shape or simple sculpture. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+
+\freequestion Feedback: \par
+\end{minipage}
+\end{minipage}}
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then select another brush and remove a piece of your sculpture with it. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+
+\freequestion Feedback: \par
+\end{minipage}
+\end{minipage}}
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then pick another colour and colour a piece of your sculpture. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+
+\freequestion Feedback: \par
+\end{minipage}
+\end{minipage}}
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then pick another material (i.e. texture) and change the material of a piece of your sculpture. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+
+\freequestion Feedback: \par
+\end{minipage}
+\end{minipage}}
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Create your own brush (with at least two primitives) using the custom brush editor and then use your own brush to create a shape. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+
+\freequestion Feedback: \par
+\end{minipage}
+\end{minipage}}
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Place an already existing 3D model in the world using the voxelizer. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+
+\freequestion Feedback: \par
+\end{minipage}
+\end{minipage}}
+
+\hfill \break
+\heading{\textbf{Querying}}
+
+1: very easy, 2: easy, 3: neutral, 4: difficult, 5: very difficult \newline
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then use the query menu to run a similarity search. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+
+\freequestion Feedback: \par
+\end{minipage}
+\end{minipage}}
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then use the query menu to run a similarity search. After that, pick one of the results and place it in the world. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+
+\freequestion Feedback: \par
+\end{minipage}
+\end{minipage}}
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then use the query menu to run a similarity search. After that, pick one of the results and place it in the world. Using a brush, remove a piece of it and then run a similarity search for the modified sculpture. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+
+\freequestion Feedback: \par
+\end{minipage}
+\end{minipage}}
+
+\hfill \break
+\heading{\textbf{General feedback}}
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\longfreequestion \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} If you have any additional remarks or suggestions for improvements please write them down here. \par
+\end{minipage}
+\end{minipage}}
+
+
+
+\newpage

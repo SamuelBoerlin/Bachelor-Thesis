@@ -6,23 +6,31 @@
 %% Use the option citeauthor to be able to use citet. The default cite will still work.
 \usepackage[citeauthor]{basilea}
 
+\usepackage{fullpage}
+\usepackage{graphicx}
+\usepackage{xspace}
+\usepackage{framed}
+
+\usepackage[top=5mm,includehead,headheight=45pt,
+             left=1.5cm,bottom=2cm,right=1.5cm,headsep=0.3cm]{geometry} 
+
 %% ----------------------------------------------------------------
 
-\title				{Thesis Title}
-\thesistype			{Thesis Type (e.g., Bachelor/Master thesis/project)}
+\title				{3D model retrieval using Constructive Solid Geometry (working-title)}
+\thesistype			{Bachelor thesis}
 
-\department 		    {Department (e.g., Department of Mathematics and Computer Science)}
-\faculty			{Faculty (e.g., Natural Science Faculty of the University of Basel)}
-\research		    {Research Group \\ Webpage}
+\department 		    {Department of Mathematics and Computer Science}
+\faculty			{Natural Science Faculty of the University of Basel}
+\research		    {Database and Information Systems Research Group \\ https://dbis.dmi.unibas.ch/}
 
-\examiner    		{Examiner (e.g., Prof. Dr. Alan Turing)}
-\supervisor  		{Supervisor (e.g., Advisor, MSc.)}
+\examiner    		{Prof. Dr. Heiko Schuldt}
+\supervisor  		{Ralph Gasser, MSc.}
 
-\authors     		{Author(s)}
-\email				{E-Mail}
-\immatriculnr		{0000-000-000}
+\authors     		{Samuel Börlin}
+\email				{samuel.boerlin@stud.unibas.ch}
+\immatriculnr		{16-051-716}
 
-\date				{Hand-In-Date}
+\date				{\todoMissing{Date} Hand-In-Date}
 
 % switch here for the german logo to logo-de
 \ulogo				{Template/logo-en} 
@@ -47,13 +55,12 @@
 %\thesisnomencl
 %% ----------------------------------------------------------------
 \thesismain
-\input{./Chapters/Chapter1}
-\input{./Chapters/Chapter2}
-\input{./Chapters/Chapter3}
-%\input{./Chapters/Chapter4}
-%\input{./Chapters/Chapter5}
-%\input{./Chapters/Chapter6}
-%\input{./Chapters/Chapter7}
+\input{./Chapters/Introduction}
+\input{./Chapters/Related Work}
+\input{./Chapters/Concepts and Architecture}
+\input{./Chapters/Implementation}
+\input{./Chapters/Evaluation}
+\input{./Chapters/Discussion}
 %% ----------------------------------------------------------------
 \thesisappendix
 \thesisbib
