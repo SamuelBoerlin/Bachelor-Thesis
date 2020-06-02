@@ -99,7 +99,7 @@ namespace Cineast_OpenAPI_Implementation
                 {
                     Categories = categories,
                     Type = QueryTerm.TypeEnum.MODEL3D,
-                    Data = "data:application/3d-json," + queryModelData
+                    Data = "data:application/3d-color-json," + queryModelData
                 }
             };
 
