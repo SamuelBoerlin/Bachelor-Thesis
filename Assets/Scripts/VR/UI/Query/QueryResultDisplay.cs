@@ -22,6 +22,8 @@ public class QueryResultDisplay : MonoBehaviour
 
     private int currentQueryId = -1;
 
+    private float minQueryScore, maxQueryScore;
+
     private List<GameObject> tiles = new List<GameObject>();
     private List<GameObject> queryResultObjects = new List<GameObject>();
 
@@ -80,6 +82,23 @@ public class QueryResultDisplay : MonoBehaviour
         currentQueryId = -1;
 
         loadingRenderer.SetActive(false);
+    }
+
+    public void SetQueryInfo(int queryId, List<UnityCineastApi.QueryResult> results, float minScore, float maxScore)
+    {
+        if(queryId == currentQueryId)
+        {
+            if(results.Count == 1)
+            {
+                minQueryScore = 0.0f;
+                maxQueryScore = maxScore;
+            }
+            else
+            {
+                minQueryScore = minScore;
+                maxQueryScore = maxScore;
+            }
+        }
     }
 
     public void SetQueryResult(int queryId, int scoreIndex, UnityCineastApi.QueryResult result, GameObject go, QueryResultObject queryResultObjectScript)
@@ -147,6 +166,9 @@ public class QueryResultDisplay : MonoBehaviour
 
             queryResultTile.ObjectPreview.ObjectRenderer = objectToTextureRenderManager;
             queryResultTile.ObjectPreview.RenderObject = go;
+
+            var relScore = ((float)result.score - minQueryScore) / (maxQueryScore - minQueryScore);
+            queryResultTile.ScoreIndicator.color = new Color(0, relScore, 0);
         }
         else
         {

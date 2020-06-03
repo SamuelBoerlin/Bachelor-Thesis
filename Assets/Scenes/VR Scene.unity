@@ -365,6 +365,95 @@ MonoBehaviour:
   m_RequiresDepthTexture: 0
   m_RequiresColorTexture: 0
   m_Version: 2
+--- !u!1 &422080426
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 422080427}
+  - component: {fileID: 422080428}
+  m_Layer: 13
+  m_Name: ControlsTutorial
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &422080427
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 422080426}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 2091921607}
+  m_RootOrder: 8
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &422080428
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 422080426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0893a7261272c6244836f60c18994b11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  booleanActions:
+  - action:
+      actionPath: /actions/default/in/InteractUI
+      needsReinit: 0
+    text: 'UI Click &
+
+      Place Brush'
+    anchorOnRightSide: 0
+  - action:
+      actionPath: /actions/default/in/VoxelizeHeldObject
+      needsReinit: 0
+    text: Voxelize Held Object
+    anchorOnRightSide: 1
+  - action:
+      actionPath: /actions/default/in/GrabPinch
+      needsReinit: 0
+    text: Grab Object
+    anchorOnRightSide: 0
+  - action:
+      actionPath: /actions/default/in/LineGuide
+      needsReinit: 0
+    text: Line Guide
+    anchorOnRightSide: 1
+  vector2Actions:
+  - action:
+      actionPath: /actions/default/in/RotateBrush
+      needsReinit: 0
+    text: 'Move: Rotate Brush
+
+      Top: Brush Settings
+
+      Right: Brush Selection
+
+      Bottom:
+      Query Menu
+
+      Left: Custom Brush Editor'
+    anchorOnRightSide: 0
+  - action:
+      actionPath: /actions/default/in/ScaleBrush
+      needsReinit: 0
+    text: 'Move: Scale Brush'
+    anchorOnRightSide: 0
+  hands:
+  - {fileID: 2081968861}
+  - {fileID: 2082148931}
 --- !u!114 &591388754 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
@@ -438,8 +527,8 @@ MonoBehaviour:
   sculpting: {fileID: 318157136}
   positionTransform: {fileID: 2091935959}
   topBottomRows: 2
-  xSpacingAngle: 8
-  ySpacingAngle: 8
+  xSpacingAngle: 10
+  ySpacingAngle: 10
   radius: 1
   loadingRenderer: {fileID: 957067059860059921}
 --- !u!1 &628201815
@@ -2216,6 +2305,7 @@ Transform:
   - {fileID: 4000011179467669}
   - {fileID: 628201818}
   - {fileID: 596042521}
+  - {fileID: 422080427}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

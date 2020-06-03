@@ -4,6 +4,7 @@ using Valve.VR;
 using System.Collections.Generic;
 using Valve.VR.InteractionSystem;
 using System;
+using static Valve.VR.InteractionSystem.ControllerButtonHints;
 
 public class ControlsTutorial : MonoBehaviour
 {
@@ -11,13 +12,15 @@ public class ControlsTutorial : MonoBehaviour
     {
         ISteamVR_Action_In_Source GetAction();
         string GetText();
+        bool IsAnchorOnRightSide();
     }
 
     private class ActionEntry<TAction> : IActionEntry
         where TAction : ISteamVR_Action_In_Source
     {
         [SerializeField] private TAction action;
-        [SerializeField] private string text;
+        [SerializeField, Multiline] private string text;
+        [SerializeField] private bool anchorOnRightSide;
 
         public ISteamVR_Action_In_Source GetAction()
         {
@@ -28,13 +31,18 @@ public class ControlsTutorial : MonoBehaviour
         {
             return text;
         }
+
+        public bool IsAnchorOnRightSide()
+        {
+            return anchorOnRightSide;
+        }
     }
 
     [Serializable]
     private class BooleanActionEntry : ActionEntry<SteamVR_Action_Boolean> { }
 
     [Serializable]
-    private class Vector2ActionEntry : ActionEntry<SteamVR_Action_Boolean> { }
+    private class Vector2ActionEntry : ActionEntry<SteamVR_Action_Vector2> { }
 
     [SerializeField] private BooleanActionEntry[] booleanActions;
     [SerializeField] private Vector2ActionEntry[] vector2Actions;
@@ -51,12 +59,11 @@ public class ControlsTutorial : MonoBehaviour
 
     private void Update()
     {
-        foreach(var action in actions)
+        foreach (var action in actions)
         {
             foreach (var hand in hands)
             {
-                ControllerButtonHints.ShowButtonHint(hand, action.GetAction());
-                ControllerButtonHints.ShowTextHint(hand, action.GetAction(), action.GetText(), true);
+                ControllerButtonHints.ShowTextHint(action.IsAnchorOnRightSide() ? AnchorSide.RIGHT : AnchorSide.LEFT, hand, action.GetAction(), action.GetText(), true);
             }
         }
     }

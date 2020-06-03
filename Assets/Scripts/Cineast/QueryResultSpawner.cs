@@ -71,6 +71,16 @@ public class QueryResultSpawner : MonoBehaviour
         //Sort by decreasing score
         results.Sort((x, y) => -x.score.CompareTo(y.score));
 
+        float minScore = 0.0f;
+        float maxScore = 1.0f;
+        if(results.Count > 0)
+        {
+            minScore = (float)results[results.Count - 1].score;
+            maxScore = (float)results[0].score;
+        }
+
+        resultDisplay.SetQueryInfo(queryId, results, minScore, maxScore);
+
         for (int j = 0; j < Mathf.Min(results.Count, maxSpawns); j++)
         {
             var result = results[j];

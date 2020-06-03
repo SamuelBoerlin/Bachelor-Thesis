@@ -21,4 +21,17 @@ public class QueryResultTile : MonoBehaviour
             return _objectPreview;
         }
     }
+
+    [SerializeField] private Image _scoreIndicator;
+    public Image ScoreIndicator
+    {
+        get
+        {
+            return _scoreIndicator;
+        }
+        set
+        {
+            _scoreIndicator = value;
+        }
+    }
 }

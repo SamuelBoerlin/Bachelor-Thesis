@@ -43,8 +43,10 @@ namespace Valve.VR.InteractionSystem
 		}
 
 		//Info for each of the buttons
-		private class ActionHintInfo
+		public class ActionHintInfo
 		{
+            public AnchorSide side;
+
 			public string componentName;
 			public List<MeshRenderer> renderers;
 			public Transform localTransform;
@@ -56,6 +58,7 @@ namespace Valve.VR.InteractionSystem
 			public Vector3 textEndOffsetDir;
 			public Transform canvasOffset;
 
+            public Transform textPanel;
 			public Text text;
 			public TextMesh textMesh;
 			public Canvas textCanvas;
@@ -65,7 +68,12 @@ namespace Valve.VR.InteractionSystem
 			public bool textHintActive = false;
 		}
 
-		private Dictionary<ISteamVR_Action_In_Source, ActionHintInfo> actionHintInfos;
+        public enum AnchorSide
+        {
+            LEFT, RIGHT
+        }
+
+		private Dictionary<(ISteamVR_Action_In_Source, AnchorSide), ActionHintInfo> actionHintInfos;
 		private Transform textHintParent;
 
 		private int colorID;
@@ -218,14 +226,17 @@ namespace Valve.VR.InteractionSystem
                 HintDebugLog(renderModelDebug);
             }
 
-            actionHintInfos = new Dictionary<ISteamVR_Action_In_Source, ActionHintInfo>();
+            actionHintInfos = new Dictionary<(ISteamVR_Action_In_Source, AnchorSide), ActionHintInfo>();
 
             for (int actionIndex = 0; actionIndex < SteamVR_Input.actionsNonPoseNonSkeletonIn.Length; actionIndex++)
             {
                 ISteamVR_Action_In action = SteamVR_Input.actionsNonPoseNonSkeletonIn[actionIndex];
 
                 if (action.GetActive(inputSource))
-                    CreateAndAddButtonInfo(action, inputSource);
+                {
+                    CreateAndAddButtonInfo(action, AnchorSide.LEFT, inputSource);
+                    CreateAndAddButtonInfo(action, AnchorSide.RIGHT, inputSource);
+                }
             }
 
             ComputeTextEndTransforms();
@@ -239,7 +250,7 @@ namespace Valve.VR.InteractionSystem
 
 
 		//-------------------------------------------------
-		private void CreateAndAddButtonInfo(ISteamVR_Action_In action, SteamVR_Input_Sources inputSource)
+		private void CreateAndAddButtonInfo(ISteamVR_Action_In action, AnchorSide side, SteamVR_Input_Sources inputSource)
 		{
 			Transform buttonTransform = null;
 			List<MeshRenderer> buttonRenderers = new List<MeshRenderer>();
@@ -287,9 +298,11 @@ namespace Valve.VR.InteractionSystem
 			}
 
 			ActionHintInfo hintInfo = new ActionHintInfo();
-			actionHintInfos.Add( action, hintInfo );
+			actionHintInfos.Add( (action, side), hintInfo );
 
-			hintInfo.componentName = buttonTransform.name;
+            hintInfo.side = side;
+
+            hintInfo.componentName = buttonTransform.name;
 			hintInfo.renderers = buttonRenderers;
 
 			//Get the local transform for the button
@@ -364,7 +377,8 @@ namespace Valve.VR.InteractionSystem
 			hintInfo.canvasOffset = hintInfo.textHintObject.transform.Find( "CanvasOffset" );
 			hintInfo.line = hintInfo.textHintObject.transform.Find( "Line" ).GetComponent<LineRenderer>();
 			hintInfo.textCanvas = hintInfo.textHintObject.GetComponentInChildren<Canvas>();
-			hintInfo.text = hintInfo.textCanvas.GetComponentInChildren<Text>();
+            hintInfo.textPanel = hintInfo.textCanvas.GetComponentInChildren<HorizontalLayoutGroup>().transform;
+            hintInfo.text = hintInfo.textCanvas.GetComponentInChildren<Text>();
 			hintInfo.textMesh = hintInfo.textCanvas.GetComponentInChildren<TextMesh>();
 
 			hintInfo.textHintObject.SetActive( false );
@@ -440,9 +454,8 @@ namespace Valve.VR.InteractionSystem
 			}
 		}
 
-
 		//-------------------------------------------------
-		private void ShowButtonHint( params ISteamVR_Action_In_Source[] actions )
+		private void ShowButtonHint( AnchorSide side, params ISteamVR_Action_In_Source[] actions )
 		{
 			renderModel.gameObject.SetActive( true );
 
@@ -459,9 +472,9 @@ namespace Valve.VR.InteractionSystem
 
 			for ( int i = 0; i < actions.Length; i++ )
 			{
-				if ( actionHintInfos.ContainsKey( actions[i] ) )
+				if ( actionHintInfos.ContainsKey( (actions[i], side) ) )
 				{
-					ActionHintInfo hintInfo = actionHintInfos[actions[i]];
+					ActionHintInfo hintInfo = actionHintInfos[(actions[i], side)];
 					foreach ( MeshRenderer renderer in hintInfo.renderers )
 					{
 						if ( !flashingRenderers.Contains( renderer ) )
@@ -488,14 +501,14 @@ namespace Valve.VR.InteractionSystem
 
 
 		//-------------------------------------------------
-		private void HideButtonHint( params ISteamVR_Action_In_Source[] actions )
+		private void HideButtonHint( AnchorSide side, params ISteamVR_Action_In_Source[] actions )
 		{
 			Color baseColor = controllerMaterial.GetColor( colorID );
 			for ( int i = 0; i < actions.Length; i++ )
 			{
-				if ( actionHintInfos.ContainsKey(actions[i] ) )
+				if ( actionHintInfos.ContainsKey((actions[i], side) ) )
 				{
-					ActionHintInfo hintInfo = actionHintInfos[actions[i]];
+					ActionHintInfo hintInfo = actionHintInfos[(actions[i], side)];
 					foreach ( MeshRenderer renderer in hintInfo.renderers )
 					{
 						renderer.material.color = baseColor;
@@ -514,11 +527,11 @@ namespace Valve.VR.InteractionSystem
 
 
 		//-------------------------------------------------
-		private bool IsButtonHintActive(ISteamVR_Action_In_Source action )
+		private bool IsButtonHintActive(AnchorSide side, ISteamVR_Action_In_Source action )
 		{
-			if ( actionHintInfos.ContainsKey(action) )
+			if ( actionHintInfos.ContainsKey((action, side)) )
 			{
-				ActionHintInfo hintInfo = actionHintInfos[action];
+				ActionHintInfo hintInfo = actionHintInfos[(action, side)];
 				foreach ( MeshRenderer buttonRenderer in hintInfo.renderers )
 				{
 					if ( flashingRenderers.Contains( buttonRenderer ) )
@@ -542,7 +555,7 @@ namespace Valve.VR.InteractionSystem
                     ISteamVR_Action_In action = SteamVR_Input.actionsNonPoseNonSkeletonIn[actionIndex];
                     if (action.GetActive(inputSource))
                     {
-                        ShowButtonHint(action);
+                        ShowButtonHint(AnchorSide.LEFT, action);
                         yield return new WaitForSeconds(1.0f);
                     }
                     yield return null;
@@ -561,7 +574,7 @@ namespace Valve.VR.InteractionSystem
                     ISteamVR_Action_In action = SteamVR_Input.actionsNonPoseNonSkeletonIn[actionIndex];
                     if (action.GetActive(inputSource))
                     {
-                        ShowText(action, action.GetShortName());
+                        ShowText(AnchorSide.LEFT, action, action.GetShortName());
                         yield return new WaitForSeconds(3.0f);
                     }
                     yield return null;
@@ -632,6 +645,16 @@ namespace Valve.VR.InteractionSystem
 
 			hintInfo.canvasOffset.rotation = Quaternion.Slerp( standardLookat, upsideDownLookat, flInterp );
 
+            if(hintInfo.side == AnchorSide.RIGHT)
+            {
+                var offset = -Vector3.right * hintInfo.text.rectTransform.rect.width;
+                var scale = hintInfo.textPanel.transform.localScale;
+                offset.x *= scale.x;
+                offset.y *= scale.y;
+                offset.z *= scale.z;
+                hintInfo.textPanel.transform.localPosition = offset;
+            }
+
 			Transform lineTransform = hintInfo.line.transform;
 
 			hintInfo.line.useWorldSpace = false;
@@ -649,11 +672,11 @@ namespace Valve.VR.InteractionSystem
 
 
 		//-------------------------------------------------
-		private void ShowText(ISteamVR_Action_In_Source action, string text, bool highlightButton = true )
+		private ActionHintInfo ShowText(AnchorSide side, ISteamVR_Action_In_Source action, string text, bool highlightButton = true )
         {
-            if ( actionHintInfos.ContainsKey(action) )
+            if ( actionHintInfos.ContainsKey((action, side)) )
             {
-                ActionHintInfo hintInfo = actionHintInfos[action];
+                ActionHintInfo hintInfo = actionHintInfos[(action, side)];
 				hintInfo.textHintObject.SetActive( true );
 				hintInfo.textHintActive = true;
 
@@ -671,24 +694,28 @@ namespace Valve.VR.InteractionSystem
 
 				if ( highlightButton )
 				{
-					ShowButtonHint(action);
+					ShowButtonHint(side, action);
 				}
 
 				renderModel.gameObject.SetActive( true );
+
+                return hintInfo;
 			}
+
+            return null;
 		}
 
 
 		//-------------------------------------------------
-		private void HideText(ISteamVR_Action_In_Source action)
+		private void HideText(AnchorSide side, ISteamVR_Action_In_Source action)
 		{
-			if ( actionHintInfos.ContainsKey(action) )
+			if ( actionHintInfos.ContainsKey((action, side)) )
 			{
-				ActionHintInfo hintInfo = actionHintInfos[action];
+				ActionHintInfo hintInfo = actionHintInfos[(action, side)];
 				hintInfo.textHintObject.SetActive( false );
 				hintInfo.textHintActive = false;
 
-				HideButtonHint(action);
+				HideButtonHint(side, action);
 			}
 		}
 
@@ -711,11 +738,11 @@ namespace Valve.VR.InteractionSystem
 
 
 		//-------------------------------------------------
-		private string GetActiveHintText(ISteamVR_Action_In_Source action )
+		private string GetActiveHintText(AnchorSide side, ISteamVR_Action_In_Source action )
 		{
-			if ( actionHintInfos.ContainsKey(action) )
+			if ( actionHintInfos.ContainsKey((action, side)) )
 			{
-				ActionHintInfo hintInfo = actionHintInfos[action];
+				ActionHintInfo hintInfo = actionHintInfos[(action, side)];
 				if ( hintInfo.textHintActive )
 				{
 					return hintInfo.text.text;
@@ -746,29 +773,46 @@ namespace Valve.VR.InteractionSystem
 
 
 		//-------------------------------------------------
-		public static void ShowButtonHint( Hand hand, params ISteamVR_Action_In_Source[] actions )
+		public static void ShowButtonHint( AnchorSide side, Hand hand, params ISteamVR_Action_In_Source[] actions )
 		{
 			ControllerButtonHints hints = GetControllerButtonHints( hand );
 			if ( hints != null )
 			{
-				hints.ShowButtonHint( actions );
+				hints.ShowButtonHint(side,  actions );
 			}
-		}
+        }//-------------------------------------------------
+        public static void ShowButtonHint(Hand hand, params ISteamVR_Action_In_Source[] actions)
+        {
+            ControllerButtonHints hints = GetControllerButtonHints(hand);
+            if (hints != null)
+            {
+                hints.ShowButtonHint(AnchorSide.LEFT, actions);
+            }
+        }
 
 
-		//-------------------------------------------------
-		public static void HideButtonHint( Hand hand, params ISteamVR_Action_In_Source[] actions )
+        //-------------------------------------------------
+        public static void HideButtonHint(AnchorSide side, Hand hand, params ISteamVR_Action_In_Source[] actions )
 		{
 			ControllerButtonHints hints = GetControllerButtonHints( hand );
 			if ( hints != null )
 			{
-				hints.HideButtonHint( actions );
+				hints.HideButtonHint( side, actions );
 			}
-		}
+        }
+        //-------------------------------------------------
+        public static void HideButtonHint(Hand hand, params ISteamVR_Action_In_Source[] actions)
+        {
+            ControllerButtonHints hints = GetControllerButtonHints(hand);
+            if (hints != null)
+            {
+                hints.HideButtonHint(AnchorSide.LEFT, actions);
+            }
+        }
 
 
-		//-------------------------------------------------
-		public static void HideAllButtonHints( Hand hand )
+        //-------------------------------------------------
+        public static void HideAllButtonHints( Hand hand )
 		{
 			ControllerButtonHints hints = GetControllerButtonHints( hand );
 			if ( hints != null )
@@ -779,42 +823,74 @@ namespace Valve.VR.InteractionSystem
 
 
 		//-------------------------------------------------
-		public static bool IsButtonHintActive( Hand hand, ISteamVR_Action_In_Source action )
+		public static bool IsButtonHintActive(AnchorSide side, Hand hand, ISteamVR_Action_In_Source action )
 		{
 			ControllerButtonHints hints = GetControllerButtonHints( hand );
 			if ( hints != null )
 			{
-				return hints.IsButtonHintActive(action);
+				return hints.IsButtonHintActive(side, action);
 			}
 
 			return false;
-		}
+        }//-------------------------------------------------
+        public static bool IsButtonHintActive(Hand hand, ISteamVR_Action_In_Source action)
+        {
+            ControllerButtonHints hints = GetControllerButtonHints(hand);
+            if (hints != null)
+            {
+                return hints.IsButtonHintActive(AnchorSide.LEFT, action);
+            }
+
+            return false;
+        }
 
 
-		//-------------------------------------------------
-		public static void ShowTextHint( Hand hand, ISteamVR_Action_In_Source action, string text, bool highlightButton = true )
+        //-------------------------------------------------
+        public static (ControllerButtonHints, ActionHintInfo) ShowTextHint(AnchorSide side, Hand hand, ISteamVR_Action_In_Source action, string text, bool highlightButton = true )
         {
             ControllerButtonHints hints = GetControllerButtonHints( hand );
 			if ( hints != null )
 			{
-				hints.ShowText(action, text, highlightButton );
+				var hintInfo = hints.ShowText(side, action, text, highlightButton );
 
                 if (hand != null)
                 {
                     if (hints.autoSetWithControllerRangeOfMotion)
                         hand.SetTemporarySkeletonRangeOfMotion(SkeletalMotionRangeChange.WithController);
                 }
+
+                return (hints, hintInfo);
             }
-		}
+
+            return (null, null);
+        }//-------------------------------------------------
+        public static (ControllerButtonHints, ActionHintInfo) ShowTextHint(Hand hand, ISteamVR_Action_In_Source action, string text, bool highlightButton = true)
+        {
+            ControllerButtonHints hints = GetControllerButtonHints(hand);
+            if (hints != null)
+            {
+                var hintInfo = hints.ShowText(AnchorSide.LEFT, action, text, highlightButton);
+
+                if (hand != null)
+                {
+                    if (hints.autoSetWithControllerRangeOfMotion)
+                        hand.SetTemporarySkeletonRangeOfMotion(SkeletalMotionRangeChange.WithController);
+                }
+
+                return (hints, hintInfo);
+            }
+
+            return (null, null);
+        }
 
 
-		//-------------------------------------------------
-		public static void HideTextHint( Hand hand, ISteamVR_Action_In_Source action)
+        //-------------------------------------------------
+        public static void HideTextHint(AnchorSide side, Hand hand, ISteamVR_Action_In_Source action)
 		{
 			ControllerButtonHints hints = GetControllerButtonHints( hand );
 			if ( hints != null )
 			{
-				hints.HideText(action);
+				hints.HideText(side, action);
 
                 if (hand != null)
                 {
@@ -823,11 +899,26 @@ namespace Valve.VR.InteractionSystem
                 }
             }
 
-		}
+        }//-------------------------------------------------
+        public static void HideTextHint(Hand hand, ISteamVR_Action_In_Source action)
+        {
+            ControllerButtonHints hints = GetControllerButtonHints(hand);
+            if (hints != null)
+            {
+                hints.HideText(AnchorSide.LEFT, action);
+
+                if (hand != null)
+                {
+                    if (hints.autoSetWithControllerRangeOfMotion)
+                        hand.ResetTemporarySkeletonRangeOfMotion();
+                }
+            }
+
+        }
 
 
-		//-------------------------------------------------
-		public static void HideAllTextHints( Hand hand )
+        //-------------------------------------------------
+        public static void HideAllTextHints( Hand hand )
 		{
 			ControllerButtonHints hints = GetControllerButtonHints( hand );
 			if ( hints != null )
@@ -838,15 +929,25 @@ namespace Valve.VR.InteractionSystem
 
 
 		//-------------------------------------------------
-		public static string GetActiveHintText( Hand hand, ISteamVR_Action_In_Source action)
+		public static string GetActiveHintText(AnchorSide side, Hand hand, ISteamVR_Action_In_Source action)
 		{
 			ControllerButtonHints hints = GetControllerButtonHints( hand );
 			if ( hints != null )
 			{
-				return hints.GetActiveHintText(action);
+				return hints.GetActiveHintText(side, action);
 			}
 
 			return string.Empty;
-		}
-	}
+        }//-------------------------------------------------
+        public static string GetActiveHintText(Hand hand, ISteamVR_Action_In_Source action)
+        {
+            ControllerButtonHints hints = GetControllerButtonHints(hand);
+            if (hints != null)
+            {
+                return hints.GetActiveHintText(AnchorSide.LEFT, action);
+            }
+
+            return string.Empty;
+        }
+    }
 }
