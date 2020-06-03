@@ -90,6 +90,10 @@
       "type": "boolean"
     },
     {
+      "name": "/actions/default/in/ScaleBrush",
+      "type": "vector2"
+    },
+    {
       "name": "/actions/default/out/Haptic",
       "type": "vibration"
     },
@@ -215,7 +219,8 @@
       "/actions/default/in/BrushPropertiesMenu": "Brush Properties Menu",
       "/actions/default/in/LineGuide": "Line Guide",
       "/actions/default/in/CustomBrushEditingMenu": "Custom Brush Editing Menu",
-      "/actions/default/in/VoxelizeHeldObject": "Voxelize Held Object"
+      "/actions/default/in/VoxelizeHeldObject": "Voxelize Held Object",
+      "/actions/default/in/ScaleBrush": "Scale Brush"
     }
   ]
 }

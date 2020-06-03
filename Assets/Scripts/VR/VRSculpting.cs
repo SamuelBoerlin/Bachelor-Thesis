@@ -5,15 +5,19 @@ using Valve.VR;
 using Voxel;
 using System;
 using System.Collections.Generic;
+using Valve.VR.InteractionSystem;
+using Unity.Collections;
+using Unity.Mathematics;
+using Voxel.Voxelizer;
 
 [RequireComponent(typeof(SdfShapeRenderHandler))]
 public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 {
     public class SdfConsumer
     {
-        public static readonly SdfConsumer NONE = new SdfConsumer();
+        public static readonly SdfConsumer PASSTHROUGH = new SdfConsumer();
 
-        public virtual TSdf Consume<TSdf>(TSdf sdf) where TSdf : struct, ISdf
+        public virtual ISdf Consume<TSdf>(TSdf sdf) where TSdf : struct, ISdf
         {
             return sdf;
         }
@@ -27,8 +31,9 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
         private Quaternion rotation;
         private int material;
         private bool replace;
+        private float scale;
 
-        public PlacementSdfConsumer(DefaultVoxelWorldContainer voxelWorld, DefaultVoxelEditManagerContainer voxelEditsManager, Vector3 position, Quaternion rotation, int material, bool replace)
+        public PlacementSdfConsumer(DefaultVoxelWorldContainer voxelWorld, DefaultVoxelEditManagerContainer voxelEditsManager, Vector3 position, Quaternion rotation, float scale, int material, bool replace)
         {
             this.voxelWorld = voxelWorld;
             this.voxelEditsManager = voxelEditsManager;
@@ -36,11 +41,12 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             this.rotation = rotation;
             this.material = material;
             this.replace = replace;
+            this.scale = scale;
         }
 
-        public override TSdf Consume<TSdf>(TSdf sdf)
+        public override ISdf Consume<TSdf>(TSdf sdf)
         {
-            voxelWorld.Instance.ApplySdf(position, rotation, sdf, material, replace, voxelEditsManager.Instance.Consumer());
+            voxelWorld.Instance.ApplySdf(position, rotation, new ScaleSDF<TSdf>(scale, sdf), material, replace, voxelEditsManager.Instance.Consumer());
             return sdf;
         }
     }
@@ -77,7 +83,18 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
     [SerializeField] private float brushRotateDeadzone = 0.1f;
     [SerializeField] private SteamVR_Action_Boolean brushResetAction;
 
+    [SerializeField] private SteamVR_Action_Vector2 brushScaleAction;
+    [SerializeField] private float brushScaleSpeed = 0.25f;
+    [SerializeField] private float brushScaleDeadzone = 0.1f;
+    [SerializeField] private float brushMaxScale = 1.0f;
+    [SerializeField] private float brushMinScale = 0.1f;
+
     [SerializeField] private GameObject controllerBrush;
+
+    [SerializeField] private SteamVR_Action_Boolean voxelizeAction;
+    [SerializeField] private Hand voxelizeHand;
+    [SerializeField] private int voxelizeResolution = 128;
+    [SerializeField] private bool voxelizeSmoothNormals = false;
 
     [SerializeField] private Camera _userCamera;
     public Camera UserCamera
@@ -170,7 +187,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             _brushType = value;
             if (change)
             {
-                OnBrushTypeChange();
+                OnBrushShapeChange();
             }
         }
     }
@@ -284,6 +301,9 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
     private Quaternion brushRotation = Quaternion.identity;
     private Quaternion brushControllerRotation = Quaternion.identity;
 
+    private Vector2 brushScaleStart = Vector2.zero;
+    private float brushScale = 1.0f;
+
     private ISdf previewSdf;
 
     private SdfShapeRenderHandler _brushRenderer;
@@ -324,7 +344,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
     {
         VRPointerInputModule.OnVRPointerInputModuleInitialized -= OnVRPointerInputModuleInitialized;
 
-        if(previewSdf != null)
+        if (previewSdf != null)
         {
             previewSdf.Dispose();
             previewSdf = null;
@@ -364,9 +384,9 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
     public TComponent GetUIWithComponent<TComponent>()
     {
-        foreach(var menu in openMenus)
+        foreach (var menu in openMenus)
         {
-            if(menu.instance.TryGetComponent<TComponent>(out var component))
+            if (menu.instance.TryGetComponent<TComponent>(out var component))
             {
                 return component;
             }
@@ -376,9 +396,9 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
     public void CloseMenu(GameObject go)
     {
-        foreach(var menu in openMenus)
+        foreach (var menu in openMenus)
         {
-            if(menu.instance == go)
+            if (menu.instance == go)
             {
                 menu.shouldClose = true;
             }
@@ -423,7 +443,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
                     }
                 }
 
-                if(closedMenus != null)
+                if (closedMenus != null)
                 {
                     foreach (var menu in closedMenus)
                     {
@@ -462,6 +482,24 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
         else
         {
             brushRotateStart = Vector2.zero;
+        }
+
+        if (brushScaleAction != null && brushScaleAction.active && (brushScaleAction.axis - brushScaleAction.delta).magnitude > 0.01f && brushScaleAction.axis.magnitude > 0.01f)
+        {
+            if (brushScaleStart == Vector2.zero)
+            {
+                brushScaleStart = brushScaleAction.axis;
+            }
+
+            if (Mathf.Abs((brushScaleStart - brushScaleAction.axis).y) >= brushScaleDeadzone)
+            {
+                var scaleChange = brushScaleAction.delta * brushScaleSpeed;
+                brushScale = Mathf.Clamp(brushScale + scaleChange.y, brushMinScale, brushMaxScale);
+            }
+        }
+        else
+        {
+            brushScaleStart = Vector2.zero;
         }
 
         bool isPlacing = placeAction != null && placeAction.active && placeAction.state && !IsPointerActive;
@@ -529,7 +567,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             VoxelEditsManager.Instance.Merge = true;
 
             //Apply SDF
-            var sdf = CreateSdf(BrushType, new PlacementSdfConsumer(VoxelWorld, VoxelEditsManager, brushPosition, brushControllerRotation * brushRotation,
+            var sdf = CreateSdf(BrushType, new PlacementSdfConsumer(VoxelWorld, VoxelEditsManager, brushPosition, brushControllerRotation * brushRotation, brushScale,
                 BrushOperation == BrushOperation.Difference ? 0 : MaterialColors.ToInteger((int)Mathf.Round(BrushColor.r * 255), (int)Mathf.Round(BrushColor.g * 255), (int)Mathf.Round(BrushColor.b * 255), BrushMaterial.ID),
                 BrushOperation == BrushOperation.Replace));
             sdf?.Dispose();
@@ -541,13 +579,94 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
         if (previewSdf != null && !IsPointerActive)
         {
-            _brushRenderer.Render(Matrix4x4.TRS(brushPosition, brushControllerRotation * brushRotation, VoxelWorld.transform.localScale), previewSdf);
+            _brushRenderer.Render(Matrix4x4.TRS(brushPosition, brushControllerRotation * brushRotation, VoxelWorld.transform.localScale * brushScale), previewSdf);
+        }
+
+        if (voxelizeAction != null && voxelizeAction.active && voxelizeAction.stateDown)
+        {
+            MeshFilter meshFilter = null;
+            QueryResultObject resultObject = null;
+
+            foreach (var attached in voxelizeHand.AttachedObjects)
+            {
+                resultObject = null;
+                meshFilter = attached.attachedObject.GetComponent<MeshFilter>();
+
+                if (meshFilter != null && meshFilter.sharedMesh != null & meshFilter.sharedMesh.isReadable)
+                {
+                    resultObject = attached.attachedObject.GetComponent<QueryResultObject>();
+
+                    if (resultObject != null)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (meshFilter != null && resultObject != null)
+            {
+                VoxelizeMesh(meshFilter.sharedMesh);
+            }
         }
     }
 
-    private void OnBrushTypeChange()
+    private void VoxelizeMesh(Mesh voxelizeMesh)
     {
-        if(previewSdf != null)
+        VoxelWorld.Instance.Clear();
+
+        //Move voxel world to brush
+        VoxelWorld.transform.position = controllerBrush.transform.position;
+        VoxelWorld.transform.rotation = controllerBrush.transform.rotation;
+
+        var triangles = voxelizeMesh.triangles;
+        var vertices = voxelizeMesh.vertices;
+        var normals = voxelizeMesh.normals;
+
+        var inVertices = new NativeArray<float3>(triangles.Length, Allocator.TempJob);
+        var inNormals = new NativeArray<float3>(triangles.Length, Allocator.TempJob);
+
+        for (int l = triangles.Length, i = 0; i < l; i += 3)
+        {
+            inVertices[i] = vertices[triangles[i]];
+            inVertices[i + 1] = vertices[triangles[i + 1]];
+            inVertices[i + 2] = vertices[triangles[i + 2]];
+
+            inNormals[i] = normals[triangles[i]];
+            inNormals[i + 1] = normals[triangles[i + 1]];
+            inNormals[i + 2] = normals[triangles[i + 2]];
+        }
+
+        var outVoxels = new NativeArray3D<Voxel.Voxel, LinearIndexer>(new LinearIndexer(voxelizeResolution, voxelizeResolution, voxelizeResolution), voxelizeResolution, voxelizeResolution, voxelizeResolution, Allocator.TempJob);
+
+        var voxelizationProperties = voxelizeSmoothNormals ? Voxelizer.VoxelizationProperties.SMOOTH : Voxelizer.VoxelizationProperties.FLAT;
+
+        var watch = new System.Diagnostics.Stopwatch();
+        watch.Start();
+
+        using (var job = Voxelizer.Voxelize(inVertices, inNormals, outVoxels, MaterialColors.ToInteger((int)Mathf.Round(BrushColor.r * 255), (int)Mathf.Round(BrushColor.g * 255), (int)Mathf.Round(BrushColor.b * 255), BrushMaterial.ID), voxelizationProperties))
+        {
+            job.Handle.Complete();
+        }
+
+        watch.Stop();
+        Debug.Log("Voxelized mesh: " + watch.ElapsedMilliseconds + "ms");
+        watch.Reset();
+        watch.Start();
+
+        //TODO Make voxelizer also undoable?
+        VoxelWorld.Instance.ApplyGrid(0, 0, 0, outVoxels, true, false, null);
+
+        watch.Stop();
+        Debug.Log("Applied to grid: " + watch.ElapsedMilliseconds + "ms");
+
+        inVertices.Dispose();
+        inNormals.Dispose();
+        outVoxels.Dispose();
+    }
+
+    private void OnBrushShapeChange()
+    {
+        if (previewSdf != null)
         {
             //Dispose the previous SDF
             previewSdf.Dispose();
@@ -566,7 +685,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
     {
         if (consumer == null)
         {
-            consumer = SdfConsumer.NONE;
+            consumer = SdfConsumer.PASSTHROUGH;
         }
 
         switch (type)

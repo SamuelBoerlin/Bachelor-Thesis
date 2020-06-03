@@ -261,7 +261,20 @@ MonoBehaviour:
   brushResetAction:
     actionPath: /actions/default/in/ResetBrush
     needsReinit: 0
+  brushScaleAction:
+    actionPath: /actions/default/in/ScaleBrush
+    needsReinit: 0
+  brushScaleSpeed: 0.25
+  brushScaleDeadzone: 0.1
+  brushMaxScale: 1
+  brushMinScale: 0.1
   controllerBrush: {fileID: 2108839681}
+  voxelizeAction:
+    actionPath: /actions/default/in/VoxelizeHeldObject
+    needsReinit: 0
+  voxelizeHand: {fileID: 2081968861}
+  voxelizeResolution: 128
+  voxelizeSmoothNormals: 0
   _userCamera: {fileID: 2091408349}
   _queryResultDisplay: {fileID: 596042522}
   _cineastApi: {fileID: 1141139612}
@@ -272,19 +285,22 @@ MonoBehaviour:
   _brushColor: {r: 1, g: 1, b: 1, a: 1}
   _brushOperation: 0
   _brushMaterials:
-  - _name: Grass
+  - _name: Marble
     _id: 0
-    _texture: {fileID: 2800000, guid: 34a39a5c02a1c504297e59f7286779e9, type: 3}
+    _texture: {fileID: 2800000, guid: 844649ea473f59241828c667b60fe5a8, type: 3}
   - _name: Dirt
     _id: 1
     _texture: {fileID: 2800000, guid: 8eeb3b6627af1a3498d3b8bee02ea4ab, type: 3}
   - _name: Wood
     _id: 2
     _texture: {fileID: 2800000, guid: 0e1bd4dd4f34c514d9465db5511dd694, type: 3}
-  _brushMaterial:
-    _name: Grass
-    _id: 0
+  - _name: Grass
+    _id: 3
     _texture: {fileID: 2800000, guid: 34a39a5c02a1c504297e59f7286779e9, type: 3}
+  _brushMaterial:
+    _name: Marble
+    _id: 0
+    _texture: {fileID: 2800000, guid: 844649ea473f59241828c667b60fe5a8, type: 3}
   _menuEntries:
   - _inputSource: 2
     _action:
@@ -1023,6 +1039,42 @@ PrefabInstance:
       propertyPath: dynamicRenderers.Array.data[0]
       value: 
       objectReference: {fileID: 591388754}
+    - target: {fileID: 444754940, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+      propertyPath: textures.Array.size
+      value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 444754940, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+      propertyPath: textures.Array.data[12]
+      value: 
+      objectReference: {fileID: 2800000, guid: 34a39a5c02a1c504297e59f7286779e9, type: 3}
+    - target: {fileID: 444754940, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+      propertyPath: textures.Array.data[13]
+      value: 
+      objectReference: {fileID: 2800000, guid: 97a779c990d2e7d40b780da2713e7747, type: 3}
+    - target: {fileID: 444754940, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+      propertyPath: textures.Array.data[14]
+      value: 
+      objectReference: {fileID: 2800000, guid: 34a39a5c02a1c504297e59f7286779e9, type: 3}
+    - target: {fileID: 444754940, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+      propertyPath: textures.Array.data[15]
+      value: 
+      objectReference: {fileID: 2800000, guid: 97a779c990d2e7d40b780da2713e7747, type: 3}
+    - target: {fileID: 444754940, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+      propertyPath: textures.Array.data[0]
+      value: 
+      objectReference: {fileID: 2800000, guid: 844649ea473f59241828c667b60fe5a8, type: 3}
+    - target: {fileID: 444754940, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+      propertyPath: textures.Array.data[1]
+      value: 
+      objectReference: {fileID: 2800000, guid: 29e3df1f18c5b65478813df2bbcddbeb, type: 3}
+    - target: {fileID: 444754940, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+      propertyPath: textures.Array.data[2]
+      value: 
+      objectReference: {fileID: 2800000, guid: 844649ea473f59241828c667b60fe5a8, type: 3}
+    - target: {fileID: 444754940, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
+      propertyPath: textures.Array.data[3]
+      value: 
+      objectReference: {fileID: 2800000, guid: 29e3df1f18c5b65478813df2bbcddbeb, type: 3}
     - target: {fileID: 444754941, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
       propertyPath: chunkSize
       value: 32
