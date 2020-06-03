@@ -79,6 +79,45 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
     [SerializeField] private GameObject controllerBrush;
 
+    [SerializeField] private Camera _userCamera;
+    public Camera UserCamera
+    {
+        get
+        {
+            return _userCamera;
+        }
+        set
+        {
+            _userCamera = value;
+        }
+    }
+
+    [SerializeField] private QueryResultDisplay _queryResultDisplay;
+    public QueryResultDisplay QueryResultDisplay
+    {
+        get
+        {
+            return _queryResultDisplay;
+        }
+        set
+        {
+            _queryResultDisplay = value;
+        }
+    }
+
+    [SerializeField] private UnityCineastApi _cineastApi;
+    public UnityCineastApi CineastApi
+    {
+        get
+        {
+            return _cineastApi;
+        }
+        set
+        {
+            _cineastApi = value;
+        }
+    }
+
     [SerializeField] private DefaultCustomBrushContainer _customBrush;
     public DefaultCustomBrushContainer CustomBrush
     {
@@ -335,12 +374,23 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
         return default;
     }
 
+    public void CloseMenu(GameObject go)
+    {
+        foreach(var menu in openMenus)
+        {
+            if(menu.instance == go)
+            {
+                menu.shouldClose = true;
+            }
+        }
+    }
+
     public void Update()
     {
         List<Menu> closedMenus = null;
         foreach (var menu in openMenus)
         {
-            if ((menu.entry.Toggle && menu.entry.Action.GetStateDown(menu.entry.InputSource)) || (!menu.entry.Toggle && !menu.entry.Action.GetState(menu.entry.InputSource)))
+            if (menu.shouldClose || (menu.entry.Toggle && menu.entry.Action.GetStateDown(menu.entry.InputSource)) || (!menu.entry.Toggle && !menu.entry.Action.GetState(menu.entry.InputSource)))
             {
                 if (closedMenus == null)
                 {

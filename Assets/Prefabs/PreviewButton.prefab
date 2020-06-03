@@ -77,7 +77,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 66537652382673006}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 57f27acad3a123042a5ba87414e167e6, type: 3}
+  m_Script: {fileID: 11500000, guid: 6112f32db6e1866469dc591205a2c774, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _objectRenderer: {fileID: 0}
@@ -89,8 +89,8 @@ MonoBehaviour:
     rotation2: {x: 0, y: 45, z: 0}
     scale: {x: 3, y: 3, z: 3}
   virtualTransform:
-    position: {x: 0, y: 0, z: -1}
-    rotation1: {x: 0, y: 0, z: 0}
+    position: {x: 0, y: 0, z: -0.3}
+    rotation1: {x: -22.5, y: 0, z: 0}
     rotation2: {x: 0, y: 45, z: 0}
     scale: {x: 1, y: 1, z: 1}
   width: 512

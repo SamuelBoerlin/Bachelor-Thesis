@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3106801376209204423}
   - component: {fileID: 2314341681116941666}
-  - component: {fileID: 7164154235829566391}
+  - component: {fileID: 4444262955275737775}
   m_Layer: 0
   m_Name: QueryResultTile
   m_TagString: Untagged
@@ -46,7 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   setCanvasEventCameras: 1
---- !u!114 &7164154235829566391
+--- !u!114 &4444262955275737775
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -55,7 +55,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3106801376209204422}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8b16b97ffd56d85479f3b95b4a1e4c8b, type: 3}
+  m_Script: {fileID: 11500000, guid: 145b9cb5e23473e43a8568f25e10a3f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _button: {fileID: 7663138509173064795}
@@ -192,6 +192,22 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 3106801375804084004}
     m_Modifications:
+    - target: {fileID: 1702195342, guid: e13343a1185841d4987234334230c87b, type: 3}
+      propertyPath: virtualTransform.scale.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1702195342, guid: e13343a1185841d4987234334230c87b, type: 3}
+      propertyPath: virtualTransform.scale.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1702195342, guid: e13343a1185841d4987234334230c87b, type: 3}
+      propertyPath: virtualTransform.scale.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1702195342, guid: e13343a1185841d4987234334230c87b, type: 3}
+      propertyPath: virtualTransform.position.z
+      value: -1
+      objectReference: {fileID: 0}
     - target: {fileID: 66537652382673006, guid: e13343a1185841d4987234334230c87b,
         type: 3}
       propertyPath: m_Name
@@ -313,7 +329,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 57f27acad3a123042a5ba87414e167e6, type: 3}
+  m_Script: {fileID: 11500000, guid: 6112f32db6e1866469dc591205a2c774, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &7663138509173064795 stripped

@@ -96,10 +96,10 @@ MonoBehaviour:
   m_RendererFeatures:
   - {fileID: 1520196814181221365}
   - {fileID: -1559299356064704811}
-  - {fileID: 7038951696789757403}
   - {fileID: 3650440403752501136}
   - {fileID: -4016530669703006124}
-  m_RendererFeatureMap: f5c3f3b9f2d21815d59644477f415ceadb5d49364661af6190bf66d334f8a83254f8e3eaa26a42c8
+  - {fileID: 6628233822633207066}
+  m_RendererFeatureMap: f5c3f3b9f2d21815d59644477f415cea90bf66d334f8a83254f8e3eaa26a42c81a2548368b37fc5b
   postProcessData: {fileID: 11400000, guid: d96fc8fa4248d0b4587096170402c5ea, type: 2}
   shaders:
     blitPS: {fileID: 4800000, guid: c17132b1f77d20942aa75f8429c0f8bc, type: 3}
@@ -203,6 +203,19 @@ MonoBehaviour:
       restoreCamera: 1
       offset: {x: 0, y: 0, z: 0, w: 0}
       cameraFieldOfView: 60
+--- !u!114 &6628233822633207066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fa667509b98c364d929de5ab48034e2, type: 3}
+  m_Name: ObjectToTextureRenderPassFeature
+  m_EditorClassIdentifier: 
+  m_Active: 1
 --- !u!114 &7038951696789757403
 MonoBehaviour:
   m_ObjectHideFlags: 0

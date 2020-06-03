@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System;
 
 public class QueryResultDisplay : MonoBehaviour
 {
@@ -17,10 +18,17 @@ public class QueryResultDisplay : MonoBehaviour
 
     [SerializeField] private float radius = 0.8f;
 
+    [SerializeField] private GameObject loadingRenderer;
+
     private int currentQueryId = -1;
 
     private List<GameObject> tiles = new List<GameObject>();
     private List<GameObject> queryResultObjects = new List<GameObject>();
+
+    private void Start()
+    {
+        loadingRenderer.SetActive(false);
+    }
 
     private void LateUpdate()
     {
@@ -29,8 +37,30 @@ public class QueryResultDisplay : MonoBehaviour
 
     public void PrepareNewQuery(int queryId)
     {
+        //Remove all previous results
         ResetDisplay();
         currentQueryId = queryId;
+
+        //Face user
+        var camForward = sculpting.UserCamera.transform.forward;
+        transform.rotation = Quaternion.LookRotation(new Vector3(camForward.x, 0, camForward.z).normalized, Vector3.up);
+
+        //Show loading screen
+        loadingRenderer.SetActive(true);
+    }
+
+    public void FinishQuery(int queryId, Exception ex)
+    {
+        if (currentQueryId == -1 || currentQueryId == queryId)
+        {
+            loadingRenderer.SetActive(false);
+        }
+
+        if (ex != null)
+        {
+            Debug.LogError("An error has occurred during the query");
+            Debug.LogError(ex.Message);
+        }
     }
 
     public void ResetDisplay()
@@ -48,12 +78,16 @@ public class QueryResultDisplay : MonoBehaviour
         queryResultObjects.Clear();
 
         currentQueryId = -1;
+
+        loadingRenderer.SetActive(false);
     }
 
     public void SetQueryResult(int queryId, int scoreIndex, UnityCineastApi.QueryResult result, GameObject go)
     {
         if (queryId == currentQueryId)
         {
+            loadingRenderer.SetActive(false);
+
             queryResultObjects.Add(go);
 
             var objectToTextureRenderManager = GameObject.FindGameObjectWithTag("ObjectToTextureRenderManager").GetComponent<ObjectToTextureRenderManager>();
@@ -62,7 +96,7 @@ public class QueryResultDisplay : MonoBehaviour
 
             tiles.Add(tile);
 
-            float xAngle = Mathf.PI / 2.0f;
+            float xAngle = (float)Math.PI / 2.0f;
             float yAngle = 0.0f;
 
             int rows = topBottomRows * 2 + 1;
@@ -99,10 +133,10 @@ public class QueryResultDisplay : MonoBehaviour
             float ycos = Mathf.Cos(yAngle);
             float ysin = Mathf.Sin(yAngle);
 
-            Vector3 offset = transform.right * xcos * ycos * radius + transform.forward * xsin * ycos * radius + Vector3.up * ysin * radius;
+            Vector3 offset = Vector3.right * xcos * ycos * radius + Vector3.forward * xsin * ycos * radius + Vector3.up * ysin * radius;
 
             tile.transform.localPosition = offset;
-            tile.transform.rotation = Quaternion.LookRotation(offset.normalized, Vector3.up);
+            tile.transform.localRotation = Quaternion.LookRotation(offset.normalized, Vector3.up);
 
             var ui = tile.GetComponent<VRUI>();
             ui.InitializeUI(sculpting, sculpting.InputModule, sculpting.EventCamera);

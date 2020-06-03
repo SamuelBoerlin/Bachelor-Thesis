@@ -1,4 +1,5 @@
 ﻿using ObjLoader.Loader.Loaders;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -38,10 +39,16 @@ public class QueryResultSpawner : MonoBehaviour
 
     private void Start()
     {
-        api.onQueryCompleted.AddListener(OnCineastQueryCompleted);
+        api.onQueryOutput.AddListener(OnCineastQueryOutput);
+        api.onQueryComplete.AddListener(OnCineastQueryComplete);
     }
 
-    private void OnCineastQueryCompleted(int queryId, List<UnityCineastApi.QueryResult> results)
+    private void OnCineastQueryComplete(int queryId, Exception ex)
+    {
+        resultDisplay.FinishQuery(queryId, ex);
+    }
+
+    private void OnCineastQueryOutput(int queryId, List<UnityCineastApi.QueryResult> results)
     {
         if (deletionArea != null)
         {

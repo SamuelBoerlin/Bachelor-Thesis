@@ -47,8 +47,12 @@ public class UnityCineastApi : MonoBehaviour
     private int queryIdCounter = 0;
 
     [Serializable]
-    public class QueryCompletedEvent : UnityEvent<int, List<QueryResult>> { }
-    public QueryCompletedEvent onQueryCompleted;
+    public class QueryOutputEvent : UnityEvent<int, List<QueryResult>> { }
+    public QueryOutputEvent onQueryOutput;
+
+    [Serializable]
+    public class QueryCompleteEvent : UnityEvent<int, Exception> { }
+    public QueryCompleteEvent onQueryComplete;
 
     public struct QueryResult
     {
@@ -177,6 +181,12 @@ public class UnityCineastApi : MonoBehaviour
         }
     }
 
+    public int StartVoxelQuery(DefaultVoxelWorldContainer voxels)
+    {
+        var modelData = SculptureToJsonConverter.Convert(voxels);
+        return StartQuery(modelData, false);
+    }
+
     public int StartQuery(string modelJson, bool continuousOutputs)
     {
         var queryId = queryIdCounter++;
@@ -198,13 +208,14 @@ public class UnityCineastApi : MonoBehaviour
 
         var categories = new List<string>(queryCategories);
 
-        StartCoroutine(CreateQueryCoroutine(query, categories, modelJson, results => onQueryCompleted?.Invoke(queryId, results), continuousOutputs, testSettings.debugLog));
+        StartCoroutine(CreateQueryCoroutine(query, categories, modelJson, results => onQueryOutput?.Invoke(queryId, results), ex => onQueryComplete?.Invoke(queryId, ex), continuousOutputs, testSettings.debugLog));
 
         return queryId;
     }
 
     public delegate void QueryResultCallbackDelegate(List<QueryResult> results);
-    public static IEnumerator CreateQueryCoroutine(Complete3DSimilarityQuery query, List<string> categories, string modelJson, QueryResultCallbackDelegate callback, bool continuous = false, bool log = false)
+    public delegate void QueryCompleteCallbackDelegate(Exception ex);
+    public static IEnumerator CreateQueryCoroutine(Complete3DSimilarityQuery query, List<string> categories, string modelJson, QueryResultCallbackDelegate outputCallback, QueryCompleteCallbackDelegate completeCallback, bool continuous = false, bool log = false)
     {
         var results = new List<QueryResult>();
 
@@ -230,6 +241,9 @@ public class UnityCineastApi : MonoBehaviour
         //Create query task
         Task queryTask = null;
 
+        //Capture potential query exception
+        Exception queryException = null;
+
         //Run query task in another thread
         var task = Task.Run(async () =>
             {
@@ -240,7 +254,7 @@ public class UnityCineastApi : MonoBehaviour
                 }
                 catch(Exception e)
                 {
-                    Debug.LogError(e.Message);
+                    queryException = e;
                 }
             }
         );
@@ -253,8 +267,11 @@ public class UnityCineastApi : MonoBehaviour
                 //Call callback with intermediate query results
                 lock (results)
                 {
-                    callback(results);
-                    results.Clear();
+                    if (results.Count > 0)
+                    {
+                        outputCallback(results);
+                        results.Clear();
+                    }
                 }
             }
 
@@ -266,8 +283,13 @@ public class UnityCineastApi : MonoBehaviour
             //Call callback with query results
             lock (results)
             {
-                callback(results);
+                if(results.Count > 0)
+                {
+                    outputCallback(results);
+                }
             }
         }
+
+        completeCallback(queryException);
     }
 }
