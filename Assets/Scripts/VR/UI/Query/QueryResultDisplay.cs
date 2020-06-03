@@ -82,10 +82,12 @@ public class QueryResultDisplay : MonoBehaviour
         loadingRenderer.SetActive(false);
     }
 
-    public void SetQueryResult(int queryId, int scoreIndex, UnityCineastApi.QueryResult result, GameObject go)
+    public void SetQueryResult(int queryId, int scoreIndex, UnityCineastApi.QueryResult result, GameObject go, QueryResultObject queryResultObjectScript)
     {
         if (queryId == currentQueryId)
         {
+            queryResultObjectScript.ObjectLabel.Camera = sculpting.UserCamera;
+
             loadingRenderer.SetActive(false);
 
             queryResultObjects.Add(go);

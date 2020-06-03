@@ -317,7 +317,7 @@ MonoBehaviour:
     _prefab: {fileID: 3106801376209204422, guid: 78ce5ee43975baf4eaa1b440f13f5e75,
       type: 3}
     _spawner: {fileID: 1621828639}
-    _toggle: 1
+    _toggle: 0
 --- !u!114 &420546073
 MonoBehaviour:
   m_ObjectHideFlags: 0

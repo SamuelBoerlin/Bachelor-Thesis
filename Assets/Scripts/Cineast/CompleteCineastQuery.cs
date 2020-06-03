@@ -16,12 +16,22 @@ public class CompleteCineastQuery
         private set;
     }
 
+    /// <summary>
+    /// Time timeout in seconds
+    /// </summary>
+    public int Timeout
+    {
+        get;
+        set;
+    } = 4 * 60;
+
     public CompleteCineastQuery(string cineastApiUrl)
     {
         Api = new Apiv1Api(new Configuration
         {
-            BasePath = cineastApiUrl
+            BasePath = cineastApiUrl,
+            Timeout = Timeout * 1000
         });
-        ObjectDownloader = new CineastObjectDownloader();
+        ObjectDownloader = new CineastObjectDownloader(Timeout);
     }
 }

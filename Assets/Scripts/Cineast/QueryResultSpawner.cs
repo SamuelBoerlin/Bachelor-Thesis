@@ -151,7 +151,7 @@ public class QueryResultSpawner : MonoBehaviour
 
                     mesh.RecalculateNormals();
 
-                    resultDisplay.SetQueryResult(loadedResult.queryId, loadedResult.scoreIndex, loadedResult.result, queryResultObject);
+                    resultDisplay.SetQueryResult(loadedResult.queryId, loadedResult.scoreIndex, loadedResult.result, queryResultObject, queryResultObjectScript);
                 }
                 else
                 {

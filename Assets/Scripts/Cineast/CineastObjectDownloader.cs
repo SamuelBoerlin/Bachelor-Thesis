@@ -12,6 +12,8 @@ namespace Cineast_OpenAPI_Implementation
 {
     public class CineastObjectDownloader
     {
+        private readonly int timeout;
+
         public bool UseCineastServer { get; set; } = true;
 
         public string HostBaseUrl { get; set; }
@@ -25,6 +27,12 @@ namespace Cineast_OpenAPI_Implementation
             { MediaObjectDescriptor.MediatypeEnum.VIDEO, "png" }
         };
         public string DefaultSuffix = "jpg";
+
+
+        public CineastObjectDownloader(int timeout)
+        {
+            this.timeout = timeout;
+        }
 
         public void RegisterSuffix(MediaObjectDescriptor.MediatypeEnum type, string suffix)
         {
@@ -48,6 +56,7 @@ namespace Cineast_OpenAPI_Implementation
                 throw new InvalidOperationException("HostBaseUrl is null");
             }
             HttpClient client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(timeout);
             return (await client.GetStreamAsync(HostBaseUrl + CompletePath(HostThumbnailsPath, objectDescriptor, segmentDescriptor)), client);
         }
 
@@ -69,6 +78,7 @@ namespace Cineast_OpenAPI_Implementation
                 throw new InvalidOperationException("HostBaseUrl is null");
             }
             client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(timeout);
             return (await client.GetStreamAsync(HostBaseUrl + CompletePath(HostContentPath, objectDescriptor, segmentDescriptor)), client);
         }
 

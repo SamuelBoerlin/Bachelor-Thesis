@@ -7,6 +7,15 @@ public class QueryResultObject : MonoBehaviour
 {
     [SerializeField] private Text display;
 
+    [SerializeField] private ObjectLabel _objectLabel;
+    public ObjectLabel ObjectLabel
+    {
+        get
+        {
+            return _objectLabel;
+        }
+    }
+
     public UnityCineastApi.QueryResult QueryResult
     {
         get;
