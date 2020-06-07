@@ -131,6 +131,13 @@
 
 %\begin{document} 
 
+The purpose of this user evaluation is to gather insight and feedback about the current implementation
+of the sculpting and querying functionality and the impression it has on users. The results will be
+helpful in identifying shortcomings and to improve the user experience.\\ \hfill
+If at any point you feel unwell or nauseous while using the VR headset please let me know. That can be a common reaction when not used
+to VR or when the program is not responsive enough.\\ \hfill
+Each time before moving on a next task please press the X \todoMissing{Which button?} button to reset the scene.
+
 
 \newcounter{questionnumber}
 
@@ -158,10 +165,12 @@
 
 1: very easy, 2: easy, 3: neutral, 4: difficult, 5: very difficult \newline
 
-
 \fbox{\begin{minipage}{1.05\linewidth}
 \begin{minipage}{0.95\linewidth}
-\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select the sphere brush and place it the world to create a shape or simple sculpture. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.}
+Read the controller hints to become familiar with VR and the control scheme. Disable the controller hints once you're ready.\\ \hfill
+Time limit: 5min.
+\par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
 
 \freequestion Feedback: \par
 \end{minipage}
@@ -170,7 +179,10 @@
 
 \fbox{\begin{minipage}{1.05\linewidth}
 \begin{minipage}{0.95\linewidth}
-\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then select another brush and remove a piece of your sculpture with it. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.}
+Select the sphere brush and place it the world to create a shape or simple sculpture using the 'Add' mode.\\ \hfill
+Time limit: 3min.
+\par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
 
 \freequestion Feedback: \par
 \end{minipage}
@@ -179,7 +191,10 @@
 
 \fbox{\begin{minipage}{1.05\linewidth}
 \begin{minipage}{0.95\linewidth}
-\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then pick another colour and colour a piece of your sculpture. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.}
+Select a brush and create a shape, then select another brush and remove a piece of your sculpture with it using the 'Remove' mode.\\ \hfill
+Time limit: 3min.
+\par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
 
 \freequestion Feedback: \par
 \end{minipage}
@@ -188,7 +203,10 @@
 
 \fbox{\begin{minipage}{1.05\linewidth}
 \begin{minipage}{0.95\linewidth}
-\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then pick another material (i.e. texture) and change the material of a piece of your sculpture. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.}
+Select a brush and create a shape, then pick another colour and colour a piece of your sculpture using the 'Replace' mode.\\ \hfill
+Time limit: 3min.
+\par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
 
 \freequestion Feedback: \par
 \end{minipage}
@@ -197,7 +215,10 @@
 
 \fbox{\begin{minipage}{1.05\linewidth}
 \begin{minipage}{0.95\linewidth}
-\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Create your own brush (with at least two primitives) using the custom brush editor and then use your own brush to create a shape. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.}
+Select a brush and create a shape, then pick another material (i.e. texture) and change the material of a piece of your sculpture using the 'Replace' mode.\\ \hfill
+Time limit: 3min.
+\par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
 
 \freequestion Feedback: \par
 \end{minipage}
@@ -206,11 +227,15 @@
 
 \fbox{\begin{minipage}{1.05\linewidth}
 \begin{minipage}{0.95\linewidth}
-\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Place an already existing 3D model in the world using the voxelizer. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.}
+Create your own brush (with at least two primitives) using the custom brush editor and then use your own brush to create a shape.\\ \hfill
+Time limit: 5min.
+\par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
 
 \freequestion Feedback: \par
 \end{minipage}
 \end{minipage}}
+
 
 \hfill \break
 \heading{\textbf{Querying}}
@@ -220,7 +245,10 @@
 
 \fbox{\begin{minipage}{1.05\linewidth}
 \begin{minipage}{0.95\linewidth}
-\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then use the query menu to run a similarity search. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.}
+Select a brush and create a shape, then use the query menu to run a similarity search.\\ \hfill
+Time limit: 6min.
+\par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
 
 \freequestion Feedback: \par
 \end{minipage}
@@ -229,7 +257,10 @@
 
 \fbox{\begin{minipage}{1.05\linewidth}
 \begin{minipage}{0.95\linewidth}
-\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then use the query menu to run a similarity search. After that, pick one of the results and place it in the world. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.}
+Select a brush and create a shape, then use the query menu to run a similarity search. After that, pick one of the results and voxelize it into the world.\\ \hfill
+Time limit: 6min.
+\par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
 
 \freequestion Feedback: \par
 \end{minipage}
@@ -238,11 +269,27 @@
 
 \fbox{\begin{minipage}{1.05\linewidth}
 \begin{minipage}{0.95\linewidth}
-\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.} Select a brush and create a shape, then use the query menu to run a similarity search. After that, pick one of the results and place it in the world. Using a brush, remove a piece of it and then run a similarity search for the modified sculpture. \par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.}
+Select a brush and create a shape, then use the query menu to run a similarity search. After that, pick one of the results and place it in the world. Using a brush, remove a piece of it and then run a similarity search for the modified sculpture.\\ \hfill
+Time limit: 8min.
+\par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
 
 \freequestion Feedback: \par
 \end{minipage}
 \end{minipage}}
+
+
+\fbox{\begin{minipage}{1.05\linewidth}
+\begin{minipage}{0.95\linewidth}
+\question \stepcounter{questionnumber} \textbf{\arabic{questionnumber}.}
+That was all, thank you! If you feel like playing around some more with the program feel free to do so for a couple more minutes.
+Further below you can give general feedback.\\ \hfill
+Time limit: 5min.
+\par \fiveboxes{\color{gray}1}{\color{gray}2}{\color{gray}3}{\color{gray}4}{\color{gray}5}
+\par
+\end{minipage}
+\end{minipage}}
+
 
 \hfill \break
 \heading{\textbf{General feedback}}
