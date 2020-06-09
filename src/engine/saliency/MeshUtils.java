@@ -45,7 +45,7 @@ public class MeshUtils {
 		float min = Float.MAX_VALUE;
 		float max = 0.0f;
 
-		for(int i = 0; i < clusters.size(); i++) {
+		/*for(int i = 0; i < clusters.size(); i++) {
 			for(int j = 0; j < clusters.size(); j++) {
 				for(int k = 0; k < clusters.size(); k++) {
 
@@ -77,9 +77,9 @@ public class MeshUtils {
 
 				}
 			}
-		}
+		}*/
 		
-		/*for(int i = 0; i < clusters.size(); i++) {
+		for(int i = 0; i < clusters.size(); i++) {
 			for(int j = i + 1; j < clusters.size(); j++) {
 
 					Cluster c1 = clusters.get(i);
@@ -99,7 +99,7 @@ public class MeshUtils {
 					}
 
 			}
-		}*/
+		}
 
 		int[] histogram = new int[numBins];
 

@@ -61,8 +61,8 @@ public class Scene {
 
 	private int displayListId = -1;
 
-	private String modelFile = "/models/penguin.obj";
-	private String textureFile = "/models/penguin.png";
+	private String modelFile = "/models/dino3.obj";
+	private String textureFile = null;//"/models/penguin.png";
 
 	private GLTexture texture = null;
 
@@ -351,7 +351,7 @@ public class Scene {
 			for(int i = 0; i < (this.feature.length - 1) * subdivs; i++) {
 				float ix = i / (float)((this.feature.length - 1) * subdivs - 1);
 
-				float height = (float)this.estimateDensity(this.feature, 1.0f / sum, this.estimateBandwidth(this.splineDeriv2(this.feature, 1.0f / sum)), ix) * 150.0f;
+				float height = (float)this.estimateDensity(this.feature, (int)sum, this.estimateBandwidth(this.splineDeriv2(this.feature, 1.0f / sum)), ix) * 150.0f;
 
 				float x = (i / (float)subdivs + 0.5f) * 11 + 100;
 				float y = 100;
@@ -380,7 +380,7 @@ public class Scene {
 		GL11.glPopMatrix();
 	}
 
-	private float calculateSimilarity(int[] feature1, int[] feature2) {
+	private float calculateJensenShannonDivergence(int[] feature1, int[] feature2) {
 		int sum1 = 0;
 		for(int value : feature1) {
 			sum1 += value;
@@ -405,50 +405,58 @@ public class Scene {
 		float bw2 = this.estimateBandwidth(s2);
 		float bw3 = this.estimateBandwidth(s3);
 
-		int samples = 1000;
-
+		float end = 0.5f / Math.max(bw1, Math.max(bw2, bw3));
+		float start = -end;
+		float diff = end - start;
+		
+		int samples = (int)Math.ceil(diff * 100);
+		
 		double dkl13 = 0.0;
-		for(int i = 0; i < samples; i++) {
-			float x1 = i / (float)(samples - 1);
-			float x2 = (i + 1) / (float)(samples - 1);
+		for(int i = 0; i < samples - 1; i++) {
+			float x1 = i / (float)(samples - 1) * diff + start;
+			float x2 = (i + 1) / (float)(samples - 1) * diff + start;
 
 			float dx = x2 - x1;
 			float mid = 0.5f * (x1 + x2);
 
-			double px = this.estimateDensity(feature1, 1.0f / sum1, bw1, mid);
-			double qx = this.estimateDensity(feature3, 1.0f / sum3, bw3, mid);
-
-			dkl13 -= px * Math.log(px / qx) * dx;
+			double px = this.estimateDensity(feature1, sum1, bw1, mid);
+			double qx = this.estimateDensity(feature3, sum3, bw3, mid);
+			
+			dkl13 += px * divLog(px, qx, 0.0000001D) * dx;
 		}
-
+		
 		double dkl23 = 0.0;
-		for(int i = 0; i < samples; i++) {
-			float x1 = i / (float)(samples - 1);
-			float x2 = (i + 1) / (float)(samples - 1);
+		for(int i = 0; i < samples - 1; i++) {
+			float x1 = i / (float)(samples - 1) * diff + start;
+			float x2 = (i + 1) / (float)(samples - 1) * diff + start;
 
 			float dx = x2 - x1;
 			float mid = 0.5f * (x1 + x2);
 
-			double px = this.estimateDensity(feature2, 1.0f / sum2, bw2, mid);
-			double qx = this.estimateDensity(feature3, 1.0f / sum3, bw3, mid);
+			double px = this.estimateDensity(feature2, sum2, bw2, mid);
+			double qx = this.estimateDensity(feature3, sum3, bw3, mid);
 
-			dkl23 -= px * Math.log(px / qx) * dx;
+			dkl23 += px * divLog(px, qx, 0.0000001D) * dx;
 		}
 
-		return 1 + (float)(0.5f * dkl13 + 0.5f * dkl23);
+		return (float)(0.5f * dkl13 + 0.5f * dkl23);
+	}
+	
+	private double divLog(double numerator, double denominator, double epsilon) {
+		if(Math.abs(numerator) < epsilon && Math.abs(denominator) < epsilon) {
+			return 0;
+		}
+		return Math.log(numerator / denominator);
 	}
 
-	private double estimateDensity(int[] feature, float scale, double bandwidth, float x) {
+	private double estimateDensity(int[] feature, int numSamples, double bandwidth, float x) {
 		double density = 0.0;
-		float numSamples = 0;
 
 		for(int i = 0; i < feature.length; i++) {
 			float sx = i / (float)(feature.length - 1);
-			float samplesForValue = feature[i] * scale;
 
 			double arg = (x - sx) / (double)bandwidth;
-			density += 1 / Math.sqrt(2 * Math.PI) * Math.exp(-0.5D * arg * arg) * samplesForValue;
-			numSamples += samplesForValue;
+			density += 1 / Math.sqrt(2 * Math.PI) * Math.exp(-0.5D * arg * arg) * feature[i];
 		}
 
 		return density / (numSamples * bandwidth);
@@ -524,36 +532,60 @@ public class Scene {
 
 		System.out.println("Number of samples: " + numSamples);
 
-		List<FeatureSample> samples = MeshUtils.sampleFeatures(this.models[this.smoothSteps], this.saliencyMapper, this.colorMapper, new ArrayList<>(), numSamples, new Random());
+		
+		int[] totalHistogram = new int[20];
+		
+		List<FeatureSample> saliencySamples = null;
+		List<FeatureSample> colorSamples = null;
+		List<FeatureSample> clusterSamples = null;
+		List<Cluster> clusters = null;
+		
+		int averageIterations = 10;
+		for(int i = 0; i < averageIterations; i++) {
+			List<FeatureSample> samples = MeshUtils.sampleFeatures(this.models[this.smoothSteps], this.saliencyMapper, this.colorMapper, new ArrayList<>(), numSamples, new Random());
 
-		//Collect saliency samples
-		Collections.sort(samples, (s1, s2) -> -Float.compare(s1.saliency, s2.saliency));
-		List<FeatureSample> saliencySamples = new ArrayList<>(samples.subList(0, numSamples / 10));
+			//Collect saliency samples
+			Collections.sort(samples, (s1, s2) -> -Float.compare(s1.saliency, s2.saliency));
+			saliencySamples = new ArrayList<>(samples.subList(0, numSamples / 10));
 
-		float meanEdgeLength = MeshUtils.meanEdgeLength(this.models[0]);
+			float meanEdgeLength = MeshUtils.meanEdgeLength(this.models[0]);
 
-		//Collect color samples
-		samples = MeshUtils.sampleFeatures(this.models[this.smoothSteps], this.saliencyMapper, this.colorMapper, new ArrayList<>(), numSamples * 2, new Random());
-		Collections.shuffle(samples);
-		List<FeatureSample> colorSamples = MeshUtils.selectColorSamples(this.models[0], samples, 6, meanEdgeLength * 2.0f, meanEdgeLength * 1.5f, 0.8f);
+			//Collect color samples
+			samples = MeshUtils.sampleFeatures(this.models[this.smoothSteps], this.saliencyMapper, this.colorMapper, new ArrayList<>(), numSamples * 2, new Random());
+			Collections.shuffle(samples);
+			colorSamples = MeshUtils.selectColorSamples(this.models[0], samples, 6, meanEdgeLength * 2.0f, meanEdgeLength * 1.5f, 0.8f);
 
-		List<FeatureSample> clusterSamples = new ArrayList<>(saliencySamples.size() + colorSamples.size());
-		clusterSamples.addAll(saliencySamples);
-		clusterSamples.addAll(colorSamples);
+			clusterSamples = new ArrayList<>(saliencySamples.size() + colorSamples.size());
+			clusterSamples.addAll(saliencySamples);
+			clusterSamples.addAll(colorSamples);
 
-		System.out.println("Number of clustered samples: " + clusterSamples.size());
+			System.out.println("Number of clustered samples: " + clusterSamples.size());
 
-		//Cluster samples
-		IsodataClustering clustering = new IsodataClustering(clusterSamples.size() / 20, meanEdgeLength * 2.0f, meanEdgeLength * 10.0f, 10, 100, 200);
-		List<Cluster> clusters = clustering.cluster(clusterSamples, new Random());
+			//Cluster samples
+			IsodataClustering clustering = new IsodataClustering(clusterSamples.size() / 20, meanEdgeLength * 2.0f, meanEdgeLength * 10.0f, 10, 100, 200);
+			clusters = clustering.cluster(clusterSamples, new Random());
 
-		//Compute ClusterAngle + Color feature
-		this.feature = MeshUtils.computeFeature(clusters, 20);
+			//Compute ClusterAngle + Color feature
+			this.feature = MeshUtils.computeFeature(clusters, 20);
+			
+			System.out.println("Histogram: " + Arrays.toString(this.feature));
+			
+			for(int j = 0; j < 20; j++) {
+				totalHistogram[j] += this.feature[j];
+			}
+		}
+		
 
-		System.out.println("Histogram: " + Arrays.toString(this.feature));
+		float[] avgFeature = new float[20];
+		for(int i = 0; i < 20; i++) {
+			avgFeature[i] = totalHistogram[i] / (float)averageIterations;
+			this.feature[i] = (int)avgFeature[i];
+		}
+
+		System.out.println("Avg. Histogram: " + Arrays.toString(avgFeature));
 
 		if(this.prevFeature != null) {
-			System.out.println("Similarity to previous: " + this.calculateSimilarity(this.feature, this.prevFeature));
+			System.out.println("Similarity to previous: " +  (1 - this.calculateJensenShannonDivergence(this.feature, this.prevFeature)));
 		}
 		
 		float colorStrength = 10.0f;
