@@ -33,7 +33,7 @@ place them not on the edges but somewhere within the cell's volume. Therefore du
 surfaces with sharp features, such as e.g. the corners of a cube. Primal contouring algorithms can also polygonize sharp features in certain cases, however only
 if said sharp feature lies exactly on a cell's edge. Fig. \ref{fig:polygonized_cube_voxel_cell} shows a polygonized voxel cell where the sharp feature lies within
 the voxel cell.\\
-Marching Cubes [\todoMissing{Missing ref}] (MC), a primal contouring algorithm, checks whether the material at each corner of the voxel is filled or empty and then 
+Marching Cubes [\todoMissing{Missing ref}] (MC), a primal contouring algorithm, checks whether the material at each corner of the voxel cell is filled or empty and then 
 packs all 8 resulting booleans into a single 8 bit integer. That integer is then used to index into a lookup table that contains which cell edges are to be connected to
 each other to form polygons. Vertex positions can either lie on the middle of their respective cell edge or if the voxel contains a density value the vertex position
 can be smoothly linearly interpolated.\\
@@ -83,12 +83,12 @@ $f\colon \mathbb{R}^3 \mapsto \mathbb{R}$, they can all be treated exactly the s
 \end{wrapfigure}
 \footnotetext{\url{http://graphics.stanford.edu/data/3Dscanrep/}}
 
-An important part of multimedial retrieval is the ability to take query results and reuse them to formulate a new query. In the context of this thesis the multimedia retrieval
+An important part of multimedial retrieval is the ability to take query results and reuse them to formulate a new, refined, query. In the context of this thesis the multimedia retrieval
 is only concerned with polygonal meshes. To facilitate the modification of such polygonal meshes the application includes a voxelizer module. A voxelizer takes a polygonal
-mesh as input and converts it into a suitable voxel representation. In particular, to achieve high accuracy our voxelizer converts the polygonal mesh into Hermite data. Since
-Hermite data contains not only the voxel material, but also the surface normals, we can reconstruct the mesh from the Hermite data voxels while keeping most of the mesh's features intact, given
+mesh as input and converts it into a suitable voxel representation. In particular, to achieve high accuracy our voxelizer converts the polygonal mesh into voxels. Since
+our voxels contain not only the voxel material, but also the surface normals, we can reconstruct the mesh from our voxels while keeping most of the mesh's features intact, given
 a large enough voxel grid with sufficient resolution. In practice a resolution of 128x128x128 seems to be sufficient for most models that aren't highly detailed or noisy.
-Fig. \ref{fig:voxelizer_example} shows an example of a mesh that has been converted to a Hermite data voxel grid.
+Fig. \ref{fig:voxelizer_example} shows an example of a mesh that has been converted to a voxel grid.
 
 \section{Virtual Reality}
 What is VR, use cases
