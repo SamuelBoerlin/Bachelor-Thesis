@@ -8,6 +8,8 @@ public class QueryMenu : MonoBehaviour
 
     [SerializeField] private Button clearButton;
 
+    [SerializeField] private Button resetButton;
+
     [SerializeField] private VRSculpting _sculpting;
     public VRSculpting VRSculpting
     {
@@ -30,6 +32,7 @@ public class QueryMenu : MonoBehaviour
     {
         startButton.onClick.AddListener(OnStartButtonClicked);
         clearButton.onClick.AddListener(OnClearButtonClicked);
+        resetButton.onClick.AddListener(OnResetButtonClicked);
     }
 
     private void OnStartButtonClicked()
@@ -40,6 +43,19 @@ public class QueryMenu : MonoBehaviour
 
     private void OnClearButtonClicked()
     {
+        VRSculpting.QueryResultDisplay.ResetDisplay();
+        VRSculpting.CloseMenu(gameObject);
+    }
+
+    private void OnResetButtonClicked()
+    {
+        VRSculpting.VoxelWorld.Instance.Clear();
+        VRSculpting.BrushScale = 1.0f;
+        VRSculpting.BrushRotation = Quaternion.identity;
+        VRSculpting.BrushType = BrushType.Box;
+        VRSculpting.BrushOperation = Voxel.BrushOperation.Union;
+        VRSculpting.BrushMaterial = VRSculpting.BrushMaterials[0];
+        VRSculpting.BrushColor = Color.white;
         VRSculpting.QueryResultDisplay.ResetDisplay();
         VRSculpting.CloseMenu(gameObject);
     }

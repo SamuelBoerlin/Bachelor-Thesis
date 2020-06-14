@@ -130,14 +130,11 @@
             },
             {
                "inputs" : {
-                  "center" : {
-                     "output" : "/actions/default/in/teleport"
-                  },
                   "east" : {
                      "output" : "/actions/default/in/snapturnright"
                   },
                   "north" : {
-                     "output" : "/actions/default/in/teleport"
+                     "output" : "/actions/default/in/togglehints"
                   },
                   "south" : {
                      "output" : "/actions/default/in/teleport"

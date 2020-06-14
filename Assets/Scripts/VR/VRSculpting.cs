@@ -298,11 +298,16 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
     private GameObject lineGuideObject = null;
 
     private Vector2 brushRotateStart = Vector2.zero;
-    private Quaternion brushRotation = Quaternion.identity;
+    public Quaternion BrushRotation {
+        get; set;
+    } = Quaternion.identity;
     private Quaternion brushControllerRotation = Quaternion.identity;
 
     private Vector2 brushScaleStart = Vector2.zero;
-    private float brushScale = 1.0f;
+    public float BrushScale
+    {
+        get; set;
+    } = 1.0f;
 
     private ISdf previewSdf;
 
@@ -464,7 +469,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
         if (brushResetAction != null && brushResetAction.active && brushResetAction.stateDown)
         {
-            brushRotation = Quaternion.identity;
+            BrushRotation = Quaternion.identity;
         }
         else if (brushRotateAction != null && brushRotateAction.active && (brushRotateAction.axis - brushRotateAction.delta).magnitude > 0.01f && brushRotateAction.axis.magnitude > 0.01f)
         {
@@ -476,7 +481,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             if ((brushRotateStart - brushRotateAction.axis).magnitude >= brushRotateDeadzone)
             {
                 var rotationVector = brushRotateAction.delta * brushRotateSpeed;
-                brushRotation = (Quaternion.Euler(rotationVector.y, -rotationVector.x, 0) * brushRotation).normalized;
+                BrushRotation = (Quaternion.Euler(rotationVector.y, -rotationVector.x, 0) * BrushRotation).normalized;
             }
         }
         else
@@ -494,7 +499,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             if (Mathf.Abs((brushScaleStart - brushScaleAction.axis).y) >= brushScaleDeadzone)
             {
                 var scaleChange = brushScaleAction.delta * brushScaleSpeed;
-                brushScale = Mathf.Clamp(brushScale + scaleChange.y, brushMinScale, brushMaxScale);
+                BrushScale = Mathf.Clamp(BrushScale + scaleChange.y, brushMinScale, brushMaxScale);
             }
         }
         else
@@ -567,7 +572,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
             VoxelEditsManager.Instance.Merge = true;
 
             //Apply SDF
-            var sdf = CreateSdf(BrushType, new PlacementSdfConsumer(VoxelWorld, VoxelEditsManager, brushPosition, brushControllerRotation * brushRotation, brushScale,
+            var sdf = CreateSdf(BrushType, new PlacementSdfConsumer(VoxelWorld, VoxelEditsManager, brushPosition, brushControllerRotation * BrushRotation, BrushScale,
                 BrushOperation == BrushOperation.Difference ? 0 : MaterialColors.ToInteger((int)Mathf.Round(BrushColor.r * 255), (int)Mathf.Round(BrushColor.g * 255), (int)Mathf.Round(BrushColor.b * 255), BrushMaterial.ID),
                 BrushOperation == BrushOperation.Replace));
             sdf?.Dispose();
@@ -579,7 +584,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
         if (previewSdf != null && !IsPointerActive)
         {
-            _brushRenderer.Render(Matrix4x4.TRS(brushPosition, brushControllerRotation * brushRotation, VoxelWorld.transform.localScale * brushScale), previewSdf);
+            _brushRenderer.Render(Matrix4x4.TRS(brushPosition, brushControllerRotation * BrushRotation, VoxelWorld.transform.localScale * BrushScale), previewSdf);
         }
 
         if (voxelizeAction != null && voxelizeAction.active && voxelizeAction.stateDown)

@@ -16,6 +16,7 @@ public class UnityCineastApi : MonoBehaviour
         public bool runTest;
         public DefaultVoxelWorldContainer voxels;
         public bool debugLog;
+        public MeshFilter queryMeshDebug;
     }
     [SerializeField] private TestSettings testSettings = new TestSettings();
 
@@ -176,14 +177,14 @@ public class UnityCineastApi : MonoBehaviour
         {
             testSettings.runTest = false;
 
-            var modelData = SculptureToJsonConverter.Convert(testSettings.voxels);
+            var modelData = SculptureToJsonConverter.Convert(testSettings.voxels, testSettings.queryMeshDebug);
             StartQuery(modelData, false);
         }
     }
 
     public int StartVoxelQuery(DefaultVoxelWorldContainer voxels)
     {
-        var modelData = SculptureToJsonConverter.Convert(voxels);
+        var modelData = SculptureToJsonConverter.Convert(voxels, testSettings.queryMeshDebug);
         return StartQuery(modelData, false);
     }
 

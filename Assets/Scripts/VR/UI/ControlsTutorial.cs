@@ -38,6 +38,8 @@ public class ControlsTutorial : MonoBehaviour
         }
     }
 
+    [SerializeField] private SteamVR_Action_Boolean toggleHints;
+
     [Serializable]
     private class BooleanActionEntry : ActionEntry<SteamVR_Action_Boolean> { }
 
@@ -51,19 +53,65 @@ public class ControlsTutorial : MonoBehaviour
 
     private List<IActionEntry> actions = new List<IActionEntry>();
 
+    private bool showHints = true;
+
+    private bool showTimer = true;
+
     private void Start()
     {
         actions.AddRange(booleanActions);
         actions.AddRange(vector2Actions);
+
+        StartCoroutine(Timer());
     }
 
-    private void Update()
+    private IEnumerator Timer()
+    {
+        yield return new WaitForSeconds(2.0f);
+
+        if(showTimer)
+        {
+            ShowHints();
+        }
+    }
+
+    private void ShowHints()
     {
         foreach (var action in actions)
         {
             foreach (var hand in hands)
             {
                 ControllerButtonHints.ShowTextHint(action.IsAnchorOnRightSide() ? AnchorSide.RIGHT : AnchorSide.LEFT, hand, action.GetAction(), action.GetText(), true);
+            }
+        }
+    }
+
+    private void HideHints()
+    {
+        foreach (var action in actions)
+        {
+            foreach (var hand in hands)
+            {
+                ControllerButtonHints.HideTextHint(action.IsAnchorOnRightSide() ? AnchorSide.RIGHT : AnchorSide.LEFT, hand, action.GetAction());
+            }
+        }
+    }
+
+    private void Update()
+    {
+        if(toggleHints != null && toggleHints.active && toggleHints.stateDown)
+        {
+            showTimer = false;
+
+            showHints = !showHints;
+
+            if (!showHints)
+            {
+                HideHints();
+            }
+            else
+            {
+                ShowHints();
             }
         }
     }
