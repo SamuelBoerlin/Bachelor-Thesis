@@ -103,8 +103,6 @@ database Cottontail DB\footnote{\url{https://github.com/vitrivr/cottontaildb}} o
 Along with the $\chi^2$ distance metric the Jensen-Shannon divergence ($D_{JS}$), described by Y.-J. Liu et al. [\todoMissing{Missing ref}], was also implemented. In short, the $D_{JS}$ metric treats the histogram feature vector as an independent and identically-distributed sample of a random variable and thus first converts the histogram into a probability density function by using kernel density approximation with a gaussian kernel. The Jensen-Shannon divergence of the two probability density functions to compare is then computed and serves as a probabilistic measure ranging from 0 to 1 for how similar they are, so in a sense how likely it is that the two histograms were generated from the same model. Fig. \ref{fig:feature_penguin_histogram} shows the histogram of a penguin model and its probability density function, along with some debug information of curves required for the $D_{JS}$ calculation.
 
 
-
-
 \subsection{REST API}
 
 In order for a program to interface with Cineast's query capabilities an API is required. Cineast provides two main APIs, a WebSocket API and more importantly a REST API which was
@@ -155,10 +153,7 @@ diverse shapes. The Hermite data and voxel material provide enough information t
 
 There are many different data structures to store voxels, the simplest of which is simply storing the voxels' values in large 3D arrays.
 Other data structures however need not necessarily store all voxel values on a regular grid. Often there are regions with many voxels of the same value, and
-in that case it is beneficial to use a more advanced data structure that can store voxel values more memory efficiently.
-
-
-
+in that case it is beneficial to use a more advanced data structure that can store voxel values more memory efficiently.\\
 The most common method to store voxels in memory is to split the voxels into fixed size blocks or chunks. Within each chunk the voxels are stored in an array. The chunks are stored seperately in a sparse data structure, e.g. a hash map,
 where they can be accessed by their position. This gives a good trade-off between memory usage and access speed, because often voxel accesses happen within the same chunks and hence the hash map lookups can usually be cached. Instead of multi-dimensonal arrays for the chunk voxel storage we use one contiguous linear array per chunk to avoid having to dereference multiple pointers for a single access. The index into this linear array can be directly computed from a given X, Y and Z position within the chunk by the following formula: $index(x, y, z) = x * N * N + y * N + z$, where $N$ is the chunk size.
 Our implementation uses a chunk size of $N=32$. Voxels on the faces towards the positive X, Y and Z axes are padding voxels that always mirror the state of the neighbour voxel in the respective neighbour chunk.
@@ -254,12 +249,6 @@ connecting the two face corners with solid materials given the marching squares 
 \end{algorithmic}
 \end{algorithm}
 
-%\todoMissing{Missing ref; DC paper}
-%\begin{wrapfigure}{R}{0.4\textwidth}
-%\includegraphics[width=0.4\textwidth]{cms_multi_material.png}
-%\caption{Multi-material CMS 3D sharp feature generation shown in a 2D analogy. The position of the sharp feature (black circles) in the top middle cell is determined both by regular intersections (black diamonds) and a material transition %(red diamonds). Adapted from [XXX].}
-%\label{fig:cms_multi_material}
-%\end{wrapfigure}
 
 \begin{wrapfigure}{R}{0.5\textwidth}
 \includegraphics[width=0.5\textwidth]{cms_multi_material_side_top.png}
@@ -370,8 +359,69 @@ In total the proposed lookup table based CMS algorithm primarily requires the fo
 For further details about the proposed lookup table CMS algorithm please refer to our lookup table tool and sample implementation written in Java.\todoMissing{Clean up and link somewhere}
 
 
-\subsection{CSG operations on hermite data}
-How union and difference operations work on hermite data, algorithm
+\subsection{CSG operations on a voxel grid}
+%How union and difference operations work on hermite data, algorithm
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.8\textwidth]{hermite_data_csg.png}
+\caption{CSG operations on a 2D Hermite data voxel grid. From left to right: initial grid, union and difference. Each square and its line segments to the right and above,
+including any normals (pink) on them, represent one Hermite data voxel.}
+\label{fig:hermite_data_csg}
+\end{figure}
+
+The CSG operations that our application uses for the sculpting brushes can be applied using variants of Alg. \ref{alg:hermite_data_csg}. 
+
+\begin{algorithm}[H]
+\caption{\textbf{Union.} \textit{Applies a CSG union to a voxel grid. \textsc{FindIntersection} finds the intersection of a primitive with the specified edge
+and returns an intersection object. $intersection.distance$ is the distance between the intersection and a voxel or $edge.voxels[0]$, and $intersection.normal$ is the 
+surface normal vector at the intersection.}}\label{alg:hermite_data_csg}
+\begin{algorithmic}[1]
+\Procedure{Union}{VoxelGrid $grid$, CSGPrimitive $primitive$}
+	\ForAll{$v \in grid.voxels$}
+			\If{$v$ is inside $primitive$}
+				\State $v.insidePrimitive \gets true$
+				\State $v.material \gets primitive.material$
+			\Else
+				\State $v.insidePrimitive \gets false$
+			\EndIf
+	\EndFor
+	\ForAll{$e \in grid.edges$}
+		\If{$e.voxels[0].insidePrimitive$ is not $e.voxels[1].insidePrimitive$}
+			\State $intersection \gets$ \Call{FindIntersection}{$e, primitive$}
+			\If{$e.voxels[0].insidePrimitive$ and $intersection.distance \geq e.voxels[0].intersections[e.axis]$}
+				\State $e.voxels[0].intersections[e.axis] \gets intersection.distance$
+				\State $e.voxels[0].normals[e.axis] \gets intersection.normal$
+			\ElsIf{$e.voxels[1].insidePrimitive$ and $intersection.distance \leq e.voxels[0].intersections[e.axis]$}
+				\State $e.voxels[0].intersections[e.axis] \gets intersection.distance$
+				\State $e.voxels[0].normals[e.axis] \gets intersection.normal$
+			\EndIf
+		\EndIf
+	\EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+First the algorithm for a CSG union operation tags all voxels of the voxel grid whether they are inside the CSG primitive. Then it iterates over all edges of the voxel grid and checks if the two voxels
+that form the edge have a different $insidePrimitive$ state. If that is the case then the edge must intersect with the primitive's surface and the exact intersection is found
+using \textsc{FindIntersection}. Then the algorithm checks if any already existing intersections can and must be replaced by comparing their values.\\
+With a minor adjustment, namely swapping the $\geq$ and $\leq$, inverting the normals and changing the material assignment to set to empty voxels, the algorithm for the CSG difference operation is obtained. \par
+
+Previously it was mentioned that SDF's are well suited for CSG primitives.
+The reason for this is that they are versatile and checking whether a voxel lies inside the SDF or finding
+intersection points is simple. Checking whether a voxel is inside the SDF is a simple as checking whether the value of the SDF evaluated at said voxel is negative.
+Finding intersection points (\textsc{FindIntersection}) on an edge is done by running a binary search on the edge, starting with the edge start- and endpoints and repeatedly moving them closer together.
+
+\begin{wrapfigure}{R}{0.4\textwidth}
+\includegraphics[width=0.4\textwidth]{adaptive_binary_search.png}
+\caption{Adaptive binary search. Red circle: SDF's surface, Arrows: start- \& endpoint, Black circles: circles with radius of SDF's value at start- or endpoint. The adaptive binary search
+finds the zero point from the initial state (left) after just one iteration (right).}
+\label{fig:adaptive_binary_search}
+\end{wrapfigure}
+
+The binary search runs as long as the sign at the start- and endpoints are different, or until the value returned by the SDF for either start- or endpoint is within a certain threshold from zero. Both the start- and endpoints will thus converge towards the position where the SDF evaluates to zero, i.e. the SDF's surface.\\
+This binary search can be optimized by using the values returned by the SDF for each iteration, since those values are a lower bound for the distance which the start- or endpoint can be moved along the edge without accidentally crossing the SDF's surface. Using this fact the adaptive binary search can make larger and more precise steps than a blind binary search. Consider a nearly linear surface perpendicular to the edge, like in Fig. \ref{fig:adaptive_binary_search}: the adaptive binary search will find the exact zero point after just one iteration because the two values returned by the SDF are the exact distances between the start- and endpoints and the surface.
 
 \subsection{Rendering}
 Vertex colors encode material (RGB, A=texture id), texture array, triplanar texturing shader
@@ -379,8 +429,6 @@ Vertex colors encode material (RGB, A=texture id), texture array, triplanar text
 \subsection{Voxelizer}
 Purpose, explain method used for voxelization (assigning triangles to bins, patching holes, etc.), use of job system
 
-\subsection{SDFs}
-Implementation, arbitrary linear transformations by using the inverse to transform space instead of SDF
 
 \section{VR Sculpting}
 
