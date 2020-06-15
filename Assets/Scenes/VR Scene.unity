@@ -155,7 +155,7 @@ MonoBehaviour:
   meshSize: 0.5
   deletionArea: {fileID: 0}
   deletionAreaRange: 0.1
-  maxSpawns: 30
+  maxSpawns: 50
   spawnSpots:
   - transform: {fileID: 35584848}
     offset: {x: 0, y: 0, z: 0}
@@ -949,12 +949,12 @@ MonoBehaviour:
     voxels: {fileID: 1716027542}
     debugLog: 0
     queryMeshDebug: {fileID: 0}
-  cineastApiUrl: http://192.168.1.112:4567/
+  cineastApiUrl: http://127.0.0.1:4567/
   queryCategories:
   - cluster2dandcolorhistogram
   objectDownloaderSettings:
     useCineastServer: 0
-    hostBaseUrl: http://192.168.1.112:8000/
+    hostBaseUrl: http://127.0.0.1:8000/
     hostThumbnailsPath: thumbnails/:o/:s:x
     hostContentPath: data/:p
     useDescriptorContentPath: 0
@@ -1358,7 +1358,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: VoxelTerrain
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 444754938, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: dd20a34e6e85d8b46b7f7bd17d515ebc, type: 3}
 --- !u!1 &1586704563
 GameObject:
@@ -1513,18 +1514,6 @@ Transform:
   m_Father: {fileID: 2092010911}
   m_RootOrder: 9
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1716027541 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 444754938, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
-    type: 3}
-  m_PrefabInstance: {fileID: 1532042239}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2421cda939f0d843bca445eb196e184, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1716027542 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 444754941, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
@@ -1718,7 +1707,7 @@ PrefabInstance:
         type: 3}
       propertyPath: sdfRenderer
       value: 
-      objectReference: {fileID: 1716027541}
+      objectReference: {fileID: 0}
     - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
         type: 3}
       propertyPath: parentWorld

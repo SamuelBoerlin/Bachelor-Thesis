@@ -553,61 +553,70 @@ public partial class CreateVoxelTerrain : MonoBehaviour
 
         if (gizmoPosition != null)
         {
-            switch (brushType)
+            var shapeRenderer = gameObject.GetComponent<SdfShapeRenderHandler>();
+
+            if(shapeRenderer != null)
             {
-                case BrushType.Sphere:
-                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform, new SphereSDF(brushSize));
-                    break;
-                case BrushType.Box:
-                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform, new BoxSDF(brushSize));
-                    break;
-                case BrushType.Cylinder:
-                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform, new CylinderSDF(brushSize, brushSize));
-                    break;
-                case BrushType.Pyramid:
-                    gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform * Matrix4x4.Translate(new Vector3(0, -brushSize / 2, 0)), new PyramidSDF(brushSize * 2, brushSize * 2));
-                    break;
-                case BrushType.Custom:
-                    using (var sdf = customBrush.Instance.CreateSdf(Allocator.TempJob))
-                    {
-                        gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform, sdf);
-                    }
-
-                    Camera camera = Camera.current;
-                    if (camera != null)
-                    {
-                        selectedPrimitive = -1;
-
-                        var ray = camera.transform.forward.normalized;
-                        float maxDst = 60.0f;
-                        int steps = Mathf.CeilToInt(maxDst * 2);
-                        for (int i = 0; i < steps && selectedPrimitive < 0; i++)
+                switch (brushType)
+                {
+                    case BrushType.Sphere:
+                        shapeRenderer.Render(brushTransform, new SphereSDF(brushSize));
+                        break;
+                    case BrushType.Box:
+                        shapeRenderer.Render(brushTransform, new BoxSDF(brushSize));
+                        break;
+                    case BrushType.Cylinder:
+                        shapeRenderer.Render(brushTransform, new CylinderSDF(brushSize, brushSize));
+                        break;
+                    case BrushType.Pyramid:
+                        shapeRenderer.Render(brushTransform * Matrix4x4.Translate(new Vector3(0, -brushSize / 2, 0)), new PyramidSDF(brushSize * 2, brushSize * 2));
+                        break;
+                    case BrushType.Custom:
+                        using (var sdf = customBrush.Instance.CreateSdf(Allocator.TempJob))
                         {
-                            var pos = camera.transform.position + ray * maxDst / steps * i;
+                            shapeRenderer.Render(brushTransform, sdf);
+                        }
 
-                            int j = 0;
-                            foreach (var primitive in customBrush.Instance.Primitives)
+                        Camera camera = Camera.current;
+                        if (camera != null)
+                        {
+                            selectedPrimitive = -1;
+
+                            var ray = camera.transform.forward.normalized;
+                            float maxDst = 60.0f;
+                            int steps = Mathf.CeilToInt(maxDst * 2);
+                            for (int i = 0; i < steps && selectedPrimitive < 0; i++)
                             {
-                                var renderSdf = customBrush.Instance.Evaluator.GetRenderSdf(primitive);
-                                if (renderSdf != null && renderSdf.Eval(math.mul(math.mul(brushTransform, primitive.invTransform), new float4(pos, 1.0f)).xyz) < 0)
+                                var pos = camera.transform.position + ray * maxDst / steps * i;
+
+                                int j = 0;
+                                foreach (var primitive in customBrush.Instance.Primitives)
                                 {
-                                    selectedPrimitive = j;
-                                    break;
+                                    using (var renderSdf = customBrush.Instance.Evaluator.GetRenderSdf(primitive))
+                                    {
+                                        if (renderSdf != null && renderSdf.Eval(math.mul(math.mul(brushTransform, primitive.invTransform), new float4(pos, 1.0f)).xyz) < 0)
+                                        {
+                                            selectedPrimitive = j;
+                                            break;
+                                        }
+                                    }
+                                    j++;
                                 }
-                                j++;
                             }
                         }
-                    }
-                    if (selectedPrimitive >= 0 && selectedPrimitive < customBrush.Instance.Primitives.Count)
-                    {
-                        var primitive = customBrush.Instance.Primitives[selectedPrimitive];
-                        var renderSdf = customBrush.Instance.Evaluator.GetRenderSdf(primitive);
-                        if (renderSdf != null)
+                        if (selectedPrimitive >= 0 && selectedPrimitive < customBrush.Instance.Primitives.Count)
                         {
-                            gameObject.GetComponent<SdfShapeRenderHandler>().Render(brushTransform * (Matrix4x4)primitive.transform, renderSdf);
+                            var primitive = customBrush.Instance.Primitives[selectedPrimitive];
+                            using (var renderSdf = customBrush.Instance.Evaluator.GetRenderSdf(primitive))
+                            {
+                                if (renderSdf != null)
+                                {
+                                    shapeRenderer.Render(brushTransform * (Matrix4x4)primitive.transform, renderSdf);
+                                }
+                            }
                         }
-                    }
-                    break;
+                        break;
+                }
             }
         }
 

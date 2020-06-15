@@ -312,6 +312,11 @@ namespace Voxel
             _voxels.Dispose();
             _voxelCount.Dispose();
 
+            if (mesh)
+            {
+                UnityEngine.GameObject.Destroy(mesh);
+            }
+
             if (ChunkObject != null)
             {
                 UnityEngine.Object.Destroy(ChunkObject);

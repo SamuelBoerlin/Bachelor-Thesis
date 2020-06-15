@@ -61,7 +61,7 @@ public class QueryResultDisplay : MonoBehaviour
         if (ex != null)
         {
             Debug.LogError("An error has occurred during the query");
-            Debug.LogError(ex.Message);
+            Debug.LogException(ex);
         }
     }
 

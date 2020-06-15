@@ -36,7 +36,7 @@ public class CustomBrushPrimitiveHoverInteractions : VRPointerRaycastHandler
     {
         HasMoved = false;
 
-        var angleDiff = lastCheckRotation - transform.root.eulerAngles;
+        var angleDiff = lastCheckRotation - transform.rotation.eulerAngles;
         if (Mathf.Abs(angleDiff.x) >= angleUpdateThreshold || Mathf.Abs(angleDiff.y) >= angleUpdateThreshold || Mathf.Abs(angleDiff.z) >= angleUpdateThreshold || (lastCheckPosition - transform.position).magnitude >= positionUpdateThreshold)
         {
             HasMoved = true;
