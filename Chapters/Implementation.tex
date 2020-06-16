@@ -26,13 +26,13 @@ then be used to compute a similarity metric, e.g. by calculating the L2 distance
 
 Since our application allows the user to color their sculptures it makes sense that similarity queries also
 take color into account. Hence part of the color information must be contained in the feature vector.
-The ClusterD2+Color algorithm described by [\todoMissing{Missing ref}], which was used for this application,
+The ClusterD2+Color algorithm described by [\todoMissing{Missing ref}], which was used in our application,
 achieves this by creating random sample points on the 3D model's surface according to certain criteria and then
 use those sample points to compute a feature vector.
 
 \subsubsection{Sample generation}
 
-Many isosurface extraction algorithms [\todoMissing{Explain this before}], such as the non-adaptive CMS [\todoMissing{Introduce abbr before}]
+Many isosurface polygonization algorithms, such as our non-adaptive CMS [\todoMissing{Introduce abbr before}]
 implementation used in this application, can produce highly tessellated meshes. Opposite to that meshes exported by
 3D modeling software are often optimized to have large triangles where the surface has little detail, and small triangles where
 the surface is more detailed. Hence it is important that the sample point generation is mostly independent of the triangle sizes
@@ -50,7 +50,7 @@ is determined by a function of the integral of the absolute Gaussian curvature o
 \captionsetup{width=0.8\textwidth}
 \includegraphics[width=0.5\textwidth]{feature_penguin.png}
 \caption{Visualization of the sample selection and clustering. On the left is shown the textured input model and the resulting shape (circles) and color (squares) samples
-and their cluster assignments (white circles and lines). The picture on the right shows the calculated mean curvature map of the model (red: high curvature, blue: low curvature).}
+and their cluster assignments (white circles and lines). The picture on the right shows the computed difference-of-Laplacian $D$ of the model (red: high, blue: low).}
 \label{fig:feature_penguin}
 \end{figure}
 
@@ -68,20 +68,27 @@ These criteria differ between two different types of samples:
 These samples should convey relevant information about the geometric shape. Previous work done by [\todoMissing{Missing ref; Lee,C.H.,Varshney,A.,Jacobs,D.:Meshsaliency.In:ACMSIGGRAPH’05, pp. 659–666 (2005)}] has
 shown that mean curvature is a good indication for visual saliency and thus for comparing geometric shapes for similarity. The mean curvature of the mesh vertices is computed using Taubin's method [\todoMissing{Missing ref}].
 Our implementation of the ClusterD2+Color algorithm computes the mean curvature of each vertex and stores it as a vertex attribute. This mean curvature attribute is then smoothed over the mesh's surface
-by a Laplacian smoothing approximation described by [\todoMissing{Missing ref; Implicit Fairing of Irregular Meshes using Diffusion and Curvature Flow}], resulting in a curvature map like shown in Fig. \ref{fig:feature_penguin}.
+by a Laplacian smoothing approximation described by [\todoMissing{Missing ref; Implicit Fairing of Irregular Meshes using Diffusion and Curvature Flow}], resulting in a curvature map.
 In particular, our implementation sets $\lambda = 8$ and, to satisfy the stability criterion $\lambda dt \leq 1$, $dt = \frac{1}{8}$, i.e. equivalently it applies small smoothings with $\lambda = 1$, $dt = 1$ a total of eight times for one
 full smoothing operation. This is repeated multiple times to create three smoothed curvature maps $C^1$ through $C^3$. Each curvature map $C^i$ has been smoothed $i$ times. As opposed to [\todoMissing{Missing ref}] we use
-$C^1$ as the baseline curvature map instead of $C^0$, because certain non-manifold (e.g. vertices or edges touching without being connected) models exhibit significant artefacts in $C^0$ as shown in Fig. \ref{fig:laplacian_smoothing_artefacts}. Lastly each shape sample calculates its $D = D^2 \oplus D^3$ value, where $D^i = C^i - C^{i-1}$ is the difference-of-Laplacian space, and only the samples with the top 10\% highest $D$ values are kept. Indeed the remaining top
+$C^1$ as the baseline curvature map instead of $C^0$, because certain non-manifold (e.g. vertices or edges touching without being connected) models exhibit significant artefacts in $C^0$ as shown in Fig. \ref{fig:laplacian_smoothing_artefacts}. Lastly each shape sample calculates its $D = D^2 \oplus D^3$ value, where $D^i = C^i - C^{i-1}$ is the difference-of-Laplacian space, as shown in Fig. \ref{fig:feature_penguin}, and only the samples with the top 10\% highest $D$ values are kept. Indeed the remaining top
 10\% $D$ value shape samples in Fig. \ref{fig:feature_penguin} are concentrated to the relevant features of the penguin model, namely its arms, feet and beak.
 
 \subparagraph{Color Samples}
-\todoMissing{Everything}
+
+The color samples' purpose is to allow the algorithm to distinguish between models that have the same geometric shape but differ in
+color or texture. This is achieved by only selecting those samples that lie on significant color transitions. As described by
+Y.-J. Liu et al. [\todoMissing{Missing ref}], all generated samples extract the mesh's color at their position and then transform
+the color to the CIE-LAB color space [\todoMissing{Missing ref}]. The resulting three CIE-LAB coordinates, $L*$, $a*$ and $b*$ are then
+quantized into 6 ($L*$), respectively 4 ($a*$) and 4 ($b*$) integer values. These three, now quantized, coordinates are combined into a single color code integer, such that each of those color codes corresponds to a unique combination of the quantized coordinates. Similar colors are thus mapped to the same color code.\\
+Lastly the algorithm only selects those samples as color samples of which less than $80\%$ of the neighboring samples' color codes are the same. In our implementation the neighborhood range is defined as a function of the model's mean edge length, or if less than 5 samples are found within said range then it chooses the 5 nearest samples as the neighborhood. In Fig. \ref{fig:feature_penguin} the
+color samples are selected mostly along the transition between the white, black and beige hair of the penguin
 
 \subsection{Comparing features for similarity}
 %L2 norm, Jensen-Shannon divergence, $\chi^2$ distance
 
-The generated shape and color samples now need to be reduced into an N-dimensional feature vector. ClusterD2+Color algorithm achieves this by first clustering nearby samples together and then
-creating a histogram from e.g. the euclidean distances, i.e. L2 norm, between all samples that are not in the same cluster.\\
+The selected shape and color samples now need to be reduced into an N-dimensional feature vector. ClusterD2+Color algorithm achieves this by first clustering nearby samples together and then
+creating a histogram from the euclidean distances, i.e. L2 norm, between all samples that are not in the same cluster.\\
 
 \begin{wrapfigure}{R}{0.3\textwidth}
 \includegraphics[width=0.3\textwidth]{feature_penguin_histogram.png}
@@ -91,7 +98,7 @@ creating a histogram from e.g. the euclidean distances, i.e. L2 norm, between al
 
 More specifically, the samples are clustered together using a modified
 ISODATA algorithm described in [\todoMissing{Missing ref}]. In our implementation we set $P_n = 5\%$ \textit{of the total number of sample points}, $P_s = 2 * E$, $P_c = 10 * E$, $I = 100$ with $E =$ \textit{mean edge length of the model}.
-Additionally we introduce two new parameters: $I_{min} = 10$, the minimum number of iterations and $I_{nc} = 200$, the total maximum number of iterations after which the algorithm is stopped if no convergence is happening. Without
+Additionally we introduce two new parameters: $I_{min} = 10$, the minimum number of iterations, and $I_{nc} = 200$, the total maximum number of iterations after which the algorithm is stopped if no convergence is happening. Without
 the $I_{min}$ parameter we have observed that the algorithm would commonly stop too early with inadequate cluster assignments. Then, once the samples are clustered together, the euclidian distances between all samples in different clusters
 are computed and stored in an array. The values in this array are then normalized s.t. the lowest value in the array is mapped to zero and the highest value is mapped to one. Finally this array is then converted into a histogram with $20$
 bins.\\
@@ -117,7 +124,7 @@ into how REST APIs operate - according to R. Fielding [\todoMissing{Missing ref;
 	\item And several other principles.
 \end{itemize}
 Usually REST requests are exclusively executed by sending an HTTP GET, PUT, POST or DELETE request through certain server provided URLs. For example Cineast's similarity query endpoint has the following URL and is executed by
-sending a POST request: \url{http://cineast.domain/find/segments/similar}. Additional data, such as the model to run the similarity query for, is included in the HTTP request body in the form of JSON data.
+sending a POST request: \url{http://cineast.domain/find/segments/similar}. Additional data, such as the model to run the similarity query for, is included in the HTTP request body in the form of JSON data.\\
 Throughout the course of development of this thesis Cineast's REST API was partially rewritten to use the Javalin\footnote{https://javalin.io/} web framework instead of Spark\footnote{http://sparkjava.com/} and SparkSwagger\footnote{https://github.com/manusant/spark-swagger}. Javalin makes great use of Cineast's already built-in JSON serialization structure using Jackson\footnote{https://github.com/FasterXML/jackson}. This enables Javalin, in combination with its OpenAPI plugin,
 to generate an OpenAPI specification that describes Cineast's REST API in a standardized way. Moreover this OpenAPI specification allows programs like Swagger Codegen\footnote{https://swagger.io/tools/swagger-codegen/} to generate
 fully functional code libraries in various programming languages capable of interfacing with the REST API defined by the specification. Since Javalin's OpenAPI plugin makes use of Jackson, it is capable of more reliably creating the specifications for JSON data structures than SparkSwagger, especially for subclasses of superclasses with generic types. The C\# library that was used to access Cineast's API endpoint from Unity was generated by the aforementioned OpenAPI
@@ -224,7 +231,7 @@ connecting the two face corners with solid materials given the marching squares 
 	\If{$f.marchingSquaresCase$ is 2}
 		\State $edge \gets $ MATERIAL\_TRANSITION[$f.marchingSquaresCase$]
 		\State $normal \gets $\Call{GetNormal}{$f, edge$}
-		\If{$normal$ is not NULL} \Comment{There can only be a transition if a normal exists.}
+		\If{$normal \neq \varnothing$} \Comment{There can only be a transition if a normal exists.}
 			\State $intersection \gets $\Call{GetIntersection}{$f, edge$}
 			\State $tangent \gets $\Call{ConstructTangent}{$intersection, normal$}
 			\ForAll{$l \in f.list$}
@@ -388,12 +395,12 @@ surface normal vector at the intersection.}}\label{alg:hermite_data_csg}
 			\EndIf
 	\EndFor
 	\ForAll{$e \in grid.edges$}
-		\If{$e.voxels[0].insidePrimitive$ is not $e.voxels[1].insidePrimitive$}
+		\If{$e.voxels[0].insidePrimitive \neq e.voxels[1].insidePrimitive$}
 			\State $intersection \gets$ \Call{FindIntersection}{$e, primitive$}
-			\If{$e.voxels[0].insidePrimitive$ and $intersection.distance \geq e.voxels[0].intersections[e.axis]$}
+			\If{$e.voxels[0].insidePrimitive \cap intersection.distance \geq e.voxels[0].intersections[e.axis]$}
 				\State $e.voxels[0].intersections[e.axis] \gets intersection.distance$
 				\State $e.voxels[0].normals[e.axis] \gets intersection.normal$
-			\ElsIf{$e.voxels[1].insidePrimitive$ and $intersection.distance \leq e.voxels[0].intersections[e.axis]$}
+			\ElsIf{$e.voxels[1].insidePrimitive \cap intersection.distance \leq e.voxels[0].intersections[e.axis]$}
 				\State $e.voxels[0].intersections[e.axis] \gets intersection.distance$
 				\State $e.voxels[0].normals[e.axis] \gets intersection.normal$
 			\EndIf
@@ -405,12 +412,13 @@ surface normal vector at the intersection.}}\label{alg:hermite_data_csg}
 
 First the algorithm for a CSG union operation tags all voxels of the voxel grid whether they are inside the CSG primitive. Then it iterates over all edges of the voxel grid and checks if the two voxels
 that form the edge have a different $insidePrimitive$ state. If that is the case then the edge must intersect with the primitive's surface and the exact intersection is found
-using \textsc{FindIntersection}. Then the algorithm checks if any already existing intersections can and must be replaced by comparing their values.\\
-With a minor adjustment, namely swapping the $\geq$ and $\leq$, inverting the normals and changing the material assignment to set to empty voxels, the algorithm for the CSG difference operation is obtained. \par
+using \textsc{FindIntersection}. Then the algorithm checks if any already existing intersections can and must be replaced by comparing their values. For multi-material voxel volumes some additional checks are required, mostly so that intersections are placed correctly at
+solid to solid material transitions. In addition to that, our implementation also gives each CSG primitive an axis aligned bounding box, such that only those voxels and edges inside the bounding box need to be checked.\\
+With some minor adjustments, namely swapping the $\geq$ and $\leq$, inverting the normals and changing the material assignment at the top to set to empty voxels, the algorithm for the CSG difference operation is obtained. \par
 
 Previously it was mentioned that SDF's are well suited for CSG primitives.
 The reason for this is that they are versatile and checking whether a voxel lies inside the SDF or finding
-intersection points is simple. Checking whether a voxel is inside the SDF is a simple as checking whether the value of the SDF evaluated at said voxel is negative.
+line to surface intersection points is simple. Checking whether a voxel is inside the SDF is a simple as checking whether the value of the SDF evaluated at said voxel is negative.
 Finding intersection points (\textsc{FindIntersection}) on an edge is done by running a binary search on the edge, starting with the edge start- and endpoints and repeatedly moving them closer together.
 
 \begin{wrapfigure}{R}{0.4\textwidth}
@@ -421,14 +429,110 @@ finds the zero point from the initial state (left) after just one iteration (rig
 \end{wrapfigure}
 
 The binary search runs as long as the sign at the start- and endpoints are different, or until the value returned by the SDF for either start- or endpoint is within a certain threshold from zero. Both the start- and endpoints will thus converge towards the position where the SDF evaluates to zero, i.e. the SDF's surface.\\
-This binary search can be optimized by using the values returned by the SDF for each iteration, since those values are a lower bound for the distance which the start- or endpoint can be moved along the edge without accidentally crossing the SDF's surface. Using this fact the adaptive binary search can make larger and more precise steps than a blind binary search. Consider a nearly linear surface perpendicular to the edge, like in Fig. \ref{fig:adaptive_binary_search}: the adaptive binary search will find the exact zero point after just one iteration because the two values returned by the SDF are the exact distances between the start- and endpoints and the surface.
+This binary search can be optimized by using the values returned by the SDF for each iteration, since those values are a lower bound for the distance which the start- or endpoint can be moved along the edge without accidentally crossing the SDF's surface. Using this fact the adaptive binary search can make larger and more precise steps than a blind binary search. Consider a nearly linear surface perpendicular to the edge, like in Fig. \ref{fig:adaptive_binary_search}: the adaptive binary search will find the exact zero point after just one iteration because the two values returned by the SDF are the exact distances between the start- and endpoints and the surface. This may not always work for inexact SDF approximations since the returned values may not be actual lower bounds, hence the algorithm should still be able to use the regular binary search method as fallback for robustness.
 
 \subsection{Rendering}
-Vertex colors encode material (RGB, A=texture id), texture array, triplanar texturing shader
+%Vertex colors encode material (RGB, A=texture id), texture array, triplanar texturing shader
+
+\begin{wrapfigure}{R}{0.4\textwidth}
+\includegraphics[width=0.4\textwidth]{triplanar_texture_mapping.png}
+\caption{Tri-planar texture mapping of a mesh. Note how the hillsides of the terrain are rocky and the top is grassy.
+Adapted from Corona Renderer\protect\footnotemark.}
+\label{fig:triplanar_texture_mapping}
+\end{wrapfigure}
+\footnotetext{\url{https://corona-renderer.com/blog/wp-content/uploads/2017/04/Triplanar_01.jpg}}
+
+The voxel polygonizer already does most of the heavy lifting for the voxel rendering. Once the voxel polygonizer has converted the voxels into a triangle mesh the rendering is done using the typical mesh rasterization techniques, provided by Unity, and shaders. The voxel materials and their colors are packed into the 32 bit RGBA color attachment of the mesh vertices. The first three components, RGB, are used to store the voxel color, the fourth component A for the voxel material ID.\\
+Since our voxel meshes are not UV mapped, i.e. they do not contain information about where the textures should be sampled, we have resorted to a tri-planar texture mapping shader to texture them. These kinds of shaders use the position of a mesh's pixels to determine where to sample a texture, without the need of any explicit UV mapping. In order to achieve a realistic looking texture
+mapping the tri-planar texture mapping shader projects an infinitely repeating texture from the X, Y and Z axes onto the mesh
+like shown in Fig. \ref{fig:triplanar_texture_mapping}. The weight, i.e. how visible it is, of each texture projection is determined by the mesh's normals. For example the more a normal points along the X axis, the stronger the X axis texture projection is weighted, and the less the other two. The result of this is a mesh
+that is usually textured nicely on all sides. In certain situations, especially when the weights of two texture projections are similar, e.g. for $45^{\circ}$ diagonal parts of the mesh with respect to axes, there can be unnatural overlapping of two texture projections. This however is only a problem for textures with obvious structures, e.g. bricks, as opposed to natural or noisy textures like e.g. dirt or grass.
 
 \subsection{Voxelizer}
-Purpose, explain method used for voxelization (assigning triangles to bins, patching holes, etc.), use of job system
+% Purpose, explain method used for voxelization (assigning triangles to bins, patching holes, etc.), use of job system
 
+The precursor of our application already had an implementation of a voxelizer, however throughout the development of this thesis
+the voxelizer was rewritten to scale better with high triangle counts.\\
+The implementation of a basic voxelizer is described in Alg. \ref{alg:voxelize}. This algorithm however will only work properly
+for meshes without holes.
+
+
+\begin{algorithm}[H]
+\caption{\textbf{Voxelize.} \textit{Voxelizes the given mesh into the voxel grid. \textsc{FillSection} fills the voxel grid along and inside the given section with the given material and also sets the voxel Hermite data at the section's start and end points.}}\label{alg:voxelize}
+\begin{algorithmic}[1]
+\Procedure{Voxelize}{VoxelGrid $grid$, Mesh $mesh$, Material $material$}
+	\ForAll{$axis \in \{X,Y,Z\}$}
+		\ForAll{$voxel \in grid.sideVoxels[axis]$}
+			\ForAll{$section \in $ \Call{FindSections}{$axis, voxel.position ,mesh$}}
+				\State \Call{$FillSection$}{$grid, section, material$} 
+			\EndFor
+		\EndFor
+	\EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{\textbf{FindSections.} \textit{Finds all intersections of a line with the mesh and then returns all sections that are between an ingoing and outgoing intersection, i.e. inside the mesh.}}\label{alg:find_sections}
+\begin{algorithmic}[1]
+\Procedure{FindSections}{Axis $axis$, Position $position$, Mesh $mesh$}
+	\State $line \gets$ \Call{CreateLine}{$position, position + axis * gridSize$}
+	\State $intersections \gets \varnothing$
+	\ForAll{$triangle \in mesh$}
+		\State $intersections \gets intersections$ $\cup$ \Call{FindIntersection}{$line, triangle$}
+	\EndFor
+	\State \Call{Sort}{$intersections$}
+	\State $sections \gets \varnothing$
+	\State $previous \gets \varnothing$
+	\State $inside \gets false$
+	\ForAll{$intersection \in intersections$}
+		\If{$\neg inside \cap previous \neq \varnothing$}
+			\State $sections \gets sections$ $\cup$ \Call{CreateSection}{$previous,intersection$}
+		\EndIf
+		\State $previous \gets intersection$
+		\State $inside \gets \neg inside$
+	\EndFor
+	\State \textbf{return} $sections$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Essentially the algorithm checks the grid lines perpendicular to the +X, +Y and +Z faces of the voxel grid for intersections
+with the mesh. Doing this for all the three grid faces will ensure that no triangles or voxels to be filled are missed.
+The found intersections are then sorted from minimum distance from grid face to maximum distance. When iterating over these
+sorted intersections the algorithm alternates between inside the mesh and outside the mesh, since for each incoming intersection
+the next intersection must be an outgoing intersection. All voxels inside such a pair of ingoing and outgoing intersections are
+then filled with a chosen material. For the first and last voxel in such a section the algorithm also needs to set the Hermite data (i.e. the voxel intersection values and normals).\\
+We have found that in practice some triangles seem to be missed during the intersection checks due to floating point precision errors. To address this problem our implementation performs a post-processing
+hole patching algorithm that checks for missing normals in the voxel Hermite data and then obtains them by sampling from the closest
+triangle to the hole's position.\\
+Note that the complexity of the algorithm, disregarding \textsc{FillSection}, is $O(N^2 * K)$ where $N$ is the voxel grid
+size and $K$ the triangle count of the mesh, since for each side voxel (i.e. those touching one of the grid's +X, +Y or +Z faces, $3*N^2$ in total) the algorithm needs to check all triangles. For large $N$ and $K$ this poses a problem. Hence as improvement our new
+algorithm first runs Alg. \ref{alg:assign_triangles}.
+
+\begin{algorithm}[H]
+\caption{\textbf{AssignTriangles.} \textit{Projects the AABB's of all triangles onto all three voxel grid faces and then
+assigns the triangles to the bin of the according face and position.}}\label{alg:assign_triangles}
+\begin{algorithmic}[1]
+\Procedure{AssignTriangles}{Bins $bins$, Mesh $mesh$}
+	\ForAll{$axis \in \{X,Y,Z\}$}
+		\ForAll{$triangle \in mesh$}
+			\State $box \gets$ \Call{CreateAABB}{$triangle$}
+			\State $area \gets$ \Call{ProjectOnGridFace}{$axis,box$}
+			\ForAll{$position \in area$}
+				\State $bins[axis][position] = bins[axis][position] \cup triangle$
+			\EndFor
+		\EndFor
+	\EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Following that Alg. \ref{alg:find_sections} is then modified to only iterate over the triangles in $bins[axis][position]$.
+In practice this provides a good speed improvement, although at the cost of more memory, because Alg. \ref{alg:find_sections} will
+only have to check a tiny fraction of all the triangles for each position.\\
+In our implementation \textsc{FindSections} runs in parallel for all the voxels touching one grid face since all the voxels along one
+of the face's perpendicular grid lines can be written to independently in parallel. This is done three times, once per grid face, because otherwise the algorithm could potentially write to the same voxel multiple times at the same time, causing a write conflict.
 
 \section{VR Sculpting}
 
