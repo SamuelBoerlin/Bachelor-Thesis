@@ -1,5 +1,8 @@
 \chapter{Implementation}
 
+This goal of this chapter is to go into more detail about the previously mentioned concepts and how they
+are implemented in our application.
+
 \section{Cineast}
 
 \subsection{Cineast core changes}
@@ -59,18 +62,22 @@ These criteria differ between two different types of samples:
 
 \subparagraph{Shape Samples}
 
-\begin{wrapfigure}{R}{0.3\textwidth}
-\includegraphics[width=0.3\textwidth]{laplacian_smoothing_artefacts.png}
-\caption{$C^0$ (left) exhibits significant artefacts on a non-manifold mesh. $C^1$ (right) is a more sensible curvature map as baseline for the shown model.}
-\label{fig:laplacian_smoothing_artefacts}
-\end{wrapfigure}
-
 These samples should convey relevant information about the geometric shape. Previous work done by [\todoMissing{Missing ref; Lee,C.H.,Varshney,A.,Jacobs,D.:Meshsaliency.In:ACMSIGGRAPH’05, pp. 659–666 (2005)}] has
 shown that mean curvature is a good indication for visual saliency and thus for comparing geometric shapes for similarity. The mean curvature of the mesh vertices is computed using Taubin's method [\todoMissing{Missing ref}].
 Our implementation of the ClusterD2+Color algorithm computes the mean curvature of each vertex and stores it as a vertex attribute. This mean curvature attribute is then smoothed over the mesh's surface
 by a Laplacian smoothing approximation described by [\todoMissing{Missing ref; Implicit Fairing of Irregular Meshes using Diffusion and Curvature Flow}], resulting in a curvature map.
 In particular, our implementation sets $\lambda = 8$ and, to satisfy the stability criterion $\lambda dt \leq 1$, $dt = \frac{1}{8}$, i.e. equivalently it applies small smoothings with $\lambda = 1$, $dt = 1$ a total of eight times for one
-full smoothing operation. This is repeated multiple times to create three smoothed curvature maps $C^1$ through $C^3$. Each curvature map $C^i$ has been smoothed $i$ times. As opposed to [\todoMissing{Missing ref}] we use
+full smoothing operation. This is repeated multiple times to create three smoothed curvature maps $C^1$ through $C^3$. Each curvature map $C^i$ has been smoothed $i$ times.
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.6\textwidth]{laplacian_smoothing_artefacts_transparent.png}
+\caption{$C^0$ (left) exhibits significant artefacts on a non-manifold vase mesh (right) which has many touching edges. $C^1$ (middle) is a more sensible curvature map as baseline for the shown model.}
+\label{fig:laplacian_smoothing_artefacts}
+\end{figure}
+
+As opposed to [\todoMissing{Missing ref}] we use
 $C^1$ as the baseline curvature map instead of $C^0$, because certain non-manifold (e.g. vertices or edges touching without being connected) models exhibit significant artefacts in $C^0$ as shown in Fig. \ref{fig:laplacian_smoothing_artefacts}. Lastly each shape sample calculates its $D = D^2 \oplus D^3$ value, where $D^i = C^i - C^{i-1}$ is the difference-of-Laplacian space, as shown in Fig. \ref{fig:feature_penguin}, and only the samples with the top 10\% highest $D$ values are kept. Indeed the remaining top
 10\% $D$ value shape samples in Fig. \ref{fig:feature_penguin} are concentrated to the relevant features of the penguin model, namely its arms, feet and beak.
 
@@ -79,8 +86,8 @@ $C^1$ as the baseline curvature map instead of $C^0$, because certain non-manifo
 The color samples' purpose is to allow the algorithm to distinguish between models that have the same geometric shape but differ in
 color or texture. This is achieved by only selecting those samples that lie on significant color transitions. As described by
 Y.-J. Liu et al. [\todoMissing{Missing ref}], all generated samples extract the mesh's color at their position and then transform
-the color to the CIE-LAB color space [\todoMissing{Missing ref}]. The resulting three CIE-LAB coordinates, $L*$, $a*$ and $b*$ are then
-quantized into 6 ($L*$), respectively 4 ($a*$) and 4 ($b*$) integer values. These three, now quantized, coordinates are combined into a single color code integer, such that each of those color codes corresponds to a unique combination of the quantized coordinates. Similar colors are thus mapped to the same color code.\\
+the color to the CIE-LAB color space [\todoMissing{Missing ref}], which aims to provide a perceptually uniform color space, i.e. same distances in CIE-LAB color space correspond to the same amount of perceptual difference.
+The resulting three CIE-LAB coordinates, $L^*$, $a^*$ and $b^*$ are then quantized into 6 ($L^*$), respectively 4 ($a^*$) and 4 ($b^*$) integer values. These three, now quantized, coordinates are combined into a single color code integer, such that each of those color codes corresponds to a unique combination of the quantized coordinates. Similar colors are thus mapped to the same color code and dissimilar colors are mapped to different color codes.\\
 Lastly the algorithm only selects those samples as color samples of which less than $80\%$ of the neighboring samples' color codes are the same. In our implementation the neighborhood range is defined as a function of the model's mean edge length, or if less than 5 samples are found within said range then it chooses the 5 nearest samples as the neighborhood. In Fig. \ref{fig:feature_penguin} the
 color samples are selected mostly along the transition between the white, black and beige hair of the penguin
 
@@ -89,13 +96,6 @@ color samples are selected mostly along the transition between the white, black 
 
 The selected shape and color samples now need to be reduced into an N-dimensional feature vector. ClusterD2+Color algorithm achieves this by first clustering nearby samples together and then
 creating a histogram from the euclidean distances, i.e. L2 norm, between all samples that are not in the same cluster.\\
-
-\begin{wrapfigure}{R}{0.3\textwidth}
-\includegraphics[width=0.3\textwidth]{feature_penguin_histogram.png}
-\caption{The feature visualization tool that was developed during the feature extraction implementation. White: histogram feature vector. Green: probability density function of the histogram.}
-\label{fig:feature_penguin_histogram}
-\end{wrapfigure}
-
 More specifically, the samples are clustered together using a modified
 ISODATA algorithm described in [\todoMissing{Missing ref}]. In our implementation we set $P_n = 5\%$ \textit{of the total number of sample points}, $P_s = 2 * E$, $P_c = 10 * E$, $I = 100$ with $E =$ \textit{mean edge length of the model}.
 Additionally we introduce two new parameters: $I_{min} = 10$, the minimum number of iterations, and $I_{nc} = 200$, the total maximum number of iterations after which the algorithm is stopped if no convergence is happening. Without
@@ -107,14 +107,24 @@ to the authors this method results in a better similarity measure, however due t
 In either case the result is a histogram which serves as 20-dimensional feature vector and in fact, since they are a geometric signature of the model, they can be used to compare models for similarity,
 e.g. by using the $\chi^2$ distance metric, a commonly used distance metric to compare two histograms for similarity. The lower the $\chi^2$ distance the more similar the models. Conveniently Cineast and its multimedia retrieval
 database Cottontail DB\footnote{\url{https://github.com/vitrivr/cottontaildb}} offer an efficient k-nearest neighbors query for the $\chi^2$ distance metric.\\
-Along with the $\chi^2$ distance metric the Jensen-Shannon divergence ($D_{JS}$), described by Y.-J. Liu et al. [\todoMissing{Missing ref}], was also implemented. In short, the $D_{JS}$ metric treats the histogram feature vector as an independent and identically-distributed sample of a random variable and thus first converts the histogram into a probability density function by using kernel density approximation with a gaussian kernel. The Jensen-Shannon divergence of the two probability density functions to compare is then computed and serves as a probabilistic measure ranging from 0 to 1 for how similar they are, so in a sense how likely it is that the two histograms were generated from the same model. Fig. \ref{fig:feature_penguin_histogram} shows the histogram of a penguin model and its probability density function, along with some debug information of curves required for the $D_{JS}$ calculation.
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.5\textwidth]{feature_penguin_histogram.png}
+\caption{The feature visualization tool that was developed during the feature extraction implementation. White: histogram feature vector. Green: probability density function of the histogram.}
+\label{fig:feature_penguin_histogram}
+\end{figure}
+
+Along with the $\chi^2$ distance metric the Jensen-Shannon divergence ($D_{JS}$) was also implemented. This is the metric Y.-J. Liu et al. [\todoMissing{Missing ref}] chose for their implementation. In short, the $D_{JS}$ metric treats the histogram feature vector as an independent and identically-distributed sample of a random variable and thus first converts the histogram into a probability density function by using kernel density approximation with a gaussian kernel. The Jensen-Shannon divergence of the two probability density functions to compare is then computed and serves as a probabilistic measure ranging from 0 to 1 for how similar they are, so in a sense how likely it is that the two histograms were generated from the same model. Fig. \ref{fig:feature_penguin_histogram} shows the histogram of a penguin model and its probability density function, along with some debug information of curves required for the $D_{JS}$ calculation.\\
+In our ClusterD2+Color implementation in Cineast $D_{JS}$ is currently significantly slower than $\chi^2$ because Cottontail DB does not natively support k-nearest neighbors queries for $D_{JS}$. Therefore Cineast must retrieve the feature vectors of all currently existing models in the database and compare all of them one by one to the input feature vector using $D_{JS}$.
 
 
 \subsection{REST API}
 
-In order for a program to interface with Cineast's query capabilities an API is required. Cineast provides two main APIs, a WebSocket API and more importantly a REST API which was
+In order for a program to interface with Cineast's query capabilities and our ClusterD2+Color implementation an API is required. Cineast provides two main APIs, a WebSocket API and more importantly a REST API which was
 used for the purposes of this thesis.\\
-REST APIs, an acronym for Representational State Transfer, aim to communicate between to programs via requests and responses over the HTTP web protocol. The following, incomplete, list should give an insight
+REST APIs, an acronym for Representational State Transfer, aim to communicate between to programs via requests and responses over the HTTP web protocol. The following incomplete list should give an insight
 into how REST APIs operate - according to R. Fielding [\todoMissing{Missing ref; \url{https://www.ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm}}] REST APIs follow at least these following principles:
 \begin{itemize}
 	\item Client-Server: User interface concerns should be separated from data storage concerns.
@@ -123,12 +133,11 @@ into how REST APIs operate - according to R. Fielding [\todoMissing{Missing ref;
 	\item Uniform Interface: The REST API should form a uniform interface. Said interface should remain the same independent of the back-end implementation.
 	\item And several other principles.
 \end{itemize}
-Usually REST requests are exclusively executed by sending an HTTP GET, PUT, POST or DELETE request through certain server provided URLs. For example Cineast's similarity query endpoint has the following URL and is executed by
-sending a POST request: \url{http://cineast.domain/find/segments/similar}. Additional data, such as the model to run the similarity query for, is included in the HTTP request body in the form of JSON data.\\
+Usually REST requests are exclusively executed by sending an HTTP \textit{GET}, \textit{PUT}, \textit{POST} or \textit{DELETE} request through certain server provided URLs. For example Cineast's similarity query endpoint has the following URL and is executed by
+sending a \textit{POST} request: \url{http://cineast.domain/find/segments/similar}. Additional data, such as the model to run the similarity query for, is included in the HTTP request body in the form of JSON data.\\
 Throughout the course of development of this thesis Cineast's REST API was partially rewritten to use the Javalin\footnote{https://javalin.io/} web framework instead of Spark\footnote{http://sparkjava.com/} and SparkSwagger\footnote{https://github.com/manusant/spark-swagger}. Javalin makes great use of Cineast's already built-in JSON serialization structure using Jackson\footnote{https://github.com/FasterXML/jackson}. This enables Javalin, in combination with its OpenAPI plugin,
 to generate an OpenAPI specification that describes Cineast's REST API in a standardized way. Moreover this OpenAPI specification allows programs like Swagger Codegen\footnote{https://swagger.io/tools/swagger-codegen/} to generate
-fully functional code libraries in various programming languages capable of interfacing with the REST API defined by the specification. Since Javalin's OpenAPI plugin makes use of Jackson, it is capable of more reliably creating the specifications for JSON data structures than SparkSwagger, especially for subclasses of superclasses with generic types. The C\# library that was used to access Cineast's API endpoint from Unity was generated by the aforementioned OpenAPI
-specification and Swagger Codegen.
+fully functional code libraries in various programming languages capable of interfacing with the REST API defined by the specification. Since Javalin's OpenAPI plugin makes use of Jackson, it is capable of more reliably creating the specifications for JSON data structures than SparkSwagger, especially for subclasses of superclasses with generic types. The C\# library that was used to access Cineast's API endpoint from Unity was generated by the aforementioned OpenAPI specification and Swagger Codegen.
 
 \section{Voxels}
 
@@ -152,11 +161,20 @@ diverse shapes. The Hermite data and voxel material provide enough information t
 \subsection{Voxel storage}
 
 \todoMissing{Missing ref; Fig in Paper} %See below
-\begin{wrapfigure}{R}{0.5\textwidth}
-\includegraphics[width=0.4\textwidth]{quantized_hermite_data.png}
+\begin{figure}[!htb]
+\minipage{0.49\textwidth}
+\includegraphics[width=\linewidth]{quantized_hermite_data.png}
 \caption{Quantized Hermite data structure. Top: a normal's component magnitudes are packed into 13 bits plus 3 bits for the signs. One normal thus fits into two bytes. Bottom: the entire quantized Hermite data object. $x,y,z_{dist}$ refer to the intersection points. Adapted from [XXX].}
 \label{fig:quantized_hermite_data}
-\end{wrapfigure}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+\vspace*{10mm}
+\includegraphics[width=\linewidth]{indexing_order.png}
+\vspace*{4mm}
+\caption{Simple linear indexing (left), Z-Order indexing (right). Each square represents a voxel in a 2D array. The blue line represents the order in which they are stored in main memory.}
+\label{fig:indexing_order}
+\endminipage\hfill
+\end{figure}
 
 There are many different data structures to store voxels, the simplest of which is simply storing the voxels' values in large 3D arrays.
 Other data structures however need not necessarily store all voxel values on a regular grid. Often there are regions with many voxels of the same value, and
@@ -172,31 +190,61 @@ This quantized Hermite data compression is lossy since it relies on quantizing t
 negligible: the exact intersection points remain accurate to a $\frac{1}{1024}$th, respectively less than 0.1\%, of the voxel's edge length. Similarly the maximum error in a normalized normal's component is $\frac{1}{1024}$.
 The effective size of the quantized Hermite data is 12 bytes (two of which are struct alignment padding), i.e. only 23\% of the uncompressed size. Fig. \ref{fig:quantized_hermite_data} shows the quantized Hermite data
 structure in more detail.\\
-
-\begin{wrapfigure}{R}{0.4\textwidth}
-\includegraphics[width=0.4\textwidth]{indexing_order.png}
-\caption{Simple linear indexing (left), Z-Order indexing (right). Each square represents a voxel in a 2D array. The blue line represents the order in which they are stored in main memory.}
-\label{fig:indexing_order}
-\end{wrapfigure}
-
 A further potential optimization is to change the linear array indexing scheme. Modern CPUs have multiple cache layers - each cache layer is a fast memory unit and generally the faster the cache the less
-memory it can store. When a program accesses a piece of memory from main memory the CPU loads the surrounding address space into a fixed size cache line, a contiguous piece of the heap memory around the access, into the cache.
-If the program then accesses a nearby address again the CPU can read the value from the cache which is a lot faster than reading it from main memory. This is called a cache hit. On the other hand if the program accesses an address further away from the previous access than the size of a cache line the CPU will have to read the value from main memory instead, ergo a cache miss. Hence by optimizing for cache hits a program's speed can be improved if it is memory bound. The most
+memory it can store.
+
+When a program accesses a piece of memory from main memory the CPU loads the surrounding address space into one or multiple fixed size cache lines, contiguous pieces of the heap memory around the access, into the cache.
+If the program then accesses a nearby address again the CPU can read the value from the cache which is a lot faster than reading it from main memory. This is called a cache hit. On the other hand if the program accesses an address too far away from the previous access or not cached then the CPU will have to read the value from main memory instead, ergo a cache miss. Hence by optimizing for cache hits a program's speed can be improved if it is memory bound. The most
 common access pattern for our voxel storage is to read eight neighbor voxels as a voxel cell for polygonization.
 For simplicity's sake we will consider a 2D instead of 3D array: if we use simple linear indexing as shown in Fig. \ref{fig:indexing_order} to read the voxel cell (1, 2, 5, 6) there will be a large address difference between the voxels
 on the first and second row. With large arrays this will often lead to cache misses. By instead using Z-Order indexing, also known as Morton indexing, spacially nearby voxels are much more likely to be nearby to each other in the address space, increasing the chance for cache hits. However, such indexing schemes usually have a larger overhead due to the calculation of the index. To compute the Z-Order indices parts of the Libmorton library\footnote{\url{https://github.com/Forceflow/libmorton}} were used and ported to C\#. Unfortunately in our case using Z-Order indexing has made no significant difference.\todoMissing{Validate this}
 
 
-\subsection{CMS}
+\subsection{Cubical Marching Squares}
 
-Since the voxels are just an internal volumetric representation some algorithm is required to convert them into something that a computer can
-display on the monitor, e.g. a polygonal 3D mesh. From the group of iso-surface and surface polygonization algorithms we have decided to use the
-Cubical Marching Squares algorithm described by [\todoMissing{Missing ref; CMS}].
+\hfill
+
+\begin{figure}[!htb]
+\minipage{0.49\textwidth}
+\vspace*{10mm}
+\includegraphics[width=\linewidth]{marching_squares_cases.png}
+\vspace*{10mm}
+\caption{All marching squares cases. Red lines indicate an ambiguous case,
+i.e. either pair of lines is valid if only the corner values of the cell
+are available. Source: [XXX]\protect\footnotemark}
+\label{fig:marching_squares_cases}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+\includegraphics[width=\linewidth]{cms_visualization.png}
+\caption{Cubical Marching Squares voxel cell components (a, d), their Marching Squares cell faces (b, e) and their triangulations (c, f). Source: [XXX]}
+\label{fig:cms_visualization}
+\endminipage\hfill
+\end{figure}
+\todoMissing{Missing ref; CMS}
+\footnotetext{http://users.polytech.unice.fr/~lingrand/MarchingCubes/accueil.html}
+
+For our application we have decided to use the Cubical Marching Squares algorithm by [\todoMissing{Missing ref; CMS}]. The reason for this choice was
+that CMS provides both primal and dual features. As such each cell can be polygonized independently but it can still also preserve sharp features well, e.g. the top of a voxel pyramid.\\
+Our implementation of the CMS algorithm runs only on regular voxel grids and
+there is no adaptivity or level of detail. Therefore all future explanations on CMS are based on these two limitations.\\
+The first step of the CMS algorithm is to run the Marching Squares (MS) algorithm, the 2D counterpart of the MC algorithm, on each face of a voxel cell. Fig. \ref{fig:marching_squares_cases} shows the total 16 different MS cases for a single voxel cell face. If the normals of the Hermite data span an angle greater than the 2D sharp feature angle threshold then the straight line segments are replaced with two lines that connect the two edges and the intersection point of the normals' tangents. This allows CMS to preserve sharp features on the voxel cell faces. Furthermore this sharp feature helps CMS to resolve the ambiguous MS cases 5 and 10, because the two line segments must not overlap. With the two sharp features in cases 5 and 10 it is simple to check
+whether the two sharp segments overlap or not, and then use the non-overlapping configuration.\\
+Once all six voxel cell faces have been processed by MS the CMS algorithm connects or links all touching line segments together. The result of this is a collection of components, i.e. groups of line segments that form a loop.\\
+Then, for each component in a voxel cell, and all their line segments, CMS outputs vertices. Additionally for each component in a voxel cell, if the component's normals of a component span an angle greater than the 3D sharp feature angle threshold the CMS algorithm finds the component's 3D sharp feature that minimizes the sum of squared distances between the sharp feature and the planes spanned by the component's normals. Then it places a vertex at said sharp feature. If the angle threshold is not met then CMS instead places a vertex at the mean position of the component's vertices. This results in a list of triangles for each component, like shown in Fig. \ref{fig:cms_visualization}, that are added to the output mesh.
+
+
+
 
 \subsubsection{Multi-material extension for CMS}
 
-\begin{wrapfigure}{R}{0.45\textwidth}
-\begin{minipage}{0.45\textwidth}
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.5\textwidth]{cms_multi_material_side_top.png}
+\caption{Multi-material CMS. The side view (left) shows how the material transitions (white triangles) are projected onto the segment, causing a split where one would expect the material transition to occur on the surface. The top view (right) shows how those splits are included in the sharp feature (yellow diamond) solution. The right side also shows the resulting triangulation (dotted lines).}
+\label{fig:cms_multi_material}
+\end{figure}
+
 \begin{algorithm}[H]
 \caption{\textbf{GenerateSegment.} \textit{This procedure remains mostly the same as described in the CMS paper. The only difference is the last line \ref{algstatement:cms_generate_segment_change}.}}\label{alg:cms_generate_segment}
 \begin{algorithmic}[1]
@@ -213,8 +261,41 @@ Cubical Marching Squares algorithm described by [\todoMissing{Missing ref; CMS}]
 \EndProcedure
 \end{algorithmic}
 \end{algorithm}
-\end{minipage}
-\end{wrapfigure}
+
+\begin{algorithm}[H]
+\caption{\textbf{DetectMaterialTransition.} \textit{This procedure finds and inserts material transitions into the segments of a face f. \textsc{InsertTransition} inserts the transition points into $f.list$ at their appropriate indices s.t. the segment's pieces remain straight and don't form folds, i.e. s.t. they subdivide the segment, and $transition2$ is to be inserted after $transition1$. The MATERIAL\_TRANSITIONS table returns one or two edges connecting two neighboring face corners with solid materials given the marching squares case, since those could contain material transitions.}}\label{alg:cms_detect_material_transition}
+\begin{algorithmic}[1]
+\Procedure{DetectMaterialTransition}{Face $f$}
+	\If{$f.marchingSquaresCase \in \{3,6,7,9,11,12,13,14\}$}
+		\State $edges \gets $ MATERIAL\_TRANSITIONS[$f.marchingSquaresCase$]
+		\ForAll{$edge \in edges$}
+			\State $normal \gets $\Call{GetNormal}{$f, edge$}
+			\If{$normal \neq \varnothing$} \Comment{There can only be a transition if a normal exists.}
+				\State $intersection \gets $\Call{GetIntersection}{$f, edge$}
+				\State $tangent \gets $\Call{ConstructTangent}{$intersection, normal$}
+				\ForAll{$l \in f.list$}
+					\ForAll{$p \in l$} \Comment{The variable $p$ is one piece of the segment $l$.}
+						\If{$tangent$ intersects with $p$}
+							\State $transitionPoint \gets $\Call{IntersectionPoint}{$tangent, p$}
+							\State $transition1 \gets $\Call{CreateTransition}{\null}
+							\State $transition1.position \gets transitionPoint$
+							\State $transition1.material \gets edge.points[0].material$
+							\State $transition1.normal \gets normal$
+							\State $transition2 \gets $\Call{CreateTransition}{\null}
+							\State $transition2.position \gets transitionPoint$
+							\State $transition2.material \gets edge.points[1].material$
+							\State $transition2.normal \gets normal$
+							\State \Call{InsertTransition}{$f.list, transition1, transition2$}
+						\EndIf
+					\EndFor
+				\EndFor
+			\EndIf
+		\EndFor
+	\EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
 
 The regular CMS algorithm does not support multiple materials. Hence due to the need for multi material volumes in this thesis's application
 a multi-material CMS extension was developed. In order for this to work the Hermite data normals must additionally also be stored for each material change edge, and not only for non-solid
@@ -222,46 +303,6 @@ to solid changes or vice versa. Furthermore each segment vertex must store a mat
 Only one change was required in the algorithms shown in the CMS paper: \textsc{GenerateSegment}'s modification is shown in Alg. \ref{alg:cms_generate_segment}.
 Since our application only uses regular voxel grids the modification was made to work on regular voxel grid cells. It can however be extended to work with the adaptive CMS version
 in a similar manner.
-
-\begin{algorithm}[H]
-\caption{\textbf{DetectMaterialTransition.} \textit{This procedure finds and inserts material transitions into the segments of a face f. \textsc{InsertTransition} inserts the transition points into $f.list$ at their appropriate indices s.t. the segment's pieces remain straight and don't form folds, i.e. s.t. they subdivide the segment, and $transition2$ is to be inserted after $transition1$. The MATERIAL\_TRANSITION table returns the edge
-connecting the two face corners with solid materials given the marching squares case.}}\label{alg:cms_detect_material_transition}
-\begin{algorithmic}[1]
-\Procedure{DetectMaterialTransition}{Face $f$}
-	\If{$f.marchingSquaresCase$ is 2}
-		\State $edge \gets $ MATERIAL\_TRANSITION[$f.marchingSquaresCase$]
-		\State $normal \gets $\Call{GetNormal}{$f, edge$}
-		\If{$normal \neq \varnothing$} \Comment{There can only be a transition if a normal exists.}
-			\State $intersection \gets $\Call{GetIntersection}{$f, edge$}
-			\State $tangent \gets $\Call{ConstructTangent}{$intersection, normal$}
-			\ForAll{$l \in f.list$}
-				\ForAll{$p \in l$} \Comment{The variable $p$ is one piece of the segment $l$.}
-					\If{$tangent$ intersects with $p$}
-						\State $transitionPoint \gets $\Call{IntersectionPoint}{$tangent, p$}
-						\State $transition1 \gets $\Call{CreateTransition}{\null}
-						\State $transition1.position \gets transitionPoint$
-						\State $transition1.material \gets edge.points[0].material$
-						\State $transition1.normal \gets normal$
-						\State $transition2 \gets $\Call{CreateTransition}{\null}
-						\State $transition2.position \gets transitionPoint$
-						\State $transition2.material \gets edge.points[1].material$
-						\State $transition2.normal \gets normal$
-						\State \Call{InsertTransition}{$f.list, transition1, transition2$}
-					\EndIf
-				\EndFor
-			\EndFor
-		\EndIf
-	\EndIf
-\EndProcedure
-\end{algorithmic}
-\end{algorithm}
-
-
-\begin{wrapfigure}{R}{0.5\textwidth}
-\includegraphics[width=0.5\textwidth]{cms_multi_material_side_top.png}
-\caption{Multi-material CMS. The side view (left) shows how the material transitions (white triangles) are projected onto the segment, causing a split where one would expect the material transition to occur on the surface. The top view (right) shows how those splits are included in the sharp feature (yellow diamond) solution. The right side also shows the resulting triangulation (dotted lines).}
-\label{fig:cms_multi_material}
-\end{wrapfigure}
 
 Additionally to the \textsc{GenerateSegment} modification the \textsc{DetectSharpFeature} implementation also requires a change. The transitions generated in \textsc{DetectMaterialTransition}, which are added to
 $f.list$, and their normals must be included in the linear system of equations to be solved ([\todoMissing{CMS and Kobbelt et al.}]) for the sharp feature detection,
@@ -280,12 +321,10 @@ From all the possible components that CMS can generate in a regular grid voxel c
 then been indexed and their size and edges were stored in a seperate lookup table.\\
 
 \begin{algorithm}[H]
-\caption{\textbf{DisambiguationBit.} \textit{Determines the disambiguation bit for the specified base case and ambiguity number.}}\label{alg:cms_lt_disambiguation_bit}
+\caption{\textbf{DisambiguationBit.} \textit{Determines the disambiguation bit for the specified ambiguous face. In our implementation we use the CASE\_AND\_AMBIGUITY\_NR\_TO\_EDGES lookup table described further below to obtain the face edges.}}\label{alg:cms_lt_disambiguation_bit}
 \begin{algorithmic}[1]
-\Procedure{DisambiguationBit}{int $baseCase$, int $ambiguityNr$}
-	\State $tableIndex \gets baseCase * 6 * 4 + ambiguityNr * 4$
-	\State $edges \gets \{$CASE\_AND\_AMBIGUITY\_NR\_TO\_EDGES[$tableIndex + 0$],
-	\Statex ..., CASE\_AND\_AMBIGUITY\_NR\_TO\_EDGES[$tableIndex + 3$]$\}$
+\Procedure{DisambiguationBit}{Face $face$}
+	\State $edges \gets face.edges$
 	\State $segment1 \gets $\Call{ConstructSegment}{$edges[0], edges[1]$} \Comment{Constructs a segment from the intersections on $edge[0]$ and $edge[1]$}
 	\State \Call{DetectFaceSharpFeature}{$segment1$}
 	\State $segment2 \gets $\Call{ConstructSegment}{$edges[2], edges[3]$}
@@ -302,7 +341,7 @@ then been indexed and their size and edges were stored in a seperate lookup tabl
 One complication of the lookup table based approach are the potential 2D cell face ambiguities. All tables thus require as index not only the base configuration and rotation index, but also a $6$ bit disambiguation
 index (one bit per cell face, also called "ambiguityRes"). For a given base configuration case and an ambiguity number (i.e. the index of the ambiguity to check, ranging from 0 to 5) Alg. \ref{alg:cms_lt_disambiguation_bit} calculates a
 disambiguation bit. These disambiguation bits are then bit packed into a single integer where the bit with $ambiguityNr = 0$ is the most right bit and then from right to left according to $ambiguityNr$, resulting
-in the $6$ bit disambiguation index. Although less common, the potential 3D ambiguities as mentioned in the CMS paper are not being handled by lookup tables, those still need to be resolved dynamically.\\
+in the $6$ bit disambiguation index. The 3D ambiguities as mentioned in the CMS paper are not being handled by lookup tables, those still need to be resolved dynamically.\\
 With the base configuration, rotation index and now also the disambiguation index a list of components can be obtained from yet another lookup table. The proposed lookup table based CMS algorithm then creates the segments for each
 component, finds their 2D and 3D sharp features similarly to the regular CMS algorithm, and finally triangulates them.\\
 In total the proposed lookup table based CMS algorithm primarily requires the following lookup tables which have been generated by our lookup table tool:
@@ -381,6 +420,7 @@ including any normals (pink) on them, represent one Hermite data voxel.}
 The CSG operations that our application uses for the sculpting brushes can be applied using variants of Alg. \ref{alg:hermite_data_csg}. 
 
 \begin{algorithm}[H]
+\small
 \caption{\textbf{Union.} \textit{Applies a CSG union to a voxel grid. \textsc{FindIntersection} finds the intersection of a primitive with the specified edge
 and returns an intersection object. $intersection.distance$ is the distance between the intersection and a voxel or $edge.voxels[0]$, and $intersection.normal$ is the 
 surface normal vector at the intersection.}}\label{alg:hermite_data_csg}
@@ -388,19 +428,19 @@ surface normal vector at the intersection.}}\label{alg:hermite_data_csg}
 \Procedure{Union}{VoxelGrid $grid$, CSGPrimitive $primitive$}
 	\ForAll{$v \in grid.voxels$}
 			\If{$v$ is inside $primitive$}
-				\State $v.insidePrimitive \gets true$
+				\State $v.inside \gets true$
 				\State $v.material \gets primitive.material$
 			\Else
-				\State $v.insidePrimitive \gets false$
+				\State $v.inside \gets false$
 			\EndIf
 	\EndFor
 	\ForAll{$e \in grid.edges$}
-		\If{$e.voxels[0].insidePrimitive \neq e.voxels[1].insidePrimitive$}
+		\If{$e.voxels[0].inside \neq e.voxels[1].inside$}
 			\State $intersection \gets$ \Call{FindIntersection}{$e, primitive$}
-			\If{$e.voxels[0].insidePrimitive \cap intersection.distance \geq e.voxels[0].intersections[e.axis]$}
+			\If{$e.voxels[0].inside \land intersection.distance \geq e.voxels[0].intersections[e.axis]$}
 				\State $e.voxels[0].intersections[e.axis] \gets intersection.distance$
 				\State $e.voxels[0].normals[e.axis] \gets intersection.normal$
-			\ElsIf{$e.voxels[1].insidePrimitive \cap intersection.distance \leq e.voxels[0].intersections[e.axis]$}
+			\ElsIf{$e.voxels[1].inside \land intersection.distance \leq e.voxels[0].intersections[e.axis]$}
 				\State $e.voxels[0].intersections[e.axis] \gets intersection.distance$
 				\State $e.voxels[0].normals[e.axis] \gets intersection.normal$
 			\EndIf
@@ -411,7 +451,7 @@ surface normal vector at the intersection.}}\label{alg:hermite_data_csg}
 \end{algorithm}
 
 First the algorithm for a CSG union operation tags all voxels of the voxel grid whether they are inside the CSG primitive. Then it iterates over all edges of the voxel grid and checks if the two voxels
-that form the edge have a different $insidePrimitive$ state. If that is the case then the edge must intersect with the primitive's surface and the exact intersection is found
+that form the edge have a different $inside$ state. If that is the case then the edge must intersect with the primitive's surface and the exact intersection is found
 using \textsc{FindIntersection}. Then the algorithm checks if any already existing intersections can and must be replaced by comparing their values. For multi-material voxel volumes some additional checks are required, mostly so that intersections are placed correctly at
 solid to solid material transitions. In addition to that, our implementation also gives each CSG primitive an axis aligned bounding box, such that only those voxels and edges inside the bounding box need to be checked.\\
 With some minor adjustments, namely swapping the $\geq$ and $\leq$, inverting the normals and changing the material assignment at the top to set to empty voxels, the algorithm for the CSG difference operation is obtained. \par
@@ -420,15 +460,17 @@ Previously it was mentioned that SDF's are well suited for CSG primitives.
 The reason for this is that they are versatile and checking whether a voxel lies inside the SDF or finding
 line to surface intersection points is simple. Checking whether a voxel is inside the SDF is a simple as checking whether the value of the SDF evaluated at said voxel is negative.
 Finding intersection points (\textsc{FindIntersection}) on an edge is done by running a binary search on the edge, starting with the edge start- and endpoints and repeatedly moving them closer together.
+The binary search runs as long as the sign at the start- and endpoints are different, or until the value returned by the SDF for either start- or endpoint is within a certain threshold from zero. Both the start- and endpoints will thus converge towards the position where the SDF evaluates to zero, i.e. the SDF's surface.\\
 
-\begin{wrapfigure}{R}{0.4\textwidth}
-\includegraphics[width=0.4\textwidth]{adaptive_binary_search.png}
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.5\textwidth]{adaptive_binary_search.png}
 \caption{Adaptive binary search. Red circle: SDF's surface, Arrows: start- \& endpoint, Black circles: circles with radius of SDF's value at start- or endpoint. The adaptive binary search
 finds the zero point from the initial state (left) after just one iteration (right).}
 \label{fig:adaptive_binary_search}
-\end{wrapfigure}
+\end{figure}
 
-The binary search runs as long as the sign at the start- and endpoints are different, or until the value returned by the SDF for either start- or endpoint is within a certain threshold from zero. Both the start- and endpoints will thus converge towards the position where the SDF evaluates to zero, i.e. the SDF's surface.\\
 This binary search can be optimized by using the values returned by the SDF for each iteration, since those values are a lower bound for the distance which the start- or endpoint can be moved along the edge without accidentally crossing the SDF's surface. Using this fact the adaptive binary search can make larger and more precise steps than a blind binary search. Consider a nearly linear surface perpendicular to the edge, like in Fig. \ref{fig:adaptive_binary_search}: the adaptive binary search will find the exact zero point after just one iteration because the two values returned by the SDF are the exact distances between the start- and endpoints and the surface. This may not always work for inexact SDF approximations since the returned values may not be actual lower bounds, hence the algorithm should still be able to use the regular binary search method as fallback for robustness.
 
 \subsection{Rendering}
@@ -486,7 +528,7 @@ for meshes without holes.
 	\State $previous \gets \varnothing$
 	\State $inside \gets false$
 	\ForAll{$intersection \in intersections$}
-		\If{$\neg inside \cap previous \neq \varnothing$}
+		\If{$\neg inside \land previous \neq \varnothing$}
 			\State $sections \gets sections$ $\cup$ \Call{CreateSection}{$previous,intersection$}
 		\EndIf
 		\State $previous \gets intersection$
@@ -542,5 +584,18 @@ General overview of capabilities and functionality, UIs, SteamVR Plugin, etc.
 \subsection{Brush properties menu}
 Functionalities, color selection (why HSV: you can see most colors at once, as opposed to RGB sliders)
 
-\subsection{Custom brush editing menu}
-Explain custom brush tool, why it exists, etc.
+\subsection{Custom Brushes}
+%Explain custom brush tool, why it exists, etc.
+
+\todoMissing{Editing menu picture}
+
+Our application currently only supports hard boolean CSG, meaning that union and difference operations often lead to sharp edges and corners. This is not always desirable, especially when the user wants to sculpt organic and
+smooth shapes. One solution to address this would be to implement a smoothing brush that smooths out sharp edges, e.g. by averaging the positions of the surface vertices and adjusting the normals. However doing this is not trivial
+because the surface vertices are constructed from the underlying voxels, hence the smoothing would instead have to happen in the voxel data instead. This also leads to several edge cases like when a voxel Hermite data intersection is moved
+from one voxel to another care must be taken to also adjust the intersections on the other voxel edges such that it doesn't produce a hole in the mesh. The multi-material voxels also pose a problem because the smoothing brush should
+not disturb or even destroy the material transitions.\\
+To avoid all these troubles we have conceived a proof of concept custom brush that can be shaped by the application's user. As discussed previously SDF's can be smoothly blended together using the smooth minimum and maximum operators.
+Our custom brushes take advantage of that and enable the user to smoothly blend two or more SDF primitives together to create a brush shape. Currently our application supports combining cube and sphere primitives together, but new
+primitives can be added easily in almost the same way as it is done for the regular brushes. In addition to that each SDF primitive can be scaled on all three axes independently.\\
+These custom brushes have several use cases: they can be used to create a single primitive shape that can be scaled, e.g. creating an ellipsoid from a sphere primitive, or it can be used to create more complex shapes, such as e.g.
+a rounded disc by combining one sphere primitive and smoothly subtracting two cube primitives from the top and bottom of the sphere.\\

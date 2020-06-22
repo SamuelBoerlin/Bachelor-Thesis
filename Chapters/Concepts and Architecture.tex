@@ -1,33 +1,96 @@
 \chapter{Concepts and Architecture}
 
+In this chapter we discuss the relevant concepts used throughout thesis and how they fit together into the high level architecture of our
+application.
+
 \section{General overview}
 How all components are connected to each other (cineast, feature module, cottontail, rest api, polygonizer, voxel storage, vr interaction controller, etc.)
 
-\section{Cineast}
-What is cineast, how does it work (feature modules, cottontail etc.)...
+%\section{Cineast}
+%What is cineast, how does it work (feature modules, cottontail etc.)...
 
-\subsection{Extraction Modules}
-What, how
+%\subsection{Extraction Modules}
+%What, how
 
-\subsection{Queries}
-What, how, KNN, etc.
+%\subsection{Queries}
+%What, how, KNN, etc.
+
+\section{Multimedia Retrieval}
+
+Multimedia retrieval has become an ever more important topic over the last decades. As the name implies multimedia retrieval entails the retrieval of various different media such as text, images, video and audio but also
+3D models. The goal is to allow the user to find such media based on an example input or a subset of the desired result.\\
+The DBIS research group\footnote{\url{https://dbis.dmi.unibas.ch/}} is working on such a system called Cineast. Cineast provides the backend functionality for multimedia retrieval queries and Vitrivr NG provides a web
+based frontend to enable users to build queries. Currently it supports queries for text, images, video, audio and 3D models.\\
+The focus of this thesis is on 3D model retrieval which is also part of multimedia retrieval. Research in this area has so far focused on building 3D model queries from example images, sketches or common 3D model file formats.
+In order to create one of these 3D model files the user requires a seperate sculpting program and needs to learn how to use it.
+
+
+\section{Virtual Reality}
+%What is VR, use cases
+
+Current 3D sculpting applications usually have a steep learning curve. This comes from the fact that keyboards and computer mice, which serve as the primary human to machine interface, are not intuitive for
+sculpting. Modifying parts of a physical clay sculpture by hand is much more intuitive for a human than doing it virtually with a keyboard and mouse, because there is no direct mapping between these actions
+and the movement of a mouse or the buttons of a keyboard. There are companies that produce hardware specifically made to alleviate some of these issues, e.g. 3Dconnexion\footnote{\url{https://www.3dconnexion.de/}}, but the issue
+of not having a direct mapping mostly persists.\\
+This is where virtual reality (VR) excels and why it is a crucial part of our application. The VR controllers create a direct mapping between the position and movement of the hands and the ingame sculpting brush. In addition to that
+the VR headset also provides a true sense of depth with its stereoscopic display and makes it easier to view the virtual sculpture from all sides because head movement is tracked accurately. When combined these advantages provide
+a more immersive experience and hopefully also a more intuitive human machine interface.
+
+%\section{UI Design}
+%Windows vs. using 3D space
+
+%\section{Sculpting interactions}
+%One hand to grab, other to sculpt, rotating brush with trackpad, etc.
 
 \section{Voxels}
-What are voxels, purpose, hermite data, etc.
+%What are voxels, purpose, hermite data, etc.
 
-\newpage
+Our application provides a 3D sculpting module and thus needs a suitable virtual representation of the sculptures. Usually 3D model formats only store the surface of a sculpture, but our application requires the sculptures to be
+truly volumetric and not just an empty shell, so that when the user removes some material from the sculpture they should be able to see the material filling the inside of the sculpture.\\
+The foundation of the sculpting module is thus based on voxels. In the most basic sense a voxel represents a value on a regular grid in 3D space [\todoMissing{Missing ref; Wikipedia}].
+The value contained in a voxel usually describes which material it is made of, but can also contain additional data, e.g. to describe the shape of the voxel.\\
+These voxels are very useful to represent volumetric structures, such as sculptures or terrain, since they fill the 3D space and each voxel represents one volume element. One can imagine voxels being like LEGO bricks with which
+the sculptures are built, or the analog to atoms on a much larger scale.
+
+\section{Voxelization}
+
+\hfill
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.75\textwidth]{voxelizer_example_transparent.png}
+\caption{The Stanford Armadillo mesh\protect\footnotemark  (left) and its voxel representation at a resolution of 128x128x128 voxels (right).}
+\label{fig:voxelizer_example}
+\end{figure}
+\footnotetext{\url{http://graphics.stanford.edu/data/3Dscanrep/}}
+
+An important part of multimedial retrieval is the ability to take query results and reuse them to formulate a new, refined, query. In the context of this thesis the multimedia retrieval
+is only concerned with polygonal meshes. To facilitate the modification of such polygonal meshes our application includes a voxelizer module. The voxelizer takes a polygonal
+mesh as input and converts it into a suitable voxel representation to enable the user to edit the model volumetrically. Since
+our voxels contain not only the voxel material, but also the surface normals, we can reconstruct the mesh from our voxels while keeping most of the mesh's features intact with high accuracy, given
+a large enough voxel grid with sufficient resolution. In practice a resolution of 128x128x128 seems to be sufficient for most models that aren't highly detailed or noisy.
+Fig. \ref{fig:voxelizer_example} shows an example of a mesh that has been converted to a voxel grid.
+
 \section{Isosurface Polygonization}
 
-\begin{wrapfigure}{R}{0.25\textwidth}
-\includegraphics[width=0.25\textwidth]{voxel_scene_cube.png}
+Since the voxels are just an internal volumetric representation an algorithm is required to convert them into something that a computer can display on the monitor, e.g. a polygonal 3D mesh. In general these kinds of algorithms are
+called isosurface polygonization algorithms, since originally
+they were conceived to convert implicit functions, or e.g.
+computed tomography (CT) density fields, into a polygonal surface. The word "isosurface" comes from the fact that the implicit function value or density is the same ("iso-", meaning equal) everywhere on the polygonal surface. There are some variants that do not directly work off of density fields but instead some intermediary representation like Hermite data which will be discussed in detail later on.
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.35\textwidth]{voxel_scene_cube.png}
 \caption{A polygonized voxel cell (white) containing the polygon surface of a cube's corner (blue) with a sharp feature (yellow).}
 \label{fig:polygonized_cube_voxel_cell}
-\end{wrapfigure}
+\end{figure}
 
 %Method for converting voxels into meshes, some common algorithms as examples
 
-There are two main groups of such algorithms: primal (\todoMissing{Missing ref; MC etc.}) and dual (\todoMissing{Missing ref; DC, CMS, etc.}) contouring algorithms.
-Generally these algorithms cannot polygonize a single voxel by itself, but instead require a cell consisting of eight voxels, usually arranged in the form
+The two main groups of isosurface polygonization alrogithms are the primal (\todoMissing{Missing ref; MC etc.}) and dual (\todoMissing{Missing ref; DC, CMS, etc.}) contouring algorithms.
+Most of these algorithms cannot polygonize a single voxel by itself, but instead require a cell consisting of eight voxels, usually arranged in the form
 of a cube. Primal and dual contouring algorithms differ in that the primal variants place polygon vertices somewhere on the cell's edges and the dual variants
 place them not on the edges but somewhere within the cell's volume. Therefore dual contouring algorithms have the advantage that they can more reliably polygonize
 surfaces with sharp features, such as e.g. the corners of a cube. Primal contouring algorithms can also polygonize sharp features in certain cases, however only
@@ -74,30 +137,7 @@ well and can produce the exact union or difference, however in certain cases it 
 SDFs need not be exact on the inside, hence we have decided to use SDFs as the representation of our CSG primitives. Additionally since the domain and range are the same for all SDFs, namely
 $f\colon \mathbb{R}^3 \mapsto \mathbb{R}$, they can all be treated exactly the same besides their formulas and can be encapsulated as a simple method in code.
 
-\section{Voxelization}
-
-\begin{wrapfigure}{R}{0.5\textwidth}
-\includegraphics[width=0.5\textwidth]{voxelizer_example.png}
-\caption{The Stanford Armadillo mesh\protect\footnotemark  (left) and its voxel representation at a resolution of 128x128x128 voxels (right).}
-\label{fig:voxelizer_example}
-\end{wrapfigure}
-\footnotetext{\url{http://graphics.stanford.edu/data/3Dscanrep/}}
-
-An important part of multimedial retrieval is the ability to take query results and reuse them to formulate a new, refined, query. In the context of this thesis the multimedia retrieval
-is only concerned with polygonal meshes. To facilitate the modification of such polygonal meshes the application includes a voxelizer module. A voxelizer takes a polygonal
-mesh as input and converts it into a suitable voxel representation. In particular, to achieve high accuracy our voxelizer converts the polygonal mesh into voxels. Since
-our voxels contain not only the voxel material, but also the surface normals, we can reconstruct the mesh from our voxels while keeping most of the mesh's features intact, given
-a large enough voxel grid with sufficient resolution. In practice a resolution of 128x128x128 seems to be sufficient for most models that aren't highly detailed or noisy.
-Fig. \ref{fig:voxelizer_example} shows an example of a mesh that has been converted to a voxel grid.
-
-\section{Virtual Reality}
-What is VR, use cases
-
-\subsection{UI Design}
-Windows vs. using 3D space
-
-\subsection{Sculpting interactions}
-One hand to grab, other to sculpt, rotating brush with trackpad, etc.
-
 \section{Unity}
 What, why
+
+\section{Architecture}
