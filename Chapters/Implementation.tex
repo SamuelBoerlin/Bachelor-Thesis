@@ -1,39 +1,54 @@
 \chapter{Implementation}
 
-This goal of this chapter is to go into more detail about the previously mentioned concepts and how they
+The goal of this chapter is to go into more detail about the previously mentioned concepts and how they
 are implemented in our application.
 
 \section{Cineast}
 
-\subsection{Cineast core changes}
-UV + texture support in meshes and OBJ loader
+Cineast is the multimedia retrieval backend of choice for our application. In order to implement the requirements of our application
+several changes had to be made to Cineast. However due to Cineast's modular structure must of the changes could be applied without having to
+modify the core code.
+
+
+\subsection{Cineast Core Changes}
+%UV + texture support in meshes and OBJ loader
+
+Cineast's mesh classes \textsc{Mesh}, \textsc{ReadableMesh} and \textsc{WritableMesh} did not support model textures and thus had to be extended
+for our feature module. Methods to get/set a \textsc{BufferedImage} texture and a \textsc{String} texture path, for later retrieving the model texture
+through the API, were added to the respective classes. The mesh's \textsc{Vertex} class was also extended to support storing \textsc{Vector2f} texture UV attributes.\\
+The \textsc{OBJMeshDecoder}, which is responsible for reading a .obj model file into a \textsc{Mesh}, was extended to also read texture UV coordinates from the file.
+Moreover it looks for a texture file with the same name as the .obj model file. If such a texture file is found it is added to the \textsc{Mesh} and the texture file's
+path is persisted in the database as metadatum with the domain "TEXTURE" and key "texture\_path". To do so the \textsc{Segmenter} class received an additional method
+\textsc{persist(SegmentContainer, MediaSegmentDescriptor)} which is called when a \textsc{SegmentContainer} is being persisted by \textsc{GenericExtractionItemHandler}.
+\textsc{ModelSegmenter} then uses that method to persist the mesh's texture file path metadatum. This metadatum can later be used by clients to download the model's texture.
 
 \subsection{Model Formats}
 
 The current implementation supports the Wavefront OBJ [\todoMissing{Missing ref}] format as it is comparatively
 simple to parse. However, the feature extraction algorithm is agnostic to the original 3D model format and only requires
-a 3D mesh consisting of triangles and vertices that contain the following attributes: position and texture coordinates.
+a 3D mesh consisting of triangles and vertices that contain the following attributes: position and texture coordinates or vertex colors.
 Because of Cineast's [\todoMissing{Missing ref}] modular nature it is possible to add parsers for other 3D model formats, or
 to extend the currently existing parsers to also read the aforementioned vertex attributes, without having to alter
 the feature extraction algorithm.
 
-\subsection{ClusterD2+Color feature extraction}
+\subsection{ClusterD2+Color Feature Extraction}
 %What, why (color support), explain assumptions made that were not covered by the paper
-
 
 In order to compare two or more 3D models for similarity the algorithm must first identify or
 extract information that is relevant for the calculation of the similarity metric.
 A common way to do so is to reduce the 3D model into an N-dimensional real-valued feature vector which
 contains only the most relevant information, or a reduced and compacted version thereof, for a similarity comparison. This feature vector can
-then be used to compute a similarity metric, e.g. by calculating the L2 distance between feature vectors.
-
+then be used to compute a similarity metric, e.g. by calculating the L2 distance between feature vectors.\\
 Since our application allows the user to color their sculptures it makes sense that similarity queries also
 take color into account. Hence part of the color information must be contained in the feature vector.
 The ClusterD2+Color algorithm described by [\todoMissing{Missing ref}], which was used in our application,
 achieves this by creating random sample points on the 3D model's surface according to certain criteria and then
-use those sample points to compute a feature vector.
+use those sample points to compute a feature vector.\\
+Our feature module, \textsc{ClusterD2AndColorHistogram}, extends Cineast's \textsc{StagedFeatureModule} class which takes care of the
+querying base functionality, such as searching for similar feature vectors and sorting results by score or persisting an extracted feature vector.
+The \textsc{ClusterD2AndColorHistogram} class mostly takes care of extracting the ClusterD2+Color feature vector from a given input model.
 
-\subsubsection{Sample generation}
+\subsubsection{Sample Generation}
 
 Many isosurface polygonization algorithms, such as our non-adaptive CMS [\todoMissing{Introduce abbr before}]
 implementation used in this application, can produce highly tessellated meshes. Opposite to that meshes exported by
@@ -73,7 +88,7 @@ full smoothing operation. This is repeated multiple times to create three smooth
 \centering
 \captionsetup{width=0.8\textwidth}
 \includegraphics[width=0.6\textwidth]{laplacian_smoothing_artefacts_transparent.png}
-\caption{$C^0$ (left) exhibits significant artefacts on a non-manifold vase mesh (right) which has many touching edges. $C^1$ (middle) is a more sensible curvature map as baseline for the shown model.}
+\caption{$C^0$ (left) exhibits significant artefacts on a non-manifold vase mesh (right) which has many invisible touching edges. $C^1$ (middle) is a more sensible curvature map as baseline for the shown model.}
 \label{fig:laplacian_smoothing_artefacts}
 \end{figure}
 
@@ -87,11 +102,11 @@ The color samples' purpose is to allow the algorithm to distinguish between mode
 color or texture. This is achieved by only selecting those samples that lie on significant color transitions. As described by
 Y.-J. Liu et al. [\todoMissing{Missing ref}], all generated samples extract the mesh's color at their position and then transform
 the color to the CIE-LAB color space [\todoMissing{Missing ref}], which aims to provide a perceptually uniform color space, i.e. same distances in CIE-LAB color space correspond to the same amount of perceptual difference.
-The resulting three CIE-LAB coordinates, $L^*$, $a^*$ and $b^*$ are then quantized into 6 ($L^*$), respectively 4 ($a^*$) and 4 ($b^*$) integer values. These three, now quantized, coordinates are combined into a single color code integer, such that each of those color codes corresponds to a unique combination of the quantized coordinates. Similar colors are thus mapped to the same color code and dissimilar colors are mapped to different color codes.\\
+The resulting three CIE-LAB coordinates, $L^*$, $a^*$ and $b^*$ are then quantized into 6 ($L^*$), respectively 4 ($a^*$) and 4 ($b^*$) integer values. These three, now quantized, coordinates are combined into a single color code integer, such that each of those color codes corresponds to a unique combination of the quantized coordinates. Perceptually similar colors are thus mapped to the same color code and dissimilar colors are mapped to different color codes.\\
 Lastly the algorithm only selects those samples as color samples of which less than $80\%$ of the neighboring samples' color codes are the same. In our implementation the neighborhood range is defined as a function of the model's mean edge length, or if less than 5 samples are found within said range then it chooses the 5 nearest samples as the neighborhood. In Fig. \ref{fig:feature_penguin} the
 color samples are selected mostly along the transition between the white, black and beige hair of the penguin
 
-\subsection{Comparing features for similarity}
+\subsection{Comparing Features For Similarity}
 %L2 norm, Jensen-Shannon divergence, $\chi^2$ distance
 
 The selected shape and color samples now need to be reduced into an N-dimensional feature vector. ClusterD2+Color algorithm achieves this by first clustering nearby samples together and then
@@ -117,7 +132,8 @@ database Cottontail DB\footnote{\url{https://github.com/vitrivr/cottontaildb}} o
 \end{figure}
 
 Along with the $\chi^2$ distance metric the Jensen-Shannon divergence ($D_{JS}$) was also implemented. This is the metric Y.-J. Liu et al. [\todoMissing{Missing ref}] chose for their implementation. In short, the $D_{JS}$ metric treats the histogram feature vector as an independent and identically-distributed sample of a random variable and thus first converts the histogram into a probability density function by using kernel density approximation with a gaussian kernel. The Jensen-Shannon divergence of the two probability density functions to compare is then computed and serves as a probabilistic measure ranging from 0 to 1 for how similar they are, so in a sense how likely it is that the two histograms were generated from the same model. Fig. \ref{fig:feature_penguin_histogram} shows the histogram of a penguin model and its probability density function, along with some debug information of curves required for the $D_{JS}$ calculation.\\
-In our ClusterD2+Color implementation in Cineast $D_{JS}$ is currently significantly slower than $\chi^2$ because Cottontail DB does not natively support k-nearest neighbors queries for $D_{JS}$. Therefore Cineast must retrieve the feature vectors of all currently existing models in the database and compare all of them one by one to the input feature vector using $D_{JS}$.
+In our ClusterD2+Color implementation in Cineast $D_{JS}$ is currently significantly slower than $\chi^2$ because Cottontail DB does not natively support k-nearest neighbors queries for $D_{JS}$. Therefore Cineast must retrieve the feature vectors of all currently existing models in the database and compare all of them one by one to the input feature vector using $D_{JS}$.\\
+Finally Cineast can run multiple features or distance metrics for a single query and then combine their scores by weights specified in Cineast's configuration. This can be useful to capture different kinds of feature types in a single similarity score.
 
 
 \subsection{REST API}
@@ -133,30 +149,133 @@ into how REST APIs operate - according to R. Fielding [\todoMissing{Missing ref;
 	\item Uniform Interface: The REST API should form a uniform interface. Said interface should remain the same independent of the back-end implementation.
 	\item And several other principles.
 \end{itemize}
-Usually REST requests are exclusively executed by sending an HTTP \textit{GET}, \textit{PUT}, \textit{POST} or \textit{DELETE} request through certain server provided URLs. For example Cineast's similarity query endpoint has the following URL and is executed by
-sending a \textit{POST} request: \url{http://cineast.domain/find/segments/similar}. Additional data, such as the model to run the similarity query for, is included in the HTTP request body in the form of JSON data.\\
+Usually REST requests are exclusively executed by sending an HTTP \textit{GET}, \textit{PUT}, \textit{POST} or \textit{DELETE} request through certain server provided URLs.\\
+For example Cineast's similarity query endpoint is executed by sending a \textit{POST} request to \url{http://cineast.domain/find/segments/similar}. Additional data, such as the model to run the similarity query for, is included in the HTTP request body in the form of JSON data as specified in "requestBody" of Listing \ref{lst:openapi_spec}. The structures of the used schemas are not shown in the listing but they are specified in the same specification file.
+
+\begin{mdframed}[
+	backgroundcolor=light-gray,
+	roundcorner=10pt,
+	leftmargin=1,
+	rightmargin=1,
+	innerleftmargin=25,
+	innertopmargin=0,
+	innerbottommargin=0,
+	outerlinewidth=1,
+	linecolor=light-gray
+]
+\lstset{style=json}
+\begin{lstlisting}[
+	caption={The OpenAPI specification for the similarity query API endpoint.},
+	label=lst:openapi_spec
+]
+"/find/segments/similar": {
+ "post": {
+  "tags": ["/api/v1"],
+  "summary": "Finds similar segments based on the given query",
+  "description": "Finds similar segments based on the given query",
+  "operationId": "FindSegmentSimilarActionHandler#POST",
+  "requestBody": {
+    "content": {
+     "application/json": {
+     "schema": {
+      "$\dollar$ref": "#/components/schemas/SimilarityQuery"
+     }
+    }
+   }
+  },
+  "responses": {
+   "200": {
+    "description": "OK",
+    "content": {
+     "application/json": {
+      "schema": {
+       "$\dollar$ref": "#/components/schemas/SimilarityQueryResultBatch"
+      }
+     }
+    }
+   }
+  }
+ }
+}
+\end{lstlisting}
+\end{mdframed}
+
 Throughout the course of development of this thesis Cineast's REST API was partially rewritten to use the Javalin\footnote{https://javalin.io/} web framework instead of Spark\footnote{http://sparkjava.com/} and SparkSwagger\footnote{https://github.com/manusant/spark-swagger}. Javalin makes great use of Cineast's already built-in JSON serialization structure using Jackson\footnote{https://github.com/FasterXML/jackson}. This enables Javalin, in combination with its OpenAPI plugin,
-to generate an OpenAPI specification that describes Cineast's REST API in a standardized way. Moreover this OpenAPI specification allows programs like Swagger Codegen\footnote{https://swagger.io/tools/swagger-codegen/} to generate
-fully functional code libraries in various programming languages capable of interfacing with the REST API defined by the specification. Since Javalin's OpenAPI plugin makes use of Jackson, it is capable of more reliably creating the specifications for JSON data structures than SparkSwagger, especially for subclasses of superclasses with generic types. The C\# library that was used to access Cineast's API endpoint from Unity was generated by the aforementioned OpenAPI specification and Swagger Codegen.
+to generate an OpenAPI specification that describes Cineast's REST API in a standardized way like shown in Listing \ref{lst:openapi_spec}.\\
+Moreover this OpenAPI specification allows programs like Swagger Codegen\footnote{https://swagger.io/tools/swagger-codegen/} to generate fully functional code libraries in various programming languages capable of interfacing with the REST API defined by the specification. Since Javalin's OpenAPI plugin makes use of Jackson, it is capable of more reliably creating the specifications for JSON data structures than SparkSwagger, especially for subclasses of superclasses with generic types.\\
+The C\# library that was used to access Cineast's API endpoint from Unity was generated by the aforementioned OpenAPI specification and Swagger Codegen.
+
+\begin{mdframed}[
+	backgroundcolor=light-gray,
+	roundcorner=10pt,
+	leftmargin=1,
+	rightmargin=1,
+	innerleftmargin=25,
+	innertopmargin=0,
+	innerbottommargin=0,
+	outerlinewidth=1,
+	linecolor=light-gray
+]
+\lstset{style=sharpc}
+\begin{lstlisting}[
+	caption={Calling the generated C\# code of the similarity query API endpoint.},
+	label=lst:csharp_cineast_api_call
+]
+var terms = new List<QueryTerm> {
+ new QueryTerm {
+  Categories = categories,
+  Type = QueryTerm.TypeEnum.MODEL3D,
+  Data = "data:application/3d-color-json," + base64ModelData
+ }
+};
+var components = new List<QueryComponent> {
+ new QueryComponent {
+  Terms = terms
+ }
+};
+var conf = new QueryConfig();
+var query = new SimilarityQuery {
+ Components = components,
+ Config = conf
+};
+var response = await Api.FindSegmentSimilarActionHandlerPOSTAsync(query);
+\end{lstlisting}
+\end{mdframed}
+
+Listing \ref{lst:csharp_cineast_api_call} shows how to send Cineast a similarity query request by calling the Swagger Codegen generated C\# method \textsc{FindSegmentSimilarActionHandlerPOSTAsync}.
 
 \section{Voxels}
 
-The foundation of the sculpting feature is based on voxels. In the most basic sense a voxel represents a value on a regular grid
-in 3D space [\todoMissing{Missing ref; Wikipedia}]. These voxels are very useful to represent volumetric structures, such as sculptures
-or terrain, since they fill the 3D space and each voxel represents one volume element.
+%The foundation of the sculpting feature is based on voxels. In the most basic sense a voxel represents a value on a regular grid
+%in 3D space [\todoMissing{Missing ref; Wikipedia}]. These voxels are very useful to represent volumetric structures, such as sculptures
+%or terrain, since they fill the 3D space and each voxel represents one volume element.
 
-\begin{wrapfigure}{R}{0.5\textwidth}
-\includegraphics[width=0.5\textwidth]{hermite_data.png}
-\caption{Hermite data.}
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=\textwidth]{hermite_data_2.png}
+\caption{Hermite data voxels. One Hermite data voxel contains 1 material ID (red squares), up to three intersection points (blue circles) and their respective normals (pink arrows). Depending on the configuration of
+the intersection points and normals one voxel can take various shapes (gray areas), e.g. a single triangle (left) or a sharp corner (middle). The Hermite data voxels can be arranged in a grid (right) to form closed surfaces.}
 \label{fig:hermite_data}
-\end{wrapfigure}
+\end{figure}
 
 Since voxels are an abstract representation of volumes they can be visualized in various ways depending on the data the voxel contains.
-Usually the data of a voxel consists of a single attribute, a color, in which case the voxel can be visualized e.g. by cubes, spheres, or splats.
-More sophisticated voxels contain additional attributes such as normals or texture coordinates. In particular, our application uses voxels that
-consist of a 32 bit material ID plus Hermite data [\todoMissing{Missing ref; Dual Contouring}]. Hermite data, first described by [\todoMissing{Missing ref; Dual Contouring}],
-consists of two attributes: a material, exact intersection points and normals. Fig. \ref{fig:hermite_data} illustrates the Hermite data and how it can represent
-diverse shapes. The Hermite data and voxel material provide enough information to construct the piece of surface represented by a voxel in the form of polygons.
+Originally a voxel consisted of a single attribute, a color or binary solid/non-solid, in which case the voxel can be visualized for example by cubes, spheres or splats.
+More sophisticated voxels can contain additional attributes such as normals or texture coordinates and thus can have a different look based on these attributes.\\
+In particular, our application uses voxels that consist of a 32 bit material ID plus Hermite data [\todoMissing{Missing ref; Dual Contouring}]. Hermite data, first used for voxels by [\todoMissing{Missing ref; Dual Contouring}],
+consists of the following attributes: exact intersection points and normals. This allows the voxel to take on various shapes much like MC, but with more precision since the exact intersection points are stored explicitly and
+sharp features can be constructed from the stored normals. Fig. \ref{fig:hermite_data} illustrates the Hermite data and how it can represent diverse shapes. When arranged in a grid these Hermite data voxels form closed surfaces
+like in Fig. \ref{fig:voxel_scene}.
+%The Hermite data and voxel material provide enough information to construct the piece of surface represented by a voxel in the form of polygons.
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=\textwidth]{voxel_scene.png}
+\caption{A voxel scene showing the mesh resulting from a grid of Hermite data voxels. Two voxel cells (top left and right) consisting of eight voxels each are shown seperately to highlight how
+the mesh is constructed by combining the partial surfaces of al voxel cells. Colors signify different materials.}
+\label{fig:voxel_scene}
+\end{figure}
 
 \subsection{Voxel storage}
 
@@ -223,7 +342,7 @@ are available. Source: [XXX]\protect\footnotemark}
 \todoMissing{Missing ref; CMS}
 \footnotetext{http://users.polytech.unice.fr/~lingrand/MarchingCubes/accueil.html}
 
-For our application we have decided to use the Cubical Marching Squares algorithm by [\todoMissing{Missing ref; CMS}]. The reason for this choice was
+For our application we have decided to use the Cubical Marching Squares algorithm by [\todoMissing{Missing ref; CMS}] to polygonize our voxels. The reason for this choice was
 that CMS provides both primal and dual features. As such each cell can be polygonized independently but it can still also preserve sharp features well, e.g. the top of a voxel pyramid.\\
 Our implementation of the CMS algorithm runs only on regular voxel grids and
 there is no adaptivity or level of detail. Therefore all future explanations on CMS are based on these two limitations.\\
@@ -476,19 +595,21 @@ This binary search can be optimized by using the values returned by the SDF for 
 \subsection{Rendering}
 %Vertex colors encode material (RGB, A=texture id), texture array, triplanar texturing shader
 
-\begin{wrapfigure}{R}{0.4\textwidth}
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
 \includegraphics[width=0.4\textwidth]{triplanar_texture_mapping.png}
 \caption{Tri-planar texture mapping of a mesh. Note how the hillsides of the terrain are rocky and the top is grassy.
 Adapted from Corona Renderer\protect\footnotemark.}
 \label{fig:triplanar_texture_mapping}
-\end{wrapfigure}
+\end{figure}
 \footnotetext{\url{https://corona-renderer.com/blog/wp-content/uploads/2017/04/Triplanar_01.jpg}}
 
 The voxel polygonizer already does most of the heavy lifting for the voxel rendering. Once the voxel polygonizer has converted the voxels into a triangle mesh the rendering is done using the typical mesh rasterization techniques, provided by Unity, and shaders. The voxel materials and their colors are packed into the 32 bit RGBA color attachment of the mesh vertices. The first three components, RGB, are used to store the voxel color, the fourth component A for the voxel material ID.\\
 Since our voxel meshes are not UV mapped, i.e. they do not contain information about where the textures should be sampled, we have resorted to a tri-planar texture mapping shader to texture them. These kinds of shaders use the position of a mesh's pixels to determine where to sample a texture, without the need of any explicit UV mapping. In order to achieve a realistic looking texture
 mapping the tri-planar texture mapping shader projects an infinitely repeating texture from the X, Y and Z axes onto the mesh
 like shown in Fig. \ref{fig:triplanar_texture_mapping}. The weight, i.e. how visible it is, of each texture projection is determined by the mesh's normals. For example the more a normal points along the X axis, the stronger the X axis texture projection is weighted, and the less the other two. The result of this is a mesh
-that is usually textured nicely on all sides. In certain situations, especially when the weights of two texture projections are similar, e.g. for $45^{\circ}$ diagonal parts of the mesh with respect to axes, there can be unnatural overlapping of two texture projections. This however is only a problem for textures with obvious structures, e.g. bricks, as opposed to natural or noisy textures like e.g. dirt or grass.
+that is usually textured nicely on all sides. In certain situations, especially when the weights of two texture projections are similar, e.g. for $45^{\circ}$ diagonal parts of the mesh with respect to axes, there can be unnatural overlapping of two texture projections. This however is only a problem for textures with obvious structures, e.g. bricks, as opposed to natural or noisy textures like dirt or grass.
 
 \subsection{Voxelizer}
 % Purpose, explain method used for voxelization (assigning triangles to bins, patching holes, etc.), use of job system

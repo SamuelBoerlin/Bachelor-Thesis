@@ -3,9 +3,6 @@
 In this chapter we discuss the relevant concepts used throughout thesis and how they fit together into the high level architecture of our
 application.
 
-\section{General overview}
-How all components are connected to each other (cineast, feature module, cottontail, rest api, polygonizer, voxel storage, vr interaction controller, etc.)
-
 %\section{Cineast}
 %What is cineast, how does it work (feature modules, cottontail etc.)...
 
@@ -21,6 +18,7 @@ Multimedia retrieval has become an ever more important topic over the last decad
 3D models. The goal is to allow the user to find such media based on an example input or a subset of the desired result.\\
 The DBIS research group\footnote{\url{https://dbis.dmi.unibas.ch/}} is working on such a system called Cineast. Cineast provides the backend functionality for multimedia retrieval queries and Vitrivr NG provides a web
 based frontend to enable users to build queries. Currently it supports queries for text, images, video, audio and 3D models.\\
+In order to run multimedia queries a multimedia database is required to store the data to compare media. Cineast currently supports the Cottontail DB column store database for multimedia retrieval which also being developed by the DBIS research group.\\
 The focus of this thesis is on 3D model retrieval which is also part of multimedia retrieval. Research in this area has so far focused on building 3D model queries from example images, sketches or common 3D model file formats.
 In order to create one of these 3D model files the user requires a seperate sculpting program and needs to learn how to use it.
 
@@ -59,7 +57,7 @@ the sculptures are built, or the analog to atoms on a much larger scale.
 \begin{figure}
 \centering
 \captionsetup{width=0.8\textwidth}
-\includegraphics[width=0.75\textwidth]{voxelizer_example_transparent.png}
+\includegraphics[width=0.75\textwidth]{voxelizer_example_transparent_3.png}
 \caption{The Stanford Armadillo mesh\protect\footnotemark  (left) and its voxel representation at a resolution of 128x128x128 voxels (right).}
 \label{fig:voxelizer_example}
 \end{figure}
@@ -137,7 +135,23 @@ well and can produce the exact union or difference, however in certain cases it 
 SDFs need not be exact on the inside, hence we have decided to use SDFs as the representation of our CSG primitives. Additionally since the domain and range are the same for all SDFs, namely
 $f\colon \mathbb{R}^3 \mapsto \mathbb{R}$, they can all be treated exactly the same besides their formulas and can be encapsulated as a simple method in code.
 
-\section{Unity}
-What, why
+%\section{Unity}
+%What, why
 
 \section{Architecture}
+%How all components are connected to each other (cineast, feature module, cottontail, rest api, polygonizer, voxel storage, vr interaction controller, etc.)
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.8\textwidth]{architecture.png}
+\caption{The high level architecture of our system.}
+\label{fig:architecture}
+\end{figure}
+
+To tie this all together Fig. \ref{fig:architecture} illustrates the high level architecture of our system. The frontend, i.e. our VR application running in the Unity
+engine, contains three main components relevant for the querying functionality: the VR interface, isosurface polygonizer and generated C\# Cineast API module.\\
+Through the VR interface the user can sculpt using voxels and CSG operations and start queries or view query results. On starting a query from the VR interface the entire sculpture is converted into a single mesh which is then sent to Cineast as an API request via the C\# Cineast API.\\
+Cineast then tasks the feature extraction module to convert the mesh into a feature vector. This feature vector is then sent over to the Cottontail DB multimedia database to be
+compared with the feature vectors of other models. All models in that multimedia database that have a similar feature vector are then scored, ranked and their IDs are sent back to be received by the C\# Cineast API. The C\# Cineast API then uses the received IDs to download the respective model files and hands them over to the VR interface to be displayed.
+

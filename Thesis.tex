@@ -18,6 +18,9 @@
 \usepackage{algorithm}
 \usepackage{algorithmicx}
 \usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{mdframed}
 
 \usepackage[top=5mm,includehead,headheight=45pt,headsep=0.3cm]{geometry} 
 %\usepackage[top=5mm,includehead,headheight=45pt,
@@ -48,6 +51,35 @@
 
 %% ----------------------------------------------------------------
 \begin{document}
+
+\definecolor{light-gray}{gray}{0.95}
+\newcommand{\dollar}{\mbox{\textdollar}}
+
+\lstdefinestyle{sharpc}{
+	language=[Sharp]C,
+	rulecolor=\color{blue!80!black},
+	morekeywords={var,await},
+	keywordstyle=\color{blue},
+	numbers=left,
+	stepnumber=1,
+	showstringspaces=false,
+	breaklines=true,
+	breakatwhitespace=false,
+	basicstyle=\footnotesize
+}
+\lstdefinestyle{json}{
+	mathescape = true,
+	string=[s]{"}{"},
+	stringstyle=\color{blue},
+	comment=[l]{:},
+	commentstyle=\color{black},
+	numbers=left,
+	stepnumber=1,
+	showstringspaces=false,
+	breaklines=true,
+	breakatwhitespace=false,
+	basicstyle=\footnotesize
+}
 
 % for english use \selectlanguage{english}, for german use \selectlanguage{ngerman}
 \selectlanguage{english}
