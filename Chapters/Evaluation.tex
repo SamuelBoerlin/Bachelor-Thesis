@@ -3,6 +3,8 @@
 \section{Technical Evaluation}
 %Voxelizer, polygonization, queries, precision vs. recall?, etc.
 
+This section is concerned with the technical performance of our application.
+
 \subsection{ClusterD2+Color Performance}
 
 \begin{figure}
@@ -25,6 +27,13 @@ and may not be optimal.\\
 On the other hand our ClusterD2+Color implementation performs similarly to Cineast's "Spherical Harmonics (Default)" feature module, whereas Y.-J. Liu et al.'s is suprisingly vastly better.
 So perhaps the discrepancy between our and Y.-J. Liu et al.'s results could be caused by a difference in the McGill 3D shape benchmark [\todoMissing{Missing ref}] model dataset or in the way the precision/recall plots are computed. Finally there's also the possibility that the result in [\todoMissing{Missing ref}] is incorrect.
 
+\todoMissing{Query time?}
+
+\subsection{Voxel Polygonizer Performance}
+Time for an average chunk? Chunk size vs. time?
+
+\subsection{Voxelizer Performance}
+Before vs. after optimization. Plot tri count vs. time taken.
 
 \section{User Evaluation}
 

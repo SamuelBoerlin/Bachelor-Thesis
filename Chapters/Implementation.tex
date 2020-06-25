@@ -20,7 +20,8 @@ The \textsc{OBJMeshDecoder}, which is responsible for reading a .obj model file 
 Moreover it looks for a texture file with the same name as the .obj model file. If such a texture file is found it is added to the \textsc{Mesh} and the texture file's
 path is persisted in the database as metadatum with the domain "TEXTURE" and key "texture\_path". To do so the \textsc{Segmenter} class received an additional method
 \textsc{persist(SegmentContainer, MediaSegmentDescriptor)} which is called when a \textsc{SegmentContainer} is being persisted by \textsc{GenericExtractionItemHandler}.
-\textsc{ModelSegmenter} then uses that method to persist the mesh's texture file path metadatum. This metadatum can later be used by clients to download the model's texture.
+\textsc{ModelSegmenter} then uses that method to persist the mesh's texture file path metadatum. This metadatum can later be used by clients to download the model's texture.\\
+A similar change was required in \textsc{ModelQueryContainer}. Model data is being sent to Cineast in the form of a custom string based model format. This format however does not support vertex colors which are required for color sensitive queries. For this reason a new \textsc{ColorMeshParser} class was added that uses a similar format but also supports vertex colors. Based on the MIME type, an identifier used to describe the format of data, that prepends the model data string the \textsc{ModelQueryContainer} can decide which parser to use. Like this the API remains backwards compatible with the model format that does not contain vertex color data.
 
 \subsection{Model Formats}
 
@@ -48,7 +49,7 @@ Our feature module, \textsc{ClusterD2AndColorHistogram}, extends Cineast's \text
 querying base functionality, such as searching for similar feature vectors and sorting results by score or persisting an extracted feature vector.
 The \textsc{ClusterD2AndColorHistogram} class mostly takes care of extracting the ClusterD2+Color feature vector from a given input model.
 
-\subsubsection{Sample Generation}
+\subparagraph{Sample Generation}
 
 Many isosurface polygonization algorithms, such as our non-adaptive CMS [\todoMissing{Introduce abbr before}]
 implementation used in this application, can produce highly tessellated meshes. Opposite to that meshes exported by
@@ -61,7 +62,7 @@ Before any sample points are generated the model is first scaled such that its t
 After generating a certain number samples the result is a collection of samples that are uniformly distributed on the mesh's surface. The number of samples
 is determined by a function of the integral of the absolute Gaussian curvature over the model's surface as described in [\todoMissing{Missing ref}].
 
-\subsubsection{Sample Selection}
+\subparagraph{Sample Selection}
 
 \begin{figure}
 \centering
@@ -140,8 +141,8 @@ Finally Cineast can run multiple features or distance metrics for a single query
 
 In order for a program to interface with Cineast's query capabilities and our ClusterD2+Color implementation an API is required. Cineast provides two main APIs, a WebSocket API and more importantly a REST API which was
 used for the purposes of this thesis.\\
-REST APIs, an acronym for Representational State Transfer, aim to communicate between to programs via requests and responses over the HTTP web protocol. The following incomplete list should give an insight
-into how REST APIs operate - according to R. Fielding [\todoMissing{Missing ref; \url{https://www.ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm}}] REST APIs follow at least these following principles:
+REST APIs, an acronym for Representational State Transfer, aim to communicate between two programs via requests and responses over the HTTP web protocol. The following incomplete list should give an insight
+into how REST APIs operate - according to R. Fielding [\todoMissing{Missing ref; \url{https://www.ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm}}] REST APIs follow these and some more principles:
 \begin{itemize}
 	\item Client-Server: User interface concerns should be separated from data storage concerns.
 	\item Stateless: Communication must be stateless. All information required for a request to be understood must be included in said request.
@@ -150,7 +151,7 @@ into how REST APIs operate - according to R. Fielding [\todoMissing{Missing ref;
 	\item And several other principles.
 \end{itemize}
 Usually REST requests are exclusively executed by sending an HTTP \textit{GET}, \textit{PUT}, \textit{POST} or \textit{DELETE} request through certain server provided URLs.\\
-For example Cineast's similarity query endpoint is executed by sending a \textit{POST} request to \url{http://cineast.domain/find/segments/similar}. Additional data, such as the model to run the similarity query for, is included in the HTTP request body in the form of JSON data as specified in "requestBody" of Listing \ref{lst:openapi_spec}. The structures of the used schemas are not shown in the listing but they are specified in the same specification file.
+For example Cineast's similarity query endpoint is executed by sending a \textit{POST} request to \url{http://cineast.domain/find/segments/similar}. Additional data, such as the model to run the similarity query for, is included in the HTTP request body in the form of JSON data as specified in "requestBody" of Listing \ref{lst:openapi_spec}. The structures of the used schemas are not shown in the listing but they are specified in the same file.
 
 \begin{mdframed}[
 	backgroundcolor=light-gray,
@@ -244,7 +245,7 @@ var response = await Api.FindSegmentSimilarActionHandlerPOSTAsync(query);
 
 Listing \ref{lst:csharp_cineast_api_call} shows how to send Cineast a similarity query request by calling the Swagger Codegen generated C\# method \textsc{FindSegmentSimilarActionHandlerPOSTAsync}.
 
-\section{Voxels}
+\section{Hermite Data Voxels}
 
 %The foundation of the sculpting feature is based on voxels. In the most basic sense a voxel represents a value on a regular grid
 %in 3D space [\todoMissing{Missing ref; Wikipedia}]. These voxels are very useful to represent volumetric structures, such as sculptures
@@ -277,7 +278,7 @@ the mesh is constructed by combining the partial surfaces of al voxel cells. Col
 \label{fig:voxel_scene}
 \end{figure}
 
-\subsection{Voxel storage}
+\subsection{Voxel Storage}
 
 \todoMissing{Missing ref; Fig in Paper} %See below
 \begin{figure}[!htb]
@@ -295,6 +296,8 @@ the mesh is constructed by combining the partial surfaces of al voxel cells. Col
 \endminipage\hfill
 \end{figure}
 
+\subparagraph{Data Structure}
+
 There are many different data structures to store voxels, the simplest of which is simply storing the voxels' values in large 3D arrays.
 Other data structures however need not necessarily store all voxel values on a regular grid. Often there are regions with many voxels of the same value, and
 in that case it is beneficial to use a more advanced data structure that can store voxel values more memory efficiently.\\
@@ -302,6 +305,9 @@ The most common method to store voxels in memory is to split the voxels into fix
 where they can be accessed by their position. This gives a good trade-off between memory usage and access speed, because often voxel accesses happen within the same chunks and hence the hash map lookups can usually be cached. Instead of multi-dimensonal arrays for the chunk voxel storage we use one contiguous linear array per chunk to avoid having to dereference multiple pointers for a single access. The index into this linear array can be directly computed from a given X, Y and Z position within the chunk by the following formula: $index(x, y, z) = x * N * N + y * N + z$, where $N$ is the chunk size.
 Our implementation uses a chunk size of $N=32$. Voxels on the faces towards the positive X, Y and Z axes are padding voxels that always mirror the state of the neighbour voxel in the respective neighbour chunk.
 These padding voxels allow the voxel polygonizer to run faster since it entirely removes the need to query neighbour chunks during meshing. This method is described by [\todoMissing{Missing ref; A refined data addressing and processing scheme to accelerate volume raycasting}] in more detail. \\
+
+\subparagraph{Memory Consumption}
+
 As previously mentioned the voxels in this application consist of a 32 bit material ID plus Hermite data. Therefore the size of a single voxel in memory is: 4 (material) + $3*3*4$ (three normals, each with three 32 bit float components) + $3*4$ (three intersection points) = 52 bytes in total. Considering that a single chunk contains $32 * 32 * 32 = 32768$ voxels, hence consumes roughly 1.7MB, and one scene can contain many of these chunks,
 the main memory will be exhausted rather quickly.
 To remedy this issue the Hermite data compression scheme described by [\todoMissing{Missing ref; Fast and Adaptive Polygon Conversion By Means Of Sparse Volumes}] was used.
@@ -311,6 +317,8 @@ The effective size of the quantized Hermite data is 12 bytes (two of which are s
 structure in more detail.\\
 A further potential optimization is to change the linear array indexing scheme. Modern CPUs have multiple cache layers - each cache layer is a fast memory unit and generally the faster the cache the less
 memory it can store.
+
+\subparagraph{Access Optimization}
 
 When a program accesses a piece of memory from main memory the CPU loads the surrounding address space into one or multiple fixed size cache lines, contiguous pieces of the heap memory around the access, into the cache.
 If the program then accesses a nearby address again the CPU can read the value from the cache which is a lot faster than reading it from main memory. This is called a cache hit. On the other hand if the program accesses an address too far away from the previous access or not cached then the CPU will have to read the value from main memory instead, ergo a cache miss. Hence by optimizing for cache hits a program's speed can be improved if it is memory bound. The most
@@ -354,7 +362,7 @@ Then, for each component in a voxel cell, and all their line segments, CMS outpu
 
 
 
-\subsubsection{Multi-material extension for CMS}
+\subsubsection{Multi-material Extension for CMS}
 
 \begin{figure}
 \centering
@@ -428,7 +436,7 @@ $f.list$, and their normals must be included in the linear system of equations t
 as suggested in [\todoMissing{Missing ref; DC paper}]. This causes the sharp feature to be placed where one would expect the material transition to occur on the surface, as shown in Fig. \ref{fig:cms_multi_material}.
 This of course means that the multi-material CMS algorithm must always generate a sharp feature when material transitions are present, even if the sharp feature conditions/heuristics described by [\todoMissing{Kobbelt et al.}] are not met.
 
-\subsubsection{Lookup table based implementation}
+\subsubsection{Lookup Table Based Implementation}
 
 Much of the CMS algorithm can be done and perhaps be sped up using appropriate lookup tables, especially in the case of regular grid voxel cells. Indeed we have generated such lookup tables in order to show
 the viability of a lookup table based approach. Due to time constraints and it breaking the previously mentioned multi-material extension however, it has ended up not being used in the final implementation.
@@ -524,7 +532,7 @@ In total the proposed lookup table based CMS algorithm primarily requires the fo
 For further details about the proposed lookup table CMS algorithm please refer to our lookup table tool and sample implementation written in Java.\todoMissing{Clean up and link somewhere}
 
 
-\subsection{CSG operations on a voxel grid}
+\subsection{CSG Operations on a Voxel Grid}
 %How union and difference operations work on hermite data, algorithm
 
 \begin{figure}
@@ -609,7 +617,7 @@ The voxel polygonizer already does most of the heavy lifting for the voxel rende
 Since our voxel meshes are not UV mapped, i.e. they do not contain information about where the textures should be sampled, we have resorted to a tri-planar texture mapping shader to texture them. These kinds of shaders use the position of a mesh's pixels to determine where to sample a texture, without the need of any explicit UV mapping. In order to achieve a realistic looking texture
 mapping the tri-planar texture mapping shader projects an infinitely repeating texture from the X, Y and Z axes onto the mesh
 like shown in Fig. \ref{fig:triplanar_texture_mapping}. The weight, i.e. how visible it is, of each texture projection is determined by the mesh's normals. For example the more a normal points along the X axis, the stronger the X axis texture projection is weighted, and the less the other two. The result of this is a mesh
-that is usually textured nicely on all sides. In certain situations, especially when the weights of two texture projections are similar, e.g. for $45^{\circ}$ diagonal parts of the mesh with respect to axes, there can be unnatural overlapping of two texture projections. This however is only a problem for textures with obvious structures, e.g. bricks, as opposed to natural or noisy textures like dirt or grass.
+that is usually textured nicely on all sides. In certain situations, especially when the weights of two texture projections are similar, e.g. for $45^{\circ}$ diagonal parts of the mesh with respect to axes, there can be unnatural overlapping of two texture projections. This however is only a problem for textures with obvious structures, e.g. bricks, as opposed to natural or noisy textures like dirt or grass. To support multiple textures we store all voxel material textures in a single texture array on the GPU. The tri-planar texture mapping shader can then select the appropriate texture to sample from for each vertex by using the vertex' voxel material ID, stored in the alpha component, to index into the texture array.
 
 \subsection{Voxelizer}
 % Purpose, explain method used for voxelization (assigning triangles to bins, patching holes, etc.), use of job system
@@ -699,16 +707,104 @@ of the face's perpendicular grid lines can be written to independently in parall
 
 \section{VR Sculpting}
 
-\subsection{Sculpting features}
-General overview of capabilities and functionality, UIs, SteamVR Plugin, etc.
+The feature that ties all these technologies together is the VR sculpting. It allows the user to freely sculpt arbitrary shapes or figures by using voxels, CSG operations and various brush shapes.
 
-\subsection{Brush properties menu}
-Functionalities, color selection (why HSV: you can see most colors at once, as opposed to RGB sliders)
+\subsection{SteamVR Plugin}
 
-\subsection{Custom Brushes}
-%Explain custom brush tool, why it exists, etc.
+The implementation of our VR application was realized through the Unity SteamVR Plugin\footnote{\url{https://assetstore.unity.com/packages/tools/integration/steamvr-plugin-32647}}. This Unity plugin offers most of the base functionality required for VR applications, such as setting up the headset and controller tracking and handling controller input. Furthermore it provides some additional scripts that can be added to objects in the scene, for example to allow the player to teleport or to grab and hold objects.\\
+Unfortunately certain features of the SteamVR Plugin are currently not yet compatible with Unity's new Universal Render Pipeline\footnote{\url{https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@8.1/manual/index.html}} (URP) that handles the rendering of scenes. With the introduction of the URP the format of Unity's
+shaders has changed. Shaders are GPU programs that determine how objects in the scene are rendered to the screen, e.g. by computing lighting or adding special effects. Some of these shaders, most notably the highlight when grabbing an object, were required for our application and thus had to be partially rewritten to work in the new URP.
 
-\todoMissing{Editing menu picture}
+\subsection{Sculpting Functionality}
+%How sculpting is implemented, VRSculpting controller, etc.
+
+The sculpting functionality is split into several scripts and components. The following list goes through the most important components for the sculpting functionality. The term "script" refers to a C\# class extending \textsc{MonoBehaviour} in the Unity project and "component" refers to a script that has been instantiated and added to an object. \textsc{MonoBehaviour}'s are scripts that can be attached to objects in the scene.
+
+\subparagraph{Voxel Sculpture}
+The voxel sculpture/terrain functionality is provided by the \textsc{DefaultVoxelWorldContainer} script and can be added as a component to an empty object. This object is then capable of storing and rendering voxels and can be modified through the \textsc{ApplySdf} method in \textsc{DefaultVoxelWorldContainer.Instance}.
+
+\subparagraph{Texture Array}
+As mentioned before our application uses a texture array to store all the voxel material textures on the GPU for rendering. This texture array is created by the \textsc{VoxelTerrainTextures} script which is to be added to the same object that contains the \textsc{DefaultVoxelWorldContainer} component. On start of the application it reads all the textures that have been added to the \textsc{VoxelTerrainTextures} component's textures array into a texture array on the GPU and then assigns it to the "\_TextureArray" attribute of the object's material such that the tri-planar texturing shader can access it.
+
+\subparagraph{Brush Type Renderers}
+All regular brush types need some way to be rendered as a preview. For each brush type a unique \textsc{ISdfRenderer} instance is responsible for rendering. The regular way to obtain such a renderer is to create a \textsc{MeshSdfRenderer} object which extends \textsc{ISdfRenderer} and handles all the rendering when given a mesh. Such an object is created in Unity's context menu under "Create $\rightarrow$ ScriptableObject $\rightarrow$ MeshSdfRenderer". Once created a mesh and material must be assigned to the object. Optionally an offset and scale can be specified. For advanced brushes one may create a custom renderer by extending \textsc{ISdfRenderer}.\\
+These renderers by themselves aren't useful yet. They need to be registered to the "Static Renderers" menu of the \textsc{SdfShapeRenderHandler} component on the player object.
+
+\subparagraph{Custom Brush}
+The main functionality of the custom brushes is contained in the \textsc{DefaultCustomBrushContainer} script which is found on a seperate object. It mostly handles creating the SDF from a list of custom brush primitives. In order to be able to render the custom brush is in the \textsc{DefaultCustomBrushSdfRenderer} script which is usually on the same object as the \textsc{DefaultCustomBrushContainer}. The custom brush can be edited by changing the \textsc{DefaultCustomBrushContainer.Instance.Primitives} list which contains the current custom brush primitives.
+
+\subparagraph{VR Interaction}
+The core of the application that ties everything together is the \textsc{VRSculpting} script found on the player object. It handles all the interactions between the sculpture, voxels, brushes, queries, UI's and so on.
+
+\subparagraph{Cineast API}
+Communication with Cineast is handled through the \textsc{UnityCineastApi} script. A query is started by calling \textsc{StartQuery} with the model data and once the results are back the \textsc{UnityCineastApi} relays them to the \textsc{QueryResultSpawner} which handles displaying the results.\\
+
+
+\subsection{Sculpting Tools}
+%General overview of capabilities and functionality, UIs, SteamVR Plugin, etc.
+
+Our VR sculpting application provides several tools to enable the user to sculpt.
+
+\subparagraph{Controller Hints}
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.75\textwidth]{controller_hints.png}
+\caption{Controller hints}
+\label{fig:controller_hints}
+\end{figure}
+
+The controller hints shown in Fig. \ref{fig:controller_hints} help the user become familiar with the VR sculpting application. They are always shown when the application is started but can then be toggled off or back on by pressing a button on the controller.
+
+\subparagraph{Brush}
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.75\textwidth]{editing_showcase.png}
+\caption{Illustration of the sculpting process. Left: modifying a sculpture. Middle: brush preview with intersection highlight. Right: after applying brush in replace mode with a red material.}
+\label{fig:editing_showcase}
+\end{figure}
+
+The most important tool available to the user is the brush. It is attached to the right controller as shown in \ref{fig:editing_showcase} and displayed as a translucent preview of the brush's shape. Using a custom shader this brush preview shows the intersection between the brush and the sculpture. This feature has turned out to be an important addition, because without it it's quite difficult to tell where the brush intersects with the sculpture despite the stereoscopic display of the VR headset.\\
+By holding the brush button, which is by default the index finger trigger on the right controller, the user can drag the brush and continuously apply a brush stroke so long performance allows.\\
+The brush size can be changed by swiping up or down on the trackpad of the left controller. Similarly the brush can be rotated by swiping any direction on the trackpad of the right controller. Rotating the brush however takes some practice because the trackpad only provides two degrees of freedom whereas there are three rotation axes for the brush.\\
+Currently our application provides five brush types: cube, sphere, pyramid, cylinder and custom. These brush types are defined from SDF's, thus it is easy to add new brush types. Our VR application provides some Unity editor interfaces to enable a developer to easily add such new brushes to the application.
+
+\subparagraph{Brush Settings}
+
+\begin{figure}[!htb]
+\minipage{0.49\textwidth}
+\includegraphics[width=\linewidth]{gui_brush_properties.png}
+\caption{Brush properties menu}
+\label{fig:gui_brush_properties}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+\includegraphics[width=\linewidth]{gui_brush_select.png}
+\caption{Brush selection menu}
+\label{fig:gui_brush_select}
+\endminipage\hfill
+\end{figure}
+
+These brushes are only useful if the user can adjust the brush and its behaviour to their liking. Fig. \ref{fig:gui_brush_properties} shows the brush properties menu which contains all the brush settings that can be changed.\\
+The user can change the CSG operation using the "Add", "Remove" and "Replace" buttons. During development we decided to replace the CSG terminology "Union" and "Difference" with the more common words "Add" and "Remove" to make it more intuitive for users that do not know anything about CSG.\\
+The three sliders are used to change the color of the brush material. We decided to use this three slider style Hue/Saturation/Value (HSV) color selection because it immediately presents the user with a large spectrum of colors that can be finely adjusted with the saturation and value, i.e. brightness, sliders. The color preview box on the right shows how the brush material will look with the color applied. Once the sculpture has been colored with a certain color the user can always reselect that color by pressing the "Pick" button and then clicking on the spot of the sculpture with the desired color.\\
+The brush material texture is changed by clicking on the color preview box which opens a submenu and then clicking on another texture in that submenu.\\
+The brush is by default fully attached to the right controller which means that it also rotates with the controller. If that is not desired then the user can toggle the
+"Fix Rotation" button. This disables the automatic rotation of the brush with the controller making it easier to for example to create straight lines with the brush.\\
+The brush selection menu in Fig. \ref{fig:gui_brush_select} lets the user select different brushes. It is arranged as a radial menu centered in front of the user's right controller. This the user quickly and conveniently select other brush types without having to move the hand much.\\
+If the user has made a mistake it can be undone by clicking the "Undo" button. Currently up to ten edits can be undone. Edits that have been undone can be redone by clicking the "Redo" button, however only if the user has not edited the sculpture again since the undo.
+
+\subparagraph{Custom Brushes}
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.75\textwidth]{gui_custom_brush.png}
+\caption{The custom brush editing menu used to create custom brush shapes. A custom brush shape composed of a sphere and scaled cube is shown on the left side. The shapes are blended together smoothly resulting in a brush shape that looks like a cuboid that bulges out at the top.}
+\label{fig:gui_custom_brush}
+\end{figure}
 
 Our application currently only supports hard boolean CSG, meaning that union and difference operations often lead to sharp edges and corners. This is not always desirable, especially when the user wants to sculpt organic and
 smooth shapes. One solution to address this would be to implement a smoothing brush that smooths out sharp edges, e.g. by averaging the positions of the surface vertices and adjusting the normals. However doing this is not trivial
@@ -719,4 +815,52 @@ To avoid all these troubles we have conceived a proof of concept custom brush th
 Our custom brushes take advantage of that and enable the user to smoothly blend two or more SDF primitives together to create a brush shape. Currently our application supports combining cube and sphere primitives together, but new
 primitives can be added easily in almost the same way as it is done for the regular brushes. In addition to that each SDF primitive can be scaled on all three axes independently.\\
 These custom brushes have several use cases: they can be used to create a single primitive shape that can be scaled, e.g. creating an ellipsoid from a sphere primitive, or it can be used to create more complex shapes, such as e.g.
-a rounded disc by combining one sphere primitive and smoothly subtracting two cube primitives from the top and bottom of the sphere.\\
+a rounded disc by combining one sphere primitive and smoothly subtracting two cube primitives from the top and bottom of the sphere.
+
+\subsection{VR User Interface System}
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.75\textwidth]{adding_menus.png}
+\caption{Menu entries section in the \textsc{VRSculpting} component where developers can register new UI's.}
+\label{fig:adding_menus}
+\end{figure}
+
+We have implemented a flexible system for VR user interfaces (UI) in Unity. Most of our menus are similar to what you would expect in a regular non-VR application. The reason for this is that most users will already be familiar with the typical window based UI's found in modern operating systems. Furthermore such window based UI's can densely pack information and functionality while remaining organized and hierarchical, e.g. by using grouping background elements such as the color settings group in Fig. \ref{fig:gui_brush_properties} to group contextually similar components together.\\
+The UI's are controlled by the VR controller which has a pointer and cursor attached to it. Since our application uses the SteamVR Plugin we have designed our pointer and cursor to be similar to that of the SteamVR menu to maintain consistency. UI components can be interacted with by pressing the interaction button on the VR controllers which by default is bound to the index finger trigger on the right controller.\\
+New UI's can easily be created by creating a new empty object and then adding Unity's \textsc{Canvas} component. This turns the object into a UI canvas and the developer can add UI elements to the viewport specified in the \textsc{Canvas} component. Any UI element already available in Unity should work in VR out of the box. This is made possible by our \textsc{VRPointerInputModule} script which extends Unity's \textsc{BaseInputModule} and thus replaces Unity's default keyboard and mouse based input controller with our VR pointer input controller. Once a new UI is finished it is converted into a Unity prefab and then registered in order to become usable by the user. This is done in the Unity editor in the \textsc{VRSculpting} component on the player object under the "Menu Entries" section. Within this section, which is shown in Fig. \ref{fig:adding_menus}, the developer can add a new entry, then set the prefab field to point to the UI prefab, set which controller button should open the UI, whether it is toggled and where it should appear when opened.
+
+\subsection{Similarity Query}
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.3\textwidth]{gui_query.png}
+\caption{Query menu with buttons to start a query, clear query results and to reset the entire scene.}
+\label{fig:gui_query}
+\end{figure}
+
+Similarity queries are executed by clicking the "Start Model Query" button in the query menu shown in Fig. \ref{fig:gui_query}. The application then converts the current sculpture into a single mesh and sends it to Cineast to be processed.
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.75\textwidth]{query_pointing.png}
+\caption{Query results UI showing the results of a similarity query.}
+\label{fig:query_pointing}
+\end{figure}
+
+Once the results have arrived back at the VR sculpting application they are displayed in a curved UI centered on the player's head. The intention is to be able to use the entire $360^{\circ}$ available in VR to display as many results as possible. Unfortunately due to performance problems while loading the results in and a networking problem in the API communication this is not yet possible, but certainly achievable in the future.\\
+The user can point at query results which makes a 3D model object appear and spin around their Y axis. Additionally this shows their name and the similarity score value on a label above the model. These model objects can be grabbed with the left controller for closer inspection.\\
+Fig. \ref{fig:query_pointing} shows the curved query results UI with the user pointing at a result object.
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.75\textwidth]{query_voxelized.png}
+\caption{A voxelized model from the query results UI.}
+\label{fig:query_voxelized}
+\end{figure}
+
+When held in the left controller the 3D model objects can be voxelized, i.e. converted into a voxel sculpture like in Fig. \ref{fig:query_voxelized}. This sculpture is then fully modifiable using the sculpting tools and can be used to create a new query. This allows the user to start with a rough 3D "sketch" to perform an initial query and then successively refine the query until the user finds the desired object.
