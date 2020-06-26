@@ -5,7 +5,35 @@
 \section{Lessons learned}
 
 \section{Future work}
-Performance, LODs/Octrees (SVO)/memory use (e.g. run length encoding), meshes as brushes (using voxelizer), saving/loading sculptures \& custom brushes, multiple sculptures at once, splitting sculptures.\\
-More brush features, e.g. selecting a polygon and filling it with material. Line guide could automatically fill between start/end.\\
-Custom brush editor could use mean position of primitives as brush center.\\
-Add way to run exact more like this query without voxelization.
+%Performance, LODs/Octrees (SVO)/memory use (e.g. run length encoding), meshes as brushes (using voxelizer), saving/loading sculptures \& custom brushes, multiple sculptures at once, splitting sculptures.\\
+%More brush features, e.g. selecting a polygon and filling it with material. Line guide could automatically fill between start/end.\\
+%Custom brush editor could use mean position of primitives as brush center.\\
+%Add way to run exact more like this query without voxelization.
+
+While our VR sculpting application already provides a solid base to work off of there are still many improvements required for it to become a mature sculpting application.
+
+\subsection{Performance}
+The main problem currently is the performance of the sculpting and rendering. The sculpture mesh does not use any level of detail (LOD) system or adaptive data structure and as such the resulting meshes have very high triangle counts.
+Eventually when a sculpture becomes large enough the framerate will drop below the desired 120Hz for VR. This problem could be addressed by using an adaptive data structure like Octrees to reduce the complexity of the meshes and only keep the details where necessary. This approach has already been tried and discussed in [\todoMissing{Missing ref; DC}].\\
+Closely related is also the memory usage of sculptures which could be reduced by using adaptive data structures and compression schemes. A commonly used compression scheme for voxels is Run Length Encoding (RLE), where instead of storing
+each voxel in an array the program stores runs of voxels. Each run is described by the length of the run and the single voxel data. In most cases this leads to a good compression because large parts of sculptures are uniform, i.e. contain the same voxel data.
+
+\subsection{Usability}
+
+\subparagraph{Sculpting}
+The sculpting module currently misses some features that would increase usability of our application by a lot.\\
+Our brushes are based entirely on SDF's and while those are quite flexible a user may instead want to use a mesh as brush shape. The voxelizer module could be used to compute the voxel representation of such a mesh, store it in a seperate voxel grid, and then copy that voxel grid to the sculpture when the brush is being applied.\\
+Currently only one sculpture can exist at once. Technically multiple sculptures can exist at once, but our application does not yet offer the interaction functionality yet to select which sculpture the user wants to edit. Furthermore when adding multiple sculptures it would make sense to implement an algorithm that is able to detect when a sculpture has multiple disjoint parts so that they can each be converted into seperate sculptures.\\
+One participant of the user evaluation has suggested to add a brush mode where the user selects two or more points to form a line or polygon and the application then automatically fills in that shape. This feature would be very useful to construct more precise shapes.
+
+\subparagraph{Custom Brush Editor}
+While the custom brush editor is functional it is not yet useful to create brush shapes with more than three or four primitives. The performance decreases with every primitive added to the brush because whenever a primitive is changed the entire custom brush shape needs to be recomputed. Secondly the editor interface is not yet intuitive and users have found it difficult to edit their custom brushes. One reason for this was the confusion between the "Add/Remove" buttons, which changes the selected primitive's CSG operation, and the "Add/Delete Primitive" buttons, which add or remove a primitive from the custom brush. This could be fixed by using better wording and appropriate icons. Selecting a primitive was also perceived as difficult because it requires the user to point at the center of the primitive with the right controller and then click the trigger, in the same way one would click a button. It would make more sense to change selecting a primitive to be done with the left controller similarly to grabbing an object.
+
+\subparagraph{Saving/Loading}
+There is currently no way to persistenly save a sculpture or custom brush. It would make sense for the application to be able to export sculptures or custom brushes into a file on disk so the user can later load them again.
+
+\subparagraph{Queries}
+As mentioned before due to some performance issues while loading results and a networking problem the number of results shown in the query results UI is currently limited to 50 results. The networking problem is caused because the C\# Cineast API wrapper sends too many REST requests and the RestSharp\footnote{https://github.com/restsharp/RestSharp} library responsible for sending the requests retains the socket connections open for a while instead of immediately closing them\footnote{https://github.com/restsharp/RestSharp/issues/1322}. This causes the machine to run out of sockets and then refuses to send any further REST requests. The solution would be to use a socket pool and to specify a maximum number of requests that can be in process at once.
+
+\subparagraph{Controls}
+It was mentioned several times during the user evaluation that the current control scheme is not optimal. As shown in Fig. \ref{fig:controller_hints} nearly all the controller buttons have been assigned a function, including the difficult to use side grip buttons of the controller. Many participants had trouble finding these side grip buttons and then use them as intended. These problems could be resolved by introducing multiple control schemes or modes that can be switched between while using the application. There could be a mode for just editing the sculpture, including brush controls and the two brush UI's, a mode for just the queries, and so on. This would reduce the amount of buttons required at any one point because the controls are distributed over the different modes.

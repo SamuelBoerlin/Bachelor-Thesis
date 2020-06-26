@@ -1,6 +1,6 @@
 \chapter{Implementation}
 
-The goal of this chapter is to go into more detail about the previously mentioned concepts and how they
+This chapter goes more into detail about the previously mentioned concepts and architecture and how they
 are implemented in our application.
 
 \section{Cineast}
@@ -21,7 +21,7 @@ Moreover it looks for a texture file with the same name as the .obj model file. 
 path is persisted in the database as metadatum with the domain "TEXTURE" and key "texture\_path". To do so the \textsc{Segmenter} class received an additional method
 \textsc{persist(SegmentContainer, MediaSegmentDescriptor)} which is called when a \textsc{SegmentContainer} is being persisted by \textsc{GenericExtractionItemHandler}.
 \textsc{ModelSegmenter} then uses that method to persist the mesh's texture file path metadatum. This metadatum can later be used by clients to download the model's texture.\\
-A similar change was required in \textsc{ModelQueryContainer}. Model data is being sent to Cineast in the form of a custom string based model format. This format however does not support vertex colors which are required for color sensitive queries. For this reason a new \textsc{ColorMeshParser} class was added that uses a similar format but also supports vertex colors. Based on the MIME type, an identifier used to describe the format of data, that prepends the model data string the \textsc{ModelQueryContainer} can decide which parser to use. Like this the API remains backwards compatible with the model format that does not contain vertex color data.
+A similar change was required in \textsc{ModelQueryContainer}. Model data is being sent to Cineast over the API in the form of a custom string based model format. This format however does not support vertex colors which are required for color sensitive queries. For this reason a new \textsc{ColorMeshParser} class was added that uses a similar format but also supports vertex colors. Based on the MIME type, an identifier used to describe the format of data, that prepends the model data string the \textsc{ModelQueryContainer} can decide which parser to use. Like this the API remains backwards compatible with the model format that does not contain vertex color data.
 
 \subsection{Model Formats}
 
@@ -793,8 +793,8 @@ The three sliders are used to change the color of the brush material. We decided
 The brush material texture is changed by clicking on the color preview box which opens a submenu and then clicking on another texture in that submenu.\\
 The brush is by default fully attached to the right controller which means that it also rotates with the controller. If that is not desired then the user can toggle the
 "Fix Rotation" button. This disables the automatic rotation of the brush with the controller making it easier to for example to create straight lines with the brush.\\
-The brush selection menu in Fig. \ref{fig:gui_brush_select} lets the user select different brushes. It is arranged as a radial menu centered in front of the user's right controller. This the user quickly and conveniently select other brush types without having to move the hand much.\\
-If the user has made a mistake it can be undone by clicking the "Undo" button. Currently up to ten edits can be undone. Edits that have been undone can be redone by clicking the "Redo" button, however only if the user has not edited the sculpture again since the undo.
+If the user has made a mistake it can be undone by clicking the "Undo" button. Currently up to ten edits can be undone. Edits that have been undone can be redone by clicking the "Redo" button, however only if the user has not edited the sculpture again since the undo.\\
+The brush selection menu in Fig. \ref{fig:gui_brush_select} lets the user select different brushes. It is arranged as a radial menu centered in front of the user's right controller. Like this the user quickly and conveniently select other brush types without having to move the controller much.
 
 \subparagraph{Custom Brushes}
 
@@ -859,7 +859,7 @@ Fig. \ref{fig:query_pointing} shows the curved query results UI with the user po
 \centering
 \captionsetup{width=0.8\textwidth}
 \includegraphics[width=0.75\textwidth]{query_voxelized.png}
-\caption{A voxelized model from the query results UI.}
+\caption{A voxelized and fully editable model from the query results UI.}
 \label{fig:query_voxelized}
 \end{figure}
 

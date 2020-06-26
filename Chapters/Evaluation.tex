@@ -3,14 +3,16 @@
 \section{Technical Evaluation}
 %Voxelizer, polygonization, queries, precision vs. recall?, etc.
 
-This section is concerned with the technical performance of our application.
+This section is concerned with the technical performance of our application. These results should provide insight
+into how the application performs to related work and reveal potential problems that may need to be improved on
+in future work.
 
 \subsection{ClusterD2+Color Performance}
 
 \begin{figure}
 \centering
 \captionsetup{width=0.8\textwidth}
-\includegraphics[width=0.75\textwidth]{precision_recall_chisqr_jsd_sh_liu.png}
+\includegraphics[width=0.5\textwidth]{precision_recall_chisqr_jsd_sh_liu.png}
 \caption{Precision/recall plots comparing the performance of Y.-J. Liu et al.'s (pink) and our implementation (blue, orange) of the ClusterD2+Color algorithm using the McGill 3D shape benchmark and Cineast's "Spherical Harmonics (Default)" feature module (green). The random scoring baseline is calculated as the average of $\frac{P}{P+N}$ over all classes where $P$ is the number of positives and $N$ the number of negatives.}
 \label{fig:precision_recall}
 \end{figure}
