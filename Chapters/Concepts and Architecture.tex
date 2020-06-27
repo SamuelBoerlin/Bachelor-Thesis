@@ -23,20 +23,6 @@ In order to run multimedia queries a multimedia database is required to store th
 The focus of this thesis is on 3D model retrieval which is also part of multimedia retrieval. Research in this area has so far focused on building 3D model queries from example images, sketches or common 3D model file formats.
 In order to create one of these 3D model files the user requires a seperate sculpting program and needs to learn how to use it.
 
-
-\section{Virtual Reality}
-%What is VR, use cases
-
-Virtual reality (VR) applications and hardware aim to immerse the user into a virtual scene or application as much as possible. This is achieved by the use of a headset with an integrated display that the user wears, whereby all the user can see is the content shown on the integrated display. Furthermore, these headsets track the user's head position and rotation so that it can be precisely reflected in the virtual scene. Another large portion of the immersion also comes from the fact that the integrated display is stereoscopic, i.e. it can trick the user's eyes into seeing the depth of the virtual scene by showing a seperate and slightly offset image of the scene to each eye. In addition to the headset there are also VR controllers that are, similarly to the headset, tracked in 3D space and reflected in the virtual scene. The user can hold these and then precisely control the position of their virtual hands and even use them to manipulate objects in the virtual scene.\\
-%Similarly to the "Rubber hand illusion" first described by Botvinick and Cohen [\todoMissing{Missing ref}]
-Current 3D sculpting applications usually have a steep learning curve. This comes from the fact that keyboards and computer mice, which serve as the primary human to machine interface, are not intuitive for
-sculpting. Modifying parts of a physical clay sculpture by hand is much more intuitive for a human than doing it virtually with a keyboard and mouse, because there is no direct mapping between these actions
-and the movement of a mouse or the buttons of a keyboard. There are companies that produce hardware specifically made to alleviate some of these issues, e.g. 3Dconnexion\footnote{\url{https://www.3dconnexion.de/}}, but the issue
-of not having a direct mapping mostly persists.\\
-This is where virtual reality excels and why it is a crucial part of our application. The VR controllers create a direct mapping between the position and movement of the hands and the ingame sculpting brush. In addition to that
-the VR headset also provides a true sense of depth with its stereoscopic display and makes it easier to view the virtual sculpture from all sides because head movement is tracked accurately. When combined these advantages provide
-a more immersive experience and hopefully also a more intuitive human machine interface.
-
 %\section{UI Design}
 %Windows vs. using 3D space
 
@@ -149,6 +135,19 @@ $f\colon \mathbb{R}^3 \mapsto \mathbb{R}$, they can all be treated exactly the s
 
 %\section{Unity}
 %What, why
+
+\section{Virtual Reality}
+%What is VR, use cases
+
+Virtual reality (VR) applications and hardware aim to immerse the user into a virtual scene or application as much as possible. This is achieved by the use of a headset with an integrated display that the user wears, whereby all the user can see is the content shown on the integrated display. Furthermore, these headsets track the user's head position and rotation so that it can be precisely reflected in the virtual scene. Another large portion of the immersion also comes from the fact that the integrated display is stereoscopic, i.e. it can trick the user's eyes into seeing the depth of the virtual scene by showing a seperate and slightly offset image of the scene to each eye. In addition to the headset there are also VR controllers that are, similarly to the headset, tracked in 3D space and reflected in the virtual scene. The user can hold these and then precisely control the position of their virtual hands and even use them to manipulate objects in the virtual scene.\\
+%Similarly to the "Rubber hand illusion" first described by Botvinick and Cohen [\todoMissing{Missing ref}]
+Current 3D sculpting applications usually have a steep learning curve. This comes from the fact that keyboards and computer mice, which serve as the primary human to machine interface, are not intuitive for
+sculpting. Modifying parts of a physical clay sculpture by hand is much more intuitive for a human than doing it virtually with a keyboard and mouse, because there is no direct mapping between these actions
+and the movement of a mouse or the buttons of a keyboard. There are companies that produce hardware specifically made to alleviate some of these issues, e.g. 3Dconnexion\footnote{\url{https://www.3dconnexion.de/}}, but the issue
+of not having a direct mapping mostly persists.\\
+This is where virtual reality excels and why it is a crucial part of our application. The VR controllers create a direct mapping between the position and movement of the hands and the ingame sculpting brush. In addition to that
+the VR headset also provides a true sense of depth with its stereoscopic display and makes it easier to view the virtual sculpture from all sides because head movement is tracked accurately. When combined these advantages provide
+a more immersive experience and hopefully also a more intuitive human machine interface.
 
 \section{Architecture}
 %How all components are connected to each other (cineast, feature module, cottontail, rest api, polygonizer, voxel storage, vr interaction controller, etc.)

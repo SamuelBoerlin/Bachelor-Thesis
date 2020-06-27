@@ -2,9 +2,19 @@
 
 \section{Conclusion}
 
+The goal of this bachelor thesis was to implement a VR sculpting application enabling users to sculpt their own figures which can then, in conjunction with a multimedia retrieval application, be used to search a database for similar models.\\
+Our VR sculpting application provides a brush tool with which the user can add or remove material from a fully volumetric interactable sculpture. Additionally the brush can take different shapes, including custom shapes made by the user, and can be used to color or texture the sculpture. The undo/redo functionality allows the user to undo mistakes and keeps them from accidentally damaging their sculpture.\\
+User made sculptures can be used to execute a similar search in a database connected to the Cineast application. The search results are presented to the user in 3D in the virtual scene. These result 3D models can be grabbed by the user for close up inspection or to convert them into a voxel representation to refine their similarity query. The new ClusterD2+Color feature module, based on the work of Y.-J. Liu et al. [\todoMissing{Missing ref}], enables Cineast to execute similarity queries that take the color and texture of 3D models, and thus also our sculptures, into consideration, which was previously not the case.\\
+Our main goal was achieved and the result is a functional VR sculpting application with multimedia retrieval capabilities and more mature user interfaces and tools compared to the precursor prototype. As is often the case there are several things left that can be improved, which will be discussed in Section \ref{sec:future_work}.
+
+
 \section{Lessons learned}
 
-\section{Future work}
+Text here
+\todoMissing{Text}
+
+\section{Outlook}
+\label{sec:future_work}
 %Performance, LODs/Octrees (SVO)/memory use (e.g. run length encoding), meshes as brushes (using voxelizer), saving/loading sculptures \& custom brushes, multiple sculptures at once, splitting sculptures.\\
 %More brush features, e.g. selecting a polygon and filling it with material. Line guide could automatically fill between start/end.\\
 %Custom brush editor could use mean position of primitives as brush center.\\
@@ -36,4 +46,4 @@ There is currently no way to persistenly save a sculpture or custom brush. It wo
 Due to some performance issues while loading results and a networking problem the number of results shown in the query results UI is currently limited to roughly 50 results. The networking problem is caused by the C\# Cineast API wrapper sending too many REST requests and the RestSharp\footnote{https://github.com/restsharp/RestSharp} library responsible for sending the requests retains the socket connections open for a while instead of immediately closing them\footnote{https://github.com/restsharp/RestSharp/issues/1322}. This causes the machine to run out of sockets and then refuses to send any further REST requests. The solution would be to use a socket pool and to specify a maximum number of requests that can be in process at once.
 
 \subparagraph{Controls}
-It was mentioned several times during the user evaluation that the current control scheme is not optimal. As shown in Fig. \ref{fig:controller_hints} nearly all the controller buttons have been assigned a function, including the difficult to use side grip buttons of the controller. Many participants had trouble finding these side grip buttons and then use them as intended. These problems could be resolved by introducing multiple control schemes or modes that can be switched between while using the application. There could be a mode for just editing the sculpture, including brush controls and the two brush UI's, a mode for just the queries, and so on. This would reduce the amount of buttons required at any one point because the controls are distributed over the different modes.
+It was mentioned several times during the user evaluation that the current control scheme is not optimal, especially the usage of the grip buttons which are pressed by squeezing ones hand or pressing them with the pinky finger. As depicted in Fig. \ref{fig:controller_hints} nearly all the controller buttons have been assigned a function, including the difficult to use side grip buttons of the controller. Many participants had trouble finding these side grip buttons and then use them as intended. These problems could be resolved by introducing multiple control schemes or modes that can be switched between while using the application. There could be a mode for just editing the sculpture, including brush controls and the two brush UI's, a mode for just the queries, and so on. This would reduce the amount of buttons required at any one point because the controls are distributed over the different modes.
