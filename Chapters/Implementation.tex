@@ -1,27 +1,31 @@
 \chapter{Implementation}
 
-This chapter goes more into detail about the previously mentioned concepts and architecture and how they
-are implemented in our application.
+This chapter goes more into detail about the concepts and architecture mentioned in Chapter \ref{chap:concepts_and_architecture} and how they
+are implemented in our application. Text \textsc{in this format} refers to code classes, methods or fields. Method parameter types are specified in the parentheses following the method name.\\
+The chapter starts out by elaborating the implementation details about the multimedia retrieval application Cineast and how it was extended to support model similarity queries that take 3D model color and texture into consideration. Furthermore, it explains how our VR sculpting application communicates with Cineast.\\
+Following that, it explains how voxels were used to implement the sculpting functionality, sculpture rendering and how the CMS algorithm was extended to support multi-material voxel volumes. In addition to that it presents an algorithm to
+convert 3D model meshes into a voxel representation and we propose a new lookup table based implementation of the CMS algorithm.\\
+Finally, it ties all these features together and describes how they were combined to form our VR sculpting application.
 
 \section{Cineast}
 
 Cineast is the multimedia retrieval backend of choice for our application. In order to implement the requirements of our application
-several changes had to be made to Cineast. However due to Cineast's modular structure must of the changes could be applied without having to
+several changes had to be made to Cineast. However due to Cineast's modular structure most of the changes could be applied without having to
 modify the core code.
 
 
-\subsection{Cineast Core Changes}
+\subsection{Core Changes}
 %UV + texture support in meshes and OBJ loader
 
 Cineast's mesh classes \textsc{Mesh}, \textsc{ReadableMesh} and \textsc{WritableMesh} did not support model textures and thus had to be extended
 for our feature module. Methods to get/set a \textsc{BufferedImage} texture and a \textsc{String} texture path, for later retrieving the model texture
 through the API, were added to the respective classes. The mesh's \textsc{Vertex} class was also extended to support storing \textsc{Vector2f} texture UV attributes.\\
-The \textsc{OBJMeshDecoder}, which is responsible for reading a .obj model file into a \textsc{Mesh}, was extended to also read texture UV coordinates from the file.
-Moreover it looks for a texture file with the same name as the .obj model file. If such a texture file is found it is added to the \textsc{Mesh} and the texture file's
+The \textsc{OBJMeshDecoder}, which is responsible for reading an OBJ-model file into a \textsc{Mesh}, was extended to also read texture UV coordinates.
+Moreover, it looks for a texture file with the same name as the OBJ-model file. If such a texture file is found it is added to the \textsc{Mesh} and the texture file's
 path is persisted in the database as metadatum with the domain "TEXTURE" and key "texture\_path". To do so the \textsc{Segmenter} class received an additional method
-\textsc{persist(SegmentContainer, MediaSegmentDescriptor)} which is called when a \textsc{SegmentContainer} is being persisted by \textsc{GenericExtractionItemHandler}.
+\textsc{persist(SegmentContainer, MediaSegmentDescriptor)} which is called when a \textsc{SegmentContainer} is persisted by \textsc{GenericExtractionItemHandler}.
 \textsc{ModelSegmenter} then uses that method to persist the mesh's texture file path metadatum. This metadatum can later be used by clients to download the model's texture.\\
-A similar change was required in \textsc{ModelQueryContainer}. Model data is being sent to Cineast over the API in the form of a custom string based model format. This format however does not support vertex colors which are required for color sensitive queries. For this reason a new \textsc{ColorMeshParser} class was added that uses a similar format but also supports vertex colors. Based on the MIME type, an identifier used to describe the format of data, that prepends the model data string the \textsc{ModelQueryContainer} can decide which parser to use. Like this the API remains backwards compatible with the model format that does not contain vertex color data.
+A similar change was required in the \textsc{ModelQueryContainer}. Model data is being sent to Cineast over its REST API, described in Section \ref{sec:rest_api}, in the form of a custom string based model format. This format however does not support vertex colors which are required for color sensitive queries. For this reason a new \textsc{ColorMeshParser} class was added that uses a similar format but also supports vertex colors. Based on the prepended MIME type, an identifier used to describe the format of data, the \textsc{ModelQueryContainer} can decide which parser to use. Like this the API remains backwards compatible with the model format that does not contain vertex color data.
 
 \subsection{Model Formats}
 
@@ -47,22 +51,21 @@ achieves this by creating random sample points on the 3D model's surface accordi
 use those sample points to compute a feature vector.\\
 Our feature module, \textsc{ClusterD2AndColorHistogram}, extends Cineast's \textsc{StagedFeatureModule} class which takes care of the
 querying base functionality, such as searching for similar feature vectors and sorting results by score or persisting an extracted feature vector.
-The \textsc{ClusterD2AndColorHistogram} class mostly takes care of extracting the ClusterD2+Color feature vector from a given input model.
+The \textsc{ClusterD2AndColorHistogram} class mostly takes care of extracting the ClusterD2+Color feature vector from a given input model.\\
+In order to obtain the data required to construct a feature vector the algorithm runs through the following stages:
 
 \subparagraph{Sample Generation}
 
-Many isosurface polygonization algorithms, such as our non-adaptive CMS [\todoMissing{Introduce abbr before}]
-implementation used in this application, can produce highly tessellated meshes. Opposite to that meshes exported by
+Many isosurface polygonization algorithms, such as the non-adaptive CMS [\todoMissing{Introduce abbr before}]
+implementation used in this application, can produce highly tessellated meshes. On the other hand meshes exported by
 3D modeling software are often optimized to have large triangles where the surface has little detail, and small triangles where
 the surface is more detailed. Hence it is important that the sample point generation is mostly independent of the triangle sizes
 of the mesh, so that meshes of varying levels of tessellation can be compared for similarity effectively.
 The ClusterD2+Color algorithm achieves this by making the sampling directly proportional to the surface area of the triangles, hence a sample point
 has a higher chance to be positioned on a large triangle, and a smaller chance to be positioned on a small triangle.
 Before any sample points are generated the model is first scaled such that its total surface area equals 100.
-After generating a certain number samples the result is a collection of samples that are uniformly distributed on the mesh's surface. The number of samples
+After generating a certain number of samples, the result is a collection of samples that are uniformly distributed on the mesh's surface. The number of samples
 is determined by a function of the integral of the absolute Gaussian curvature over the model's surface as described in [\todoMissing{Missing ref}].
-
-\subparagraph{Sample Selection}
 
 \begin{figure}
 \centering
@@ -73,10 +76,7 @@ and their cluster assignments (white circles and lines). The picture on the righ
 \label{fig:feature_penguin}
 \end{figure}
 
-Once the initial samples have been generated they are filtered and tested for certain criteria.
-These criteria differ between two different types of samples:
-
-\subparagraph{Shape Samples}
+\subparagraph{Shape Sample Selection}
 
 These samples should convey relevant information about the geometric shape. Previous work done by [\todoMissing{Missing ref; Lee,C.H.,Varshney,A.,Jacobs,D.:Meshsaliency.In:ACMSIGGRAPH’05, pp. 659–666 (2005)}] has
 shown that mean curvature is a good indication for visual saliency and thus for comparing geometric shapes for similarity. The mean curvature of the mesh vertices is computed using Taubin's method [\todoMissing{Missing ref}].
@@ -94,10 +94,10 @@ full smoothing operation. This is repeated multiple times to create three smooth
 \end{figure}
 
 As opposed to [\todoMissing{Missing ref}] we use
-$C^1$ as the baseline curvature map instead of $C^0$, because certain non-manifold (e.g. vertices or edges touching without being connected) models exhibit significant artefacts in $C^0$ as shown in Fig. \ref{fig:laplacian_smoothing_artefacts}. Lastly each shape sample calculates its $D = D^2 \oplus D^3$ value, where $D^i = C^i - C^{i-1}$ is the difference-of-Laplacian space, as shown in Fig. \ref{fig:feature_penguin}, and only the samples with the top 10\% highest $D$ values are kept. Indeed the remaining top
+$C^1$ as the baseline curvature map instead of $C^0$, because certain non-manifold (e.g. vertices or edges touching without being connected) models exhibit significant artefacts in $C^0$ as illustrated in Fig. \ref{fig:laplacian_smoothing_artefacts}. Lastly each shape sample calculates its $D = D^2 \oplus D^3$ value, where $D^i = C^i - C^{i-1}$ is the difference-of-Laplacian space, as depicted in Fig. \ref{fig:feature_penguin}, and only the samples with the top 10\% highest $D$ values are kept. Indeed the remaining top
 10\% $D$ value shape samples in Fig. \ref{fig:feature_penguin} are concentrated to the relevant features of the penguin model, namely its arms, feet and beak.
 
-\subparagraph{Color Samples}
+\subparagraph{Color Sample Selection}
 
 The color samples' purpose is to allow the algorithm to distinguish between models that have the same geometric shape but differ in
 color or texture. This is achieved by only selecting those samples that lie on significant color transitions. As described by
@@ -116,8 +116,7 @@ More specifically, the samples are clustered together using a modified
 ISODATA algorithm described in [\todoMissing{Missing ref}]. In our implementation we set $P_n = 5\%$ \textit{of the total number of sample points}, $P_s = 2 * E$, $P_c = 10 * E$, $I = 100$ with $E =$ \textit{mean edge length of the model}.
 Additionally we introduce two new parameters: $I_{min} = 10$, the minimum number of iterations, and $I_{nc} = 200$, the total maximum number of iterations after which the algorithm is stopped if no convergence is happening. Without
 the $I_{min}$ parameter we have observed that the algorithm would commonly stop too early with inadequate cluster assignments. Then, once the samples are clustered together, the euclidian distances between all samples in different clusters
-are computed and stored in an array. The values in this array are then normalized s.t. the lowest value in the array is mapped to zero and the highest value is mapped to one. Finally this array is then converted into a histogram with $20$
-bins.\\
+are computed and stored in an array. The values in this array are then normalized such that the lowest value in the array is mapped to zero and the highest value is mapped to one. Finally this array is then converted into a histogram with $20$ bins.\\
 Y.-J. Liu et al. [\todoMissing{Missing ref}] have also proposed a second method called ClusterAngle+Color which calculates the values for the histogram from the angle between triplets of samples that are each in different clusters. According
 to the authors this method results in a better similarity measure, however due to the $O(N^3)$ complexity we have unfortunately found it to be infeasible with the large number of samples generated from the user sculpted models in our application.\\
 In either case the result is a histogram which serves as 20-dimensional feature vector and in fact, since they are a geometric signature of the model, they can be used to compare models for similarity,
@@ -132,12 +131,14 @@ database Cottontail DB\footnote{\url{https://github.com/vitrivr/cottontaildb}} o
 \label{fig:feature_penguin_histogram}
 \end{figure}
 
-Along with the $\chi^2$ distance metric the Jensen-Shannon divergence ($D_{JS}$) was also implemented. This is the metric Y.-J. Liu et al. [\todoMissing{Missing ref}] chose for their implementation. In short, the $D_{JS}$ metric treats the histogram feature vector as an independent and identically-distributed sample of a random variable and thus first converts the histogram into a probability density function by using kernel density approximation with a gaussian kernel. The Jensen-Shannon divergence of the two probability density functions to compare is then computed and serves as a probabilistic measure ranging from 0 to 1 for how similar they are, so in a sense how likely it is that the two histograms were generated from the same model. Fig. \ref{fig:feature_penguin_histogram} shows the histogram of a penguin model and its probability density function, along with some debug information of curves required for the $D_{JS}$ calculation.\\
+Along with the $\chi^2$ distance metric the Jensen-Shannon divergence ($D_{JS}$) was implemented. This is the metric Y.-J. Liu et al. [\todoMissing{Missing ref}] chose for their implementation. In short, the $D_{JS}$ metric treats the histogram feature vector as an independent and identically-distributed sample of a random variable and thus first converts the histogram into a probability density function by using kernel density approximation with a gaussian kernel. The Jensen-Shannon divergence of the two probability density functions to compare is then computed and serves as a probabilistic measure ranging from 0 to 1 for how similar they are, so in a sense how likely it is that the two histograms were generated from the same model. Fig. \ref{fig:feature_penguin_histogram} depicts the histogram of a penguin model and its probability density function, along with some debug information of curves required for the $D_{JS}$ calculation.\\
 In our ClusterD2+Color implementation in Cineast $D_{JS}$ is currently significantly slower than $\chi^2$ because Cottontail DB does not natively support k-nearest neighbors queries for $D_{JS}$. Therefore Cineast must retrieve the feature vectors of all currently existing models in the database and compare all of them one by one to the input feature vector using $D_{JS}$.\\
+The exact reason why Y.-J. Liu et al. used the Jensen-Shannon divergence was not mentioned, other than the fact that for a given 3D model they "[...] regard its shape histogram as an independent and identically-distributed sample of a random variable [...]" and thus convert it to a probability density function which can be compared using $D_{JS}$. We speculate that $D_{JS}$ may be more robust to noise from the random sample generation than the $\chi^2$ distance metric due to the conversion to a smooth probability density function. However this may incur a slight general loss of accuracy due to the smoothing.\\
 Finally Cineast can run multiple features or distance metrics for a single query and then combine their scores by weights specified in Cineast's configuration. This can be useful to capture different kinds of feature types in a single similarity score.
 
 
 \subsection{REST API}
+\label{sec:rest_api}
 
 In order for a program to interface with Cineast's query capabilities and our ClusterD2+Color implementation an API is required. Cineast provides two main APIs, a WebSocket API and more importantly a REST API which was
 used for the purposes of this thesis.\\
@@ -202,7 +203,7 @@ For example Cineast's similarity query endpoint is executed by sending a \textit
 \end{mdframed}
 
 Throughout the course of development of this thesis Cineast's REST API was partially rewritten to use the Javalin\footnote{https://javalin.io/} web framework instead of Spark\footnote{http://sparkjava.com/} and SparkSwagger\footnote{https://github.com/manusant/spark-swagger}. Javalin makes great use of Cineast's already built-in JSON serialization structure using Jackson\footnote{https://github.com/FasterXML/jackson}. This enables Javalin, in combination with its OpenAPI plugin,
-to generate an OpenAPI specification that describes Cineast's REST API in a standardized way like shown in Listing \ref{lst:openapi_spec}.\\
+to generate an OpenAPI specification that describes Cineast's REST API in a standardized way like in Listing \ref{lst:openapi_spec}.\\
 Moreover this OpenAPI specification allows programs like Swagger Codegen\footnote{https://swagger.io/tools/swagger-codegen/} to generate fully functional code libraries in various programming languages capable of interfacing with the REST API defined by the specification. Since Javalin's OpenAPI plugin makes use of Jackson, it is capable of more reliably creating the specifications for JSON data structures than SparkSwagger, especially for subclasses of superclasses with generic types.\\
 The C\# library that was used to access Cineast's API endpoint from Unity was generated by the aforementioned OpenAPI specification and Swagger Codegen.
 
@@ -243,7 +244,7 @@ var response = await Api.FindSegmentSimilarActionHandlerPOSTAsync(query);
 \end{lstlisting}
 \end{mdframed}
 
-Listing \ref{lst:csharp_cineast_api_call} shows how to send Cineast a similarity query request by calling the Swagger Codegen generated C\# method \textsc{FindSegmentSimilarActionHandlerPOSTAsync}.
+Listing \ref{lst:csharp_cineast_api_call} illustrates how to send Cineast a similarity query request by calling the Swagger Codegen generated C\# method \textsc{FindSegmentSimilarActionHandlerPOSTAsync}.
 
 \section{Hermite Data Voxels}
 
@@ -308,12 +309,12 @@ These padding voxels allow the voxel polygonizer to run faster since it entirely
 
 \subparagraph{Memory Consumption}
 
-As previously mentioned the voxels in this application consist of a 32 bit material ID plus Hermite data. Therefore the size of a single voxel in memory is: 4 (material) + $3*3*4$ (three normals, each with three 32 bit float components) + $3*4$ (three intersection points) = 52 bytes in total. Considering that a single chunk contains $32 * 32 * 32 = 32768$ voxels, hence consumes roughly 1.7MB, and one scene can contain many of these chunks,
+The voxels in this application consist of a 32 bit material ID plus Hermite data. Therefore the size of a single voxel in memory is: 4 (material) + $3*3*4$ (three normals, each with three 32 bit float components) + $3*4$ (three intersection points) = 52 bytes in total. Considering that a single chunk contains $32 * 32 * 32 = 32768$ voxels, hence consumes roughly 1.7MB, and one scene can contain many of these chunks,
 the main memory will be exhausted rather quickly.
 To remedy this issue the Hermite data compression scheme described by [\todoMissing{Missing ref; Fast and Adaptive Polygon Conversion By Means Of Sparse Volumes}] was used.
 This quantized Hermite data compression is lossy since it relies on quantizing the floating point values into small integers that are then packed together using bitwise operations. The errors introduced by the compression are
 negligible: the exact intersection points remain accurate to a $\frac{1}{1024}$th, respectively less than 0.1\%, of the voxel's edge length. Similarly the maximum error in a normalized normal's component is $\frac{1}{1024}$.
-The effective size of the quantized Hermite data is 12 bytes (two of which are struct alignment padding), i.e. only 23\% of the uncompressed size. Fig. \ref{fig:quantized_hermite_data} shows the quantized Hermite data
+The effective size of the quantized Hermite data is 12 bytes (two of which are struct alignment padding), i.e. only 23\% of the uncompressed size. Fig. \ref{fig:quantized_hermite_data} illustrates the quantized Hermite data
 structure in more detail.\\
 A further potential optimization is to change the linear array indexing scheme. Modern CPUs have multiple cache layers - each cache layer is a fast memory unit and generally the faster the cache the less
 memory it can store.
@@ -323,11 +324,12 @@ memory it can store.
 When a program accesses a piece of memory from main memory the CPU loads the surrounding address space into one or multiple fixed size cache lines, contiguous pieces of the heap memory around the access, into the cache.
 If the program then accesses a nearby address again the CPU can read the value from the cache which is a lot faster than reading it from main memory. This is called a cache hit. On the other hand if the program accesses an address too far away from the previous access or not cached then the CPU will have to read the value from main memory instead, ergo a cache miss. Hence by optimizing for cache hits a program's speed can be improved if it is memory bound. The most
 common access pattern for our voxel storage is to read eight neighbor voxels as a voxel cell for polygonization.
-For simplicity's sake we will consider a 2D instead of 3D array: if we use simple linear indexing as shown in Fig. \ref{fig:indexing_order} to read the voxel cell (1, 2, 5, 6) there will be a large address difference between the voxels
+For simplicity's sake we will consider a 2D instead of 3D array: if we use simple linear indexing as illustrated in Fig. \ref{fig:indexing_order} to read the voxel cell (1, 2, 5, 6) there will be a large address difference between the voxels
 on the first and second row. With large arrays this will often lead to cache misses. By instead using Z-Order indexing, also known as Morton indexing, spacially nearby voxels are much more likely to be nearby to each other in the address space, increasing the chance for cache hits. However, such indexing schemes usually have a larger overhead due to the calculation of the index. To compute the Z-Order indices parts of the Libmorton library\footnote{\url{https://github.com/Forceflow/libmorton}} were used and ported to C\#. Unfortunately in our case using Z-Order indexing has made no significant difference.\todoMissing{Validate this}
 
 
 \subsection{Cubical Marching Squares}
+\label{sec:cms}
 
 \hfill
 
@@ -354,21 +356,22 @@ For our application we have decided to use the Cubical Marching Squares algorith
 that CMS provides both primal and dual features. As such each cell can be polygonized independently but it can still also preserve sharp features well, e.g. the top of a voxel pyramid.\\
 Our implementation of the CMS algorithm runs only on regular voxel grids and
 there is no adaptivity or level of detail. Therefore all future explanations on CMS are based on these two limitations.\\
-The first step of the CMS algorithm is to run the Marching Squares (MS) algorithm, the 2D counterpart of the MC algorithm, on each face of a voxel cell. Fig. \ref{fig:marching_squares_cases} shows the total 16 different MS cases for a single voxel cell face. If the normals of the Hermite data span an angle greater than the 2D sharp feature angle threshold then the straight line segments are replaced with two lines that connect the two edges and the intersection point of the normals' tangents. This allows CMS to preserve sharp features on the voxel cell faces. Furthermore this sharp feature helps CMS to resolve the ambiguous MS cases 5 and 10, because the two line segments must not overlap. With the two sharp features in cases 5 and 10 it is simple to check
+The first step of the CMS algorithm is to run the Marching Squares (MS) algorithm, the 2D counterpart of the MC algorithm, on each face of a voxel cell. Fig. \ref{fig:marching_squares_cases} gives an overview over the total 16 different MS cases for a single voxel cell face. If the normals of the Hermite data span an angle greater than the 2D sharp feature angle threshold then the straight line segments are replaced with two lines that connect the two edges and the intersection point of the normals' tangents. This allows CMS to preserve sharp features on the voxel cell faces. Furthermore this sharp feature helps CMS to resolve the ambiguous MS cases 5 and 10, because the two line segments must not overlap. With the two sharp features in cases 5 and 10 it is simple to check
 whether the two sharp segments overlap or not, and then use the non-overlapping configuration.\\
 Once all six voxel cell faces have been processed by MS the CMS algorithm connects or links all touching line segments together. The result of this is a collection of components, i.e. groups of line segments that form a loop.\\
-Then, for each component in a voxel cell, and all their line segments, CMS outputs vertices. Additionally for each component in a voxel cell, if the component's normals of a component span an angle greater than the 3D sharp feature angle threshold the CMS algorithm finds the component's 3D sharp feature that minimizes the sum of squared distances between the sharp feature and the planes spanned by the component's normals. Then it places a vertex at said sharp feature. If the angle threshold is not met then CMS instead places a vertex at the mean position of the component's vertices. This results in a list of triangles for each component, like shown in Fig. \ref{fig:cms_visualization}, that are added to the output mesh.
+Then, for each component in a voxel cell, and all their line segments, CMS outputs vertices. Additionally for each component in a voxel cell, if the component's normals of a component span an angle greater than the 3D sharp feature angle threshold the CMS algorithm finds the component's 3D sharp feature that minimizes the sum of squared distances between the sharp feature and the planes spanned by the component's normals. Then it places a vertex at said sharp feature. If the angle threshold is not met then CMS instead places a vertex at the mean position of the component's vertices. This results in a list of triangles for each component, like illustrated in Fig. \ref{fig:cms_visualization}, that are added to the output mesh.
 
 
 
 
 \subsubsection{Multi-material Extension for CMS}
+\label{sec:multi_material_cms}
 
 \begin{figure}
 \centering
 \captionsetup{width=0.8\textwidth}
 \includegraphics[width=0.5\textwidth]{cms_multi_material_side_top.png}
-\caption{Multi-material CMS. The side view (left) shows how the material transitions (white triangles) are projected onto the segment, causing a split where one would expect the material transition to occur on the surface. The top view (right) shows how those splits are included in the sharp feature (yellow diamond) solution. The right side also shows the resulting triangulation (dotted lines).}
+\caption{Multi-material CMS. The side view (left) shows how the material transitions (white triangles) are projected onto the segment, causing a split where one would expect the material transition to occur on the surface. The top view (right) illustrates how those splits are included in the sharp feature (yellow diamond) solution. The right side also shows the resulting triangulation (dotted lines).}
 \label{fig:cms_multi_material}
 \end{figure}
 
@@ -427,19 +430,19 @@ Then, for each component in a voxel cell, and all their line segments, CMS outpu
 The regular CMS algorithm does not support multiple materials. Hence due to the need for multi material volumes in this thesis's application
 a multi-material CMS extension was developed. In order for this to work the Hermite data normals must additionally also be stored for each material change edge, and not only for non-solid
 to solid changes or vice versa. Furthermore each segment vertex must store a material.
-Only one change was required in the algorithms shown in the CMS paper: \textsc{GenerateSegment}'s modification is shown in Alg. \ref{alg:cms_generate_segment}.
+Only one change was required in the algorithms presented in the CMS paper: \textsc{GenerateSegment}'s modification is shown in Alg. \ref{alg:cms_generate_segment}.
 Since our application only uses regular voxel grids the modification was made to work on regular voxel grid cells. It can however be extended to work with the adaptive CMS version
 in a similar manner.
 
 Additionally to the \textsc{GenerateSegment} modification the \textsc{DetectSharpFeature} implementation also requires a change. The transitions generated in \textsc{DetectMaterialTransition}, which are added to
 $f.list$, and their normals must be included in the linear system of equations to be solved ([\todoMissing{CMS and Kobbelt et al.}]) for the sharp feature detection,
-as suggested in [\todoMissing{Missing ref; DC paper}]. This causes the sharp feature to be placed where one would expect the material transition to occur on the surface, as shown in Fig. \ref{fig:cms_multi_material}.
+as suggested in [\todoMissing{Missing ref; DC paper}]. This causes the sharp feature to be placed where one would expect the material transition to occur on the surface, as illustrated in Fig. \ref{fig:cms_multi_material}.
 This of course means that the multi-material CMS algorithm must always generate a sharp feature when material transitions are present, even if the sharp feature conditions/heuristics described by [\todoMissing{Kobbelt et al.}] are not met.
 
 \subsubsection{Lookup Table Based Implementation}
 
 Much of the CMS algorithm can be done and perhaps be sped up using appropriate lookup tables, especially in the case of regular grid voxel cells. Indeed we have generated such lookup tables in order to show
-the viability of a lookup table based approach. Due to time constraints and it breaking the previously mentioned multi-material extension however, it has ended up not being used in the final implementation.
+the viability of a lookup table based approach. Due to time constraints and it breaking the multi-material extension from Section \ref{sec:multi_material_cms} however, it has ended up not being used in the final implementation.
 Nevertheless with some more work it can also be made to work with multi-material volumes. Furthermore this lookup table based approach may prove useful for a future GPU based implementation as it splits
 the problem into several small steps that can all be run in parallel with very little divergent behaviour.\\
 A tool was implemented to generate the lookup tables for all $2^8 = 256$ possible cell states (two states per cell corner, solid vs. non-solid). Using rotational symmetries several lookup tables have been reduced in size - the initial lookup table maps one of the $256$ cell states to one of $23$ base configurations by rotating it appropriately (one or multiple $90^{\circ}$ rotations around the X, Y and Z axes). Each of the in total $24$ unique rotations gets its own index.
@@ -583,7 +586,7 @@ using \textsc{FindIntersection}. Then the algorithm checks if any already existi
 solid to solid material transitions. In addition to that, our implementation also gives each CSG primitive an axis aligned bounding box, such that only those voxels and edges inside the bounding box need to be checked.\\
 With some minor adjustments, namely swapping the $\geq$ and $\leq$, inverting the normals and changing the material assignment at the top to set to empty voxels, the algorithm for the CSG difference operation is obtained. \par
 
-Previously it was mentioned that SDF's are well suited for CSG primitives.
+In Section \ref{sec:signed_distance_functions} it was already mentioned that SDF's are well suited for CSG primitives.
 The reason for this is that they are versatile and checking whether a voxel lies inside the SDF or finding
 line to surface intersection points is simple. Checking whether a voxel is inside the SDF is a simple as checking whether the value of the SDF evaluated at said voxel is negative.
 Finding intersection points (\textsc{FindIntersection}) on an edge is done by running a binary search on the edge, starting with the edge start- and endpoints and repeatedly moving them closer together.
@@ -601,6 +604,7 @@ finds the zero point from the initial state (left) after just one iteration (rig
 This binary search can be optimized by using the values returned by the SDF for each iteration, since those values are a lower bound for the distance which the start- or endpoint can be moved along the edge without accidentally crossing the SDF's surface. Using this fact the adaptive binary search can make larger and more precise steps than a blind binary search. Consider a nearly linear surface perpendicular to the edge, like in Fig. \ref{fig:adaptive_binary_search}: the adaptive binary search will find the exact zero point after just one iteration because the two values returned by the SDF are the exact distances between the start- and endpoints and the surface. This may not always work for inexact SDF approximations since the returned values may not be actual lower bounds, hence the algorithm should still be able to use the regular binary search method as fallback for robustness.
 
 \subsection{Rendering}
+\label{sec:voxel_rendering}
 %Vertex colors encode material (RGB, A=texture id), texture array, triplanar texturing shader
 
 \begin{figure}
@@ -613,13 +617,14 @@ Adapted from Corona Renderer\protect\footnotemark.}
 \end{figure}
 \footnotetext{\url{https://corona-renderer.com/blog/wp-content/uploads/2017/04/Triplanar_01.jpg}}
 
-The voxel polygonizer already does most of the heavy lifting for the voxel rendering. Once the voxel polygonizer has converted the voxels into a triangle mesh the rendering is done using the typical mesh rasterization techniques, provided by Unity, and shaders. The voxel materials and their colors are packed into the 32 bit RGBA color attachment of the mesh vertices. The first three components, RGB, are used to store the voxel color, the fourth component A for the voxel material ID.\\
+The voxel polygonizer already does most of the heavy lifting for the voxel rendering. Once the voxel polygonizer has converted the voxels into a triangle mesh the rendering is done using the typical mesh rasterization techniques, provided by Unity, and shaders. Shaders are GPU programs that determine how objects in the scene are rendered to the screen, e.g. by computing lighting or adding special effects. The voxel materials and their colors are packed into the 32 bit RGBA color attachment of the mesh vertices. The first three components, RGB, are used to store the voxel color, the fourth component A for the voxel material ID.\\
 Since our voxel meshes are not UV mapped, i.e. they do not contain information about where the textures should be sampled, we have resorted to a tri-planar texture mapping shader to texture them. These kinds of shaders use the position of a mesh's pixels to determine where to sample a texture, without the need of any explicit UV mapping. In order to achieve a realistic looking texture
 mapping the tri-planar texture mapping shader projects an infinitely repeating texture from the X, Y and Z axes onto the mesh
-like shown in Fig. \ref{fig:triplanar_texture_mapping}. The weight, i.e. how visible it is, of each texture projection is determined by the mesh's normals. For example the more a normal points along the X axis, the stronger the X axis texture projection is weighted, and the less the other two. The result of this is a mesh
+like depicted in Fig. \ref{fig:triplanar_texture_mapping}. The weight, i.e. how visible it is, of each texture projection is determined by the mesh's normals. For example the more a normal points along the X axis, the stronger the X axis texture projection is weighted, and the less the other two. The result of this is a mesh
 that is usually textured nicely on all sides. In certain situations, especially when the weights of two texture projections are similar, e.g. for $45^{\circ}$ diagonal parts of the mesh with respect to axes, there can be unnatural overlapping of two texture projections. This however is only a problem for textures with obvious structures, e.g. bricks, as opposed to natural or noisy textures like dirt or grass. To support multiple textures we store all voxel material textures in a single texture array on the GPU. The tri-planar texture mapping shader can then select the appropriate texture to sample from for each vertex by using the vertex' voxel material ID, stored in the alpha component, to index into the texture array.
 
 \subsection{Voxelizer}
+\label{sec:voxelizer}
 % Purpose, explain method used for voxelization (assigning triangles to bins, patching holes, etc.), use of job system
 
 The precursor of our application already had an implementation of a voxelizer, however throughout the development of this thesis
@@ -713,7 +718,7 @@ The feature that ties all these technologies together is the VR sculpting. It al
 
 The implementation of our VR application was realized through the Unity SteamVR Plugin\footnote{\url{https://assetstore.unity.com/packages/tools/integration/steamvr-plugin-32647}}. This Unity plugin offers most of the base functionality required for VR applications, such as setting up the headset and controller tracking and handling controller input. Furthermore it provides some additional scripts that can be added to objects in the scene, for example to allow the player to teleport or to grab and hold objects.\\
 Unfortunately certain features of the SteamVR Plugin are currently not yet compatible with Unity's new Universal Render Pipeline\footnote{\url{https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@8.1/manual/index.html}} (URP) that handles the rendering of scenes. With the introduction of the URP the format of Unity's
-shaders has changed. Shaders are GPU programs that determine how objects in the scene are rendered to the screen, e.g. by computing lighting or adding special effects. Some of these shaders, most notably the highlight when grabbing an object, were required for our application and thus had to be partially rewritten to work in the new URP.
+shaders has changed. Some of these shaders, most notably the highlight when grabbing an object, were required for our application and thus had to be partially rewritten to work in the new URP.
 
 \subsection{Sculpting Functionality}
 %How sculpting is implemented, VRSculpting controller, etc.
@@ -724,7 +729,7 @@ The sculpting functionality is split into several scripts and components. The fo
 The voxel sculpture/terrain functionality is provided by the \textsc{DefaultVoxelWorldContainer} script and can be added as a component to an empty object. This object is then capable of storing and rendering voxels and can be modified through the \textsc{ApplySdf} method in \textsc{DefaultVoxelWorldContainer.Instance}.
 
 \subparagraph{Texture Array}
-As mentioned before our application uses a texture array to store all the voxel material textures on the GPU for rendering. This texture array is created by the \textsc{VoxelTerrainTextures} script which is to be added to the same object that contains the \textsc{DefaultVoxelWorldContainer} component. On start of the application it reads all the textures that have been added to the \textsc{VoxelTerrainTextures} component's textures array into a texture array on the GPU and then assigns it to the "\_TextureArray" attribute of the object's material such that the tri-planar texturing shader can access it.
+As mentioned in Section \ref{sec:voxel_rendering} our application uses a texture array to store all the voxel material textures on the GPU for rendering. This texture array is created by the \textsc{VoxelTerrainTextures} script which is to be added to the same object that contains the \textsc{DefaultVoxelWorldContainer} component. On start of the application it reads all the textures that have been added to the \textsc{VoxelTerrainTextures} component's textures array into a texture array on the GPU and then assigns it to the "\_TextureArray" attribute of the object's material such that the tri-planar texturing shader can access it.
 
 \subparagraph{Brush Type Renderers}
 All regular brush types need some way to be rendered as a preview. For each brush type a unique \textsc{ISdfRenderer} instance is responsible for rendering. The regular way to obtain such a renderer is to create a \textsc{MeshSdfRenderer} object which extends \textsc{ISdfRenderer} and handles all the rendering when given a mesh. Such an object is created in Unity's context menu under "Create $\rightarrow$ ScriptableObject $\rightarrow$ MeshSdfRenderer". Once created a mesh and material must be assigned to the object. Optionally an offset and scale can be specified. For advanced brushes one may create a custom renderer by extending \textsc{ISdfRenderer}.\\
@@ -732,6 +737,9 @@ These renderers by themselves aren't useful yet. They need to be registered to t
 
 \subparagraph{Custom Brush}
 The main functionality of the custom brushes is contained in the \textsc{DefaultCustomBrushContainer} script which is found on a seperate object. It mostly handles creating the SDF from a list of custom brush primitives. In order to be able to render the custom brush is in the \textsc{DefaultCustomBrushSdfRenderer} script which is usually on the same object as the \textsc{DefaultCustomBrushContainer}. The custom brush can be edited by changing the \textsc{DefaultCustomBrushContainer.Instance.Primitives} list which contains the current custom brush primitives.
+
+\subparagraph{Undo/Redo}
+The undo/redo functionality is handled by the \textsc{DefaultVoxelEditManagerContainer} script. It exposes an \textsc{Undo} and \textsc{Redo} method in \textsc{DefaultVoxelEditManagerContainer.Instance}. In order to store edits \textsc{DefaultVoxelEditManagerContainer.Instance.Consumer()} must be passed to \textsc{ApplySdf}. Brush strokes are counted as a single edit. Each edit stores a snapshot of the previous state of the chunks it affects so the edit can be undone by replacing the chunk data with the snapshots.
 
 \subparagraph{VR Interaction}
 The core of the application that ties everything together is the \textsc{VRSculpting} script found on the player object. It handles all the interactions between the sculpture, voxels, brushes, queries, UI's and so on.
@@ -755,7 +763,7 @@ Our VR sculpting application provides several tools to enable the user to sculpt
 \label{fig:controller_hints}
 \end{figure}
 
-The controller hints shown in Fig. \ref{fig:controller_hints} help the user become familiar with the VR sculpting application. They are always shown when the application is started but can then be toggled off or back on by pressing a button on the controller.
+The controller hints portrayed in Fig. \ref{fig:controller_hints} help the user become familiar with the VR sculpting application. They are always shown when the application is started but can then be toggled off or back on by pressing a button on the controller.
 
 \subparagraph{Brush}
 
@@ -767,7 +775,7 @@ The controller hints shown in Fig. \ref{fig:controller_hints} help the user beco
 \label{fig:editing_showcase}
 \end{figure}
 
-The most important tool available to the user is the brush. It is attached to the right controller as shown in \ref{fig:editing_showcase} and displayed as a translucent preview of the brush's shape. Using a custom shader this brush preview shows the intersection between the brush and the sculpture. This feature has turned out to be an important addition, because without it it's quite difficult to tell where the brush intersects with the sculpture despite the stereoscopic display of the VR headset.\\
+The most important tool available to the user is the brush. It is attached to the right controller as depicted in \ref{fig:editing_showcase} and displayed as a translucent preview of the brush's shape. Using a custom shader this brush preview shows the intersection between the brush and the sculpture. This feature has turned out to be an important addition, because without it it's quite difficult to tell where the brush intersects with the sculpture despite the stereoscopic display of the VR headset.\\
 By holding the brush button, which is by default the index finger trigger on the right controller, the user can drag the brush and continuously apply a brush stroke so long performance allows.\\
 The brush size can be changed by swiping up or down on the trackpad of the left controller. Similarly the brush can be rotated by swiping any direction on the trackpad of the right controller. Rotating the brush however takes some practice because the trackpad only provides two degrees of freedom whereas there are three rotation axes for the brush.\\
 Currently our application provides five brush types: cube, sphere, pyramid, cylinder and custom. These brush types are defined from SDF's, thus it is easy to add new brush types. Our VR application provides some Unity editor interfaces to enable a developer to easily add such new brushes to the application.
@@ -829,7 +837,7 @@ a rounded disc by combining one sphere primitive and smoothly subtracting two cu
 
 We have implemented a flexible system for VR user interfaces (UI) in Unity. Most of our menus are similar to what you would expect in a regular non-VR application. The reason for this is that most users will already be familiar with the typical window based UI's found in modern operating systems. Furthermore such window based UI's can densely pack information and functionality while remaining organized and hierarchical, e.g. by using grouping background elements such as the color settings group in Fig. \ref{fig:gui_brush_properties} to group contextually similar components together.\\
 The UI's are controlled by the VR controller which has a pointer and cursor attached to it. Since our application uses the SteamVR Plugin we have designed our pointer and cursor to be similar to that of the SteamVR menu to maintain consistency. UI components can be interacted with by pressing the interaction button on the VR controllers which by default is bound to the index finger trigger on the right controller.\\
-New UI's can easily be created by creating a new empty object and then adding Unity's \textsc{Canvas} component. This turns the object into a UI canvas and the developer can add UI elements to the viewport specified in the \textsc{Canvas} component. Any UI element already available in Unity should work in VR out of the box. This is made possible by our \textsc{VRPointerInputModule} script which extends Unity's \textsc{BaseInputModule} and thus replaces Unity's default keyboard and mouse based input controller with our VR pointer input controller. Once a new UI is finished it is converted into a Unity prefab and then registered in order to become usable by the user. This is done in the Unity editor in the \textsc{VRSculpting} component on the player object under the "Menu Entries" section. Within this section, which is shown in Fig. \ref{fig:adding_menus}, the developer can add a new entry, then set the prefab field to point to the UI prefab, set which controller button should open the UI, whether it is toggled and where it should appear when opened.
+New UI's can easily be created by creating a new empty object and then adding Unity's \textsc{Canvas} component. This turns the object into a UI canvas and the developer can add UI elements to the viewport specified in the \textsc{Canvas} component. Any UI element already available in Unity should work in VR out of the box. This is made possible by our \textsc{VRPointerInputModule} script which extends Unity's \textsc{BaseInputModule} and thus replaces Unity's default keyboard and mouse based input controller with our VR pointer input controller. Once a new UI is finished it is converted into a Unity prefab and then registered in order to become usable by the user. This is done in the Unity editor in the \textsc{VRSculpting} component on the player object under the "Menu Entries" section. Within this section, which is depicted in Fig. \ref{fig:adding_menus}, the developer can add a new entry, then set the prefab field to point to the UI prefab, set which controller button should open the UI, whether it is toggled and where it should appear when opened.
 
 \subsection{Similarity Query}
 
@@ -853,7 +861,7 @@ Similarity queries are executed by clicking the "Start Model Query" button in th
 
 Once the results have arrived back at the VR sculpting application they are displayed in a curved UI centered on the player's head. The intention is to be able to use the entire $360^{\circ}$ available in VR to display as many results as possible. Unfortunately due to performance problems while loading the results in and a networking problem in the API communication this is not yet possible, but certainly achievable in the future.\\
 The user can point at query results which makes a 3D model object appear and spin around their Y axis. Additionally this shows their name and the similarity score value on a label above the model. These model objects can be grabbed with the left controller for closer inspection.\\
-Fig. \ref{fig:query_pointing} shows the curved query results UI with the user pointing at a result object.
+Fig. \ref{fig:query_pointing} portrays the curved query results UI with the user pointing at a result object.
 
 \begin{figure}
 \centering
@@ -863,4 +871,4 @@ Fig. \ref{fig:query_pointing} shows the curved query results UI with the user po
 \label{fig:query_voxelized}
 \end{figure}
 
-When held in the left controller the 3D model objects can be voxelized, i.e. converted into a voxel sculpture like in Fig. \ref{fig:query_voxelized}. This sculpture is then fully modifiable using the sculpting tools and can be used to create a new query. This allows the user to start with a rough 3D "sketch" to perform an initial query and then successively refine the query until the user finds the desired object.
+When held in the left controller the 3D model objects can be voxelized, i.e. converted into a voxel sculpture like in Fig. \ref{fig:query_voxelized}. This sculpture is then fully modifiable using the sculpting tools and can be used to create a new query. This allows the user to start with a rough 3D sketch to perform an initial query and then successively refine the query until the user finds the desired object.
