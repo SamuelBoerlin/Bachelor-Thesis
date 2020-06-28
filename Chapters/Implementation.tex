@@ -1,7 +1,7 @@
 \chapter{Implementation}
 
 This chapter goes more into detail about the concepts and architecture mentioned in Chapter \ref{chap:concepts_and_architecture} and how they
-are implemented in our application. Text \textsc{in this format} refers to code classes, methods or fields. Method parameter types are specified in the parentheses following the method name.\\
+are implemented in our application. Text \textsc{in this font} refers to code classes, methods or fields. Method parameter types are specified in the parentheses following the method name.\\
 The chapter starts out by elaborating the implementation details about the multimedia retrieval application Cineast and how it was extended to support model similarity queries that take 3D model color and texture into consideration. Furthermore, it explains how our VR sculpting application communicates with Cineast.\\
 Following that, it explains how voxels were used to implement the sculpting functionality, sculpture rendering and how the CMS algorithm was extended to support multi-material voxel volumes. In addition to that it presents an algorithm to
 convert 3D model meshes into a voxel representation and we propose a new lookup table based implementation of the CMS algorithm.\\
@@ -15,6 +15,7 @@ modify the core code.
 
 
 \subsection{Core Changes}
+\label{sec:core_changes}
 %UV + texture support in meshes and OBJ loader
 
 Cineast's mesh classes \textsc{Mesh}, \textsc{ReadableMesh} and \textsc{WritableMesh} did not support model textures and thus had to be extended
@@ -25,7 +26,9 @@ Moreover, it looks for a texture file with the same name as the OBJ-model file. 
 path is persisted in the database as metadatum with the domain "TEXTURE" and key "texture\_path". To do so the \textsc{Segmenter} class received an additional method
 \textsc{persist(SegmentContainer, MediaSegmentDescriptor)} which is called when a \textsc{SegmentContainer} is persisted by \textsc{GenericExtractionItemHandler}.
 \textsc{ModelSegmenter} then uses that method to persist the mesh's texture file path metadatum. This metadatum can later be used by clients to download the model's texture.\\
-A similar change was required in the \textsc{ModelQueryContainer}. Model data is being sent to Cineast over its REST API, described in Section \ref{sec:rest_api}, in the form of a custom string based model format. This format however does not support vertex colors which are required for color sensitive queries. For this reason a new \textsc{ColorMeshParser} class was added that uses a similar format but also supports vertex colors. Based on the prepended MIME type, an identifier used to describe the format of data, the \textsc{ModelQueryContainer} can decide which parser to use. Like this the API remains backwards compatible with the model format that does not contain vertex color data.
+A similar change was required in the \textsc{ModelQueryContainer}. Model data is being sent to Cineast over its REST API, described in Section \ref{sec:rest_api}, in the form of a custom string based model format. This format however does not support vertex colors which are required for color sensitive queries. For this reason a new \textsc{ColorMeshParser} class was added that uses a similar format but also supports vertex colors. Based on the prepended MIME type, an identifier used to describe the format of data, the \textsc{ModelQueryContainer} can decide which parser to use. Like this the API remains backwards compatible with the model format that does not contain vertex color data.\\
+Throughout the course of development of this thesis Cineast's REST API was partially rewritten to use the Javalin\footnote{https://javalin.io/} web framework instead of Spark\footnote{http://sparkjava.com/} and SparkSwagger\footnote{https://github.com/manusant/spark-swagger}. Javalin makes great use of Cineast's already built-in JSON serialization structure using Jackson\footnote{https://github.com/FasterXML/jackson}. This enables Javalin, in combination with its OpenAPI plugin,
+to generate an OpenAPI specification [\todoMissing{Missing ref; \url{https://swagger.io/specification/}}] that describes Cineast's REST API in a standardized way. An excerpt of this OpenAPI specification is shown in Listing \ref{lst:openapi_spec} of Section \ref{sec:rest_api}. Since Javalin's OpenAPI plugin makes use of Jackson, it is capable of more reliably creating the specifications for JSON data structures than SparkSwagger, especially for subclasses of superclasses with generic types.
 
 \subsection{Model Formats}
 
@@ -39,13 +42,10 @@ the feature extraction algorithm.
 \subsection{ClusterD2+Color Feature Extraction}
 %What, why (color support), explain assumptions made that were not covered by the paper
 
-In order to compare two or more 3D models for similarity the algorithm must first identify or
-extract information that is relevant for the calculation of the similarity metric.
-A common way to do so is to reduce the 3D model into an N-dimensional real-valued feature vector which
-contains only the most relevant information, or a reduced and compacted version thereof, for a similarity comparison. This feature vector can
-then be used to compute a similarity metric, e.g. by calculating the L2 distance between feature vectors.\\
-Since our application allows the user to color their sculptures it makes sense that similarity queries also
-take color into account. Hence part of the color information must be contained in the feature vector.
+Since our application allows the user to color their sculptures it makes sense that our similarity queries for 3D models also
+take color into account. Hence part of the color information must be contained in the feature vector, which will then be used
+to compare 3D models for similarity as described in Section \ref{sec:multimedia_retrieval_concept}.
+Currently, none of Cineast's feature extraction modules take the color of 3D models into consideration.\\
 The ClusterD2+Color algorithm described by [\todoMissing{Missing ref}], which was used in our application,
 achieves this by creating random sample points on the 3D model's surface according to certain criteria and then
 use those sample points to compute a feature vector.\\
@@ -94,7 +94,7 @@ full smoothing operation. This is repeated multiple times to create three smooth
 \end{figure}
 
 As opposed to [\todoMissing{Missing ref}] we use
-$C^1$ as the baseline curvature map instead of $C^0$, because certain non-manifold (e.g. vertices or edges touching without being connected) models exhibit significant artefacts in $C^0$ as illustrated in Fig. \ref{fig:laplacian_smoothing_artefacts}. Lastly each shape sample calculates its $D = D^2 \oplus D^3$ value, where $D^i = C^i - C^{i-1}$ is the difference-of-Laplacian space, as depicted in Fig. \ref{fig:feature_penguin}, and only the samples with the top 10\% highest $D$ values are kept. Indeed the remaining top
+$C^1$ as the baseline curvature map instead of $C^0$, because certain non-manifold models exhibit significant artefacts in $C^0$ as illustrated in Fig. \ref{fig:laplacian_smoothing_artefacts}. A mesh is considered non-manifold when it has unconnected vertices or edges that are touching. Lastly each shape sample calculates its $D = D^2 \oplus D^3$ value, where $D^i = C^i - C^{i-1}$ is the difference-of-Laplacian space, as depicted in Fig. \ref{fig:feature_penguin}, and only the samples with the top 10\% highest $D$ values are kept. Indeed the remaining top
 10\% $D$ value shape samples in Fig. \ref{fig:feature_penguin} are concentrated to the relevant features of the penguin model, namely its arms, feet and beak.
 
 \subparagraph{Color Sample Selection}
@@ -137,21 +137,10 @@ The exact reason why Y.-J. Liu et al. used the Jensen-Shannon divergence was not
 Finally Cineast can run multiple features or distance metrics for a single query and then combine their scores by weights specified in Cineast's configuration. This can be useful to capture different kinds of feature types in a single similarity score.
 
 
-\subsection{REST API}
+\subsection{C\# Cineast API}
 \label{sec:rest_api}
 
-In order for a program to interface with Cineast's query capabilities and our ClusterD2+Color implementation an API is required. Cineast provides two main APIs, a WebSocket API and more importantly a REST API which was
-used for the purposes of this thesis.\\
-REST APIs, an acronym for Representational State Transfer, aim to communicate between two programs via requests and responses over the HTTP web protocol. The following incomplete list should give an insight
-into how REST APIs operate - according to R. Fielding [\todoMissing{Missing ref; \url{https://www.ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm}}] REST APIs follow these and some more principles:
-\begin{itemize}
-	\item Client-Server: User interface concerns should be separated from data storage concerns.
-	\item Stateless: Communication must be stateless. All information required for a request to be understood must be included in said request.
-	\item Cache: Responses' data must be labeled whether the data can be cached on the client side or not. If it is chacheable the client may reuse the same data for future equivalent requests.
-	\item Uniform Interface: The REST API should form a uniform interface. Said interface should remain the same independent of the back-end implementation.
-	\item And several other principles.
-\end{itemize}
-Usually REST requests are exclusively executed by sending an HTTP \textit{GET}, \textit{PUT}, \textit{POST} or \textit{DELETE} request through certain server provided URLs.\\
+Cineast provides two main APIs, a WebSocket API and more importantly a REST API which was used for the purposes of this thesis. The operating principles of a REST API are described in Section \ref{sec:rest_api_concept}.\\
 For example Cineast's similarity query endpoint is executed by sending a \textit{POST} request to \url{http://cineast.domain/find/segments/similar}. Additional data, such as the model to run the similarity query for, is included in the HTTP request body in the form of JSON data as specified in "requestBody" of Listing \ref{lst:openapi_spec}. The structures of the used schemas are not shown in the listing but they are specified in the same file.
 
 \begin{mdframed}[
@@ -167,7 +156,7 @@ For example Cineast's similarity query endpoint is executed by sending a \textit
 ]
 \lstset{style=json}
 \begin{lstlisting}[
-	caption={The OpenAPI specification for the similarity query API endpoint.},
+	caption={Part of the Cineast OpenAPI specification responsible for the similarity query API endpoint.},
 	label=lst:openapi_spec
 ]
 "/find/segments/similar": {
@@ -202,10 +191,7 @@ For example Cineast's similarity query endpoint is executed by sending a \textit
 \end{lstlisting}
 \end{mdframed}
 
-Throughout the course of development of this thesis Cineast's REST API was partially rewritten to use the Javalin\footnote{https://javalin.io/} web framework instead of Spark\footnote{http://sparkjava.com/} and SparkSwagger\footnote{https://github.com/manusant/spark-swagger}. Javalin makes great use of Cineast's already built-in JSON serialization structure using Jackson\footnote{https://github.com/FasterXML/jackson}. This enables Javalin, in combination with its OpenAPI plugin,
-to generate an OpenAPI specification that describes Cineast's REST API in a standardized way like in Listing \ref{lst:openapi_spec}.\\
-Moreover this OpenAPI specification allows programs like Swagger Codegen\footnote{https://swagger.io/tools/swagger-codegen/} to generate fully functional code libraries in various programming languages capable of interfacing with the REST API defined by the specification. Since Javalin's OpenAPI plugin makes use of Jackson, it is capable of more reliably creating the specifications for JSON data structures than SparkSwagger, especially for subclasses of superclasses with generic types.\\
-The C\# library that was used to access Cineast's API endpoint from Unity was generated by the aforementioned OpenAPI specification and Swagger Codegen.
+The OpenAPI specification mentioned in Section \ref{sec:core_changes} allows programs like Swagger Codegen\footnote{https://swagger.io/tools/swagger-codegen/} to generate fully functional code libraries in various programming languages capable of interfacing with the REST API defined by the specification. The C\# library that was used to access Cineast's API endpoint from Unity was generated by Swagger Codegen from Cineast's OpenAPI specification.
 
 \begin{mdframed}[
 	backgroundcolor=light-gray,
@@ -244,7 +230,7 @@ var response = await Api.FindSegmentSimilarActionHandlerPOSTAsync(query);
 \end{lstlisting}
 \end{mdframed}
 
-Listing \ref{lst:csharp_cineast_api_call} illustrates how to send Cineast a similarity query request by calling the Swagger Codegen generated C\# method \textsc{FindSegmentSimilarActionHandlerPOSTAsync}.
+Listing \ref{lst:csharp_cineast_api_call} shows an excerpt from our code that sends Cineast a similarity query REST request by calling the Swagger Codegen generated C\# method \textsc{FindSegmentSimilarActionHandlerPOSTAsync} and using the generated classes \textsc{QueryTerm}, \textsc{QueryComponent}, \textsc{QueryConfig} and \textsc{SimilarityQuery}.
 
 \section{Hermite Data Voxels}
 
@@ -305,7 +291,7 @@ in that case it is beneficial to use a more advanced data structure that can sto
 The most common method to store voxels in memory is to split the voxels into fixed size blocks or chunks. Within each chunk the voxels are stored in an array. The chunks are stored seperately in a sparse data structure, e.g. a hash map,
 where they can be accessed by their position. This gives a good trade-off between memory usage and access speed, because often voxel accesses happen within the same chunks and hence the hash map lookups can usually be cached. Instead of multi-dimensonal arrays for the chunk voxel storage we use one contiguous linear array per chunk to avoid having to dereference multiple pointers for a single access. The index into this linear array can be directly computed from a given X, Y and Z position within the chunk by the following formula: $index(x, y, z) = x * N * N + y * N + z$, where $N$ is the chunk size.
 Our implementation uses a chunk size of $N=32$. Voxels on the faces towards the positive X, Y and Z axes are padding voxels that always mirror the state of the neighbour voxel in the respective neighbour chunk.
-These padding voxels allow the voxel polygonizer to run faster since it entirely removes the need to query neighbour chunks during meshing. This method is described by [\todoMissing{Missing ref; A refined data addressing and processing scheme to accelerate volume raycasting}] in more detail. \\
+These padding voxels allow the voxel polygonizer to run faster since it entirely removes the need to query neighbour chunks during meshing. This method is described by [\todoMissing{Missing ref; A refined data addressing and processing scheme to accelerate volume raycasting}] in more detail.
 
 \subparagraph{Memory Consumption}
 
@@ -314,10 +300,8 @@ the main memory will be exhausted rather quickly.
 To remedy this issue the Hermite data compression scheme described by [\todoMissing{Missing ref; Fast and Adaptive Polygon Conversion By Means Of Sparse Volumes}] was used.
 This quantized Hermite data compression is lossy since it relies on quantizing the floating point values into small integers that are then packed together using bitwise operations. The errors introduced by the compression are
 negligible: the exact intersection points remain accurate to a $\frac{1}{1024}$th, respectively less than 0.1\%, of the voxel's edge length. Similarly the maximum error in a normalized normal's component is $\frac{1}{1024}$.
-The effective size of the quantized Hermite data is 12 bytes (two of which are struct alignment padding), i.e. only 23\% of the uncompressed size. Fig. \ref{fig:quantized_hermite_data} illustrates the quantized Hermite data
-structure in more detail.\\
-A further potential optimization is to change the linear array indexing scheme. Modern CPUs have multiple cache layers - each cache layer is a fast memory unit and generally the faster the cache the less
-memory it can store.
+The effective size of the quantized Hermite data is 12 bytes, two of which are struct alignment padding, i.e. only 23\% of the uncompressed size. Fig. \ref{fig:quantized_hermite_data} illustrates the quantized Hermite data
+structure in more detail.
 
 \subparagraph{Access Optimization}
 
@@ -441,12 +425,12 @@ This of course means that the multi-material CMS algorithm must always generate 
 
 \subsubsection{Lookup Table Based Implementation}
 
-Much of the CMS algorithm can be done and perhaps be sped up using appropriate lookup tables, especially in the case of regular grid voxel cells. Indeed we have generated such lookup tables in order to show
-the viability of a lookup table based approach. Due to time constraints and it breaking the multi-material extension from Section \ref{sec:multi_material_cms} however, it has ended up not being used in the final implementation.
+Much of the CMS algorithm can be done and perhaps be sped up using appropriate lookup tables, especially in the case of regular grid voxel cells. We have generated such lookup tables in order to show
+the viability of such an approach. Due to time constraints and it breaking the multi-material extension from Section \ref{sec:multi_material_cms} however, it has ended up not being used in the final implementation.
 Nevertheless with some more work it can also be made to work with multi-material volumes. Furthermore this lookup table based approach may prove useful for a future GPU based implementation as it splits
 the problem into several small steps that can all be run in parallel with very little divergent behaviour.\\
-A tool was implemented to generate the lookup tables for all $2^8 = 256$ possible cell states (two states per cell corner, solid vs. non-solid). Using rotational symmetries several lookup tables have been reduced in size - the initial lookup table maps one of the $256$ cell states to one of $23$ base configurations by rotating it appropriately (one or multiple $90^{\circ}$ rotations around the X, Y and Z axes). Each of the in total $24$ unique rotations gets its own index.
-All other lookup tables are based on these base configurations, their components (in the context of CMS) and the rotation index.
+A tool was implemented to generate the lookup tables for all $2^8 = 256$ possible cell states. There are two states per cell corner, solid vs. non-solid, hence 256 states per cell. Using rotational symmetries several lookup tables have been reduced in size - the initial lookup table maps one of the $256$ cell states to one of $23$ base configurations by rotating it appropriately. Each of the in total $24$ unique such rotations, consisting of one or multiple $90^{\circ}$ rotations around the X, Y and Z axes, gets its own index.
+All other lookup tables are based on these base configurations, their CMS components and the rotation index.
 From all the possible components that CMS can generate in a regular grid voxel cell, the lookup table tool has identified a total of $86$ unique components for all base configurations. These components have
 then been indexed and their size and edges were stored in a seperate lookup table.\\
 
@@ -469,8 +453,7 @@ then been indexed and their size and edges were stored in a seperate lookup tabl
 \end{algorithm}
 
 One complication of the lookup table based approach are the potential 2D cell face ambiguities. All tables thus require as index not only the base configuration and rotation index, but also a $6$ bit disambiguation
-index (one bit per cell face, also called "ambiguityRes"). For a given base configuration case and an ambiguity number (i.e. the index of the ambiguity to check, ranging from 0 to 5) Alg. \ref{alg:cms_lt_disambiguation_bit} calculates a
-disambiguation bit. These disambiguation bits are then bit packed into a single integer where the bit with $ambiguityNr = 0$ is the most right bit and then from right to left according to $ambiguityNr$, resulting
+index, also called "ambiguityRes", where each bit corresponds to one of the cell faces. For a given base configuration case and an ambiguity number, i.e. the index of the ambiguity ranging from 0 to 5 to check, Alg. \ref{alg:cms_lt_disambiguation_bit} calculates a disambiguation bit. These disambiguation bits are then bit packed into a single integer where the bit with $ambiguityNr = 0$ is the most right bit and then from right to left according to $ambiguityNr$, resulting
 in the $6$ bit disambiguation index. The 3D ambiguities as mentioned in the CMS paper are not being handled by lookup tables, those still need to be resolved dynamically.\\
 With the base configuration, rotation index and now also the disambiguation index a list of components can be obtained from yet another lookup table. The proposed lookup table based CMS algorithm then creates the segments for each
 component, finds their 2D and 3D sharp features similarly to the regular CMS algorithm, and finally triangulates them.\\
@@ -580,9 +563,9 @@ surface normal vector at the intersection.}}\label{alg:hermite_data_csg}
 \end{algorithmic}
 \end{algorithm}
 
-First the algorithm for a CSG union operation tags all voxels of the voxel grid whether they are inside the CSG primitive. Then it iterates over all edges of the voxel grid and checks if the two voxels
+First, the algorithm for a CSG union operation tags all voxels of the voxel grid that are inside the CSG primitive. Then it iterates over all edges of the voxel grid and checks if the two voxels
 that form the edge have a different $inside$ state. If that is the case then the edge must intersect with the primitive's surface and the exact intersection is found
-using \textsc{FindIntersection}. Then the algorithm checks if any already existing intersections can and must be replaced by comparing their values. For multi-material voxel volumes some additional checks are required, mostly so that intersections are placed correctly at
+using \textsc{FindIntersection}. The algorithm then checks if any already existing intersections can and must be replaced by comparing their values. For multi-material voxel volumes some additional checks are required, mostly so that intersections are placed correctly at
 solid to solid material transitions. In addition to that, our implementation also gives each CSG primitive an axis aligned bounding box, such that only those voxels and edges inside the bounding box need to be checked.\\
 With some minor adjustments, namely swapping the $\geq$ and $\leq$, inverting the normals and changing the material assignment at the top to set to empty voxels, the algorithm for the CSG difference operation is obtained. \par
 
@@ -601,7 +584,7 @@ finds the zero point from the initial state (left) after just one iteration (rig
 \label{fig:adaptive_binary_search}
 \end{figure}
 
-This binary search can be optimized by using the values returned by the SDF for each iteration, since those values are a lower bound for the distance which the start- or endpoint can be moved along the edge without accidentally crossing the SDF's surface. Using this fact the adaptive binary search can make larger and more precise steps than a blind binary search. Consider a nearly linear surface perpendicular to the edge, like in Fig. \ref{fig:adaptive_binary_search}: the adaptive binary search will find the exact zero point after just one iteration because the two values returned by the SDF are the exact distances between the start- and endpoints and the surface. This may not always work for inexact SDF approximations since the returned values may not be actual lower bounds, hence the algorithm should still be able to use the regular binary search method as fallback for robustness.
+This binary search can be optimized by using the values returned by the SDF for each iteration. Those values are a lower bound of the distance the start- or endpoint can be moved without accidentally crossing the SDF's surface. Using this fact the adaptive binary search can often make larger and more precise steps than a blind binary search. Consider a nearly linear surface perpendicular to the edge, like in Fig. \ref{fig:adaptive_binary_search}: the adaptive binary search will find the exact zero point after just one iteration because the two values returned by the SDF are the exact distances between the start- and endpoints and the surface. This may not always work for inexact SDF approximations since the returned values may not be actual lower bounds, hence the algorithm should still be able to use the regular binary search method as fallback for robustness.
 
 \subsection{Rendering}
 \label{sec:voxel_rendering}
@@ -678,12 +661,12 @@ with the mesh. Doing this for all the three grid faces will ensure that no trian
 The found intersections are then sorted from minimum distance from grid face to maximum distance. When iterating over these
 sorted intersections the algorithm alternates between inside the mesh and outside the mesh, since for each incoming intersection
 the next intersection must be an outgoing intersection. All voxels inside such a pair of ingoing and outgoing intersections are
-then filled with a chosen material. For the first and last voxel in such a section the algorithm also needs to set the Hermite data (i.e. the voxel intersection values and normals).\\
+then filled with a chosen material. For the first and last voxel in such a section the algorithm also needs to set the Hermite data, i.e. the voxel intersection values and normals.\\
 We have found that in practice some triangles seem to be missed during the intersection checks due to floating point precision errors. To address this problem our implementation performs a post-processing
 hole patching algorithm that checks for missing normals in the voxel Hermite data and then obtains them by sampling from the closest
 triangle to the hole's position.\\
 Note that the complexity of the algorithm, disregarding \textsc{FillSection}, is $O(N^2 * K)$ where $N$ is the voxel grid
-size and $K$ the triangle count of the mesh, since for each side voxel (i.e. those touching one of the grid's +X, +Y or +Z faces, $3*N^2$ in total) the algorithm needs to check all triangles. For large $N$ and $K$ this poses a problem. Hence as improvement our new
+size and $K$ the triangle count of the mesh, since for each side voxel touching one of the grid's +X, +Y or +Z faces, of which there are $3*N^2$ in total, the algorithm needs to check all triangles. For large $N$ and $K$ this poses a problem. Hence as improvement our new
 algorithm first runs Alg. \ref{alg:assign_triangles}.
 
 \begin{algorithm}[H]
@@ -852,24 +835,35 @@ New UI's can easily be created by creating a new empty object and then adding Un
 
 Similarity queries are executed by clicking the "Start Model Query" button in the query menu shown in Fig. \ref{fig:gui_query}. The application then converts the current sculpture into a single mesh and sends it to Cineast to be processed.
 
-\begin{figure}
-\centering
-\captionsetup{width=0.8\textwidth}
-\includegraphics[width=0.75\textwidth]{query_pointing.png}
+%\begin{figure}
+%\centering
+%\captionsetup{width=0.8\textwidth}
+%\includegraphics[width=0.75\textwidth]{query_pointing.png}
+%\caption{Query results UI showing the results of a similarity query.}
+%\label{fig:query_pointing}
+%\end{figure}
+
+%\begin{figure}
+%\centering
+%\captionsetup{width=0.8\textwidth}
+%\includegraphics[width=0.75\textwidth]{query_voxelized.png}
+%\caption{A voxelized and fully editable model from the query results UI.}
+%\label{fig:query_voxelized}
+%\end{figure}
+
+\begin{figure}[!htb]
+\minipage{0.49\textwidth}
+\includegraphics[width=\linewidth]{query_pointing.png}
 \caption{Query results UI showing the results of a similarity query.}
 \label{fig:query_pointing}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+\includegraphics[width=\linewidth]{query_voxelized.png}
+\caption{A voxelized and fully editable model from the query results UI.}
+\label{fig:query_voxelized}
+\endminipage\hfill
 \end{figure}
 
 Once the results have arrived back at the VR sculpting application they are displayed in a curved UI centered on the player's head. The intention is to be able to use the entire $360^{\circ}$ available in VR to display as many results as possible. Unfortunately due to performance problems while loading the results in and a networking problem in the API communication this is not yet possible, but certainly achievable in the future.\\
 The user can point at query results which makes a 3D model object appear and spin around their Y axis. Additionally this shows their name and the similarity score value on a label above the model. These model objects can be grabbed with the left controller for closer inspection.\\
-Fig. \ref{fig:query_pointing} portrays the curved query results UI with the user pointing at a result object.
-
-\begin{figure}
-\centering
-\captionsetup{width=0.8\textwidth}
-\includegraphics[width=0.75\textwidth]{query_voxelized.png}
-\caption{A voxelized and fully editable model from the query results UI.}
-\label{fig:query_voxelized}
-\end{figure}
-
-When held in the left controller the 3D model objects can be voxelized, i.e. converted into a voxel sculpture like in Fig. \ref{fig:query_voxelized}. This sculpture is then fully modifiable using the sculpting tools and can be used to create a new query. This allows the user to start with a rough 3D sketch to perform an initial query and then successively refine the query until the user finds the desired object.
+Fig. \ref{fig:query_pointing} portrays the curved query results UI with the user pointing at a result object. When held in the left controller the 3D model objects can be voxelized, i.e. converted into a voxel sculpture like in Fig. \ref{fig:query_voxelized}. This sculpture is then fully modifiable using the sculpting tools and can be used to create a new query. This allows the user to start with a rough 3D sketch to perform an initial query and then successively refine the query until the user finds the desired object.

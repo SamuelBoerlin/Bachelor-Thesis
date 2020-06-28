@@ -1,19 +1,12 @@
 \chapter{Concepts and Architecture}
 \label{chap:concepts_and_architecture}
 
-In this chapter we discuss the relevant concepts used throughout this thesis and describe how they fit together into the high level architecture of our
-application.
-
-%\section{Cineast}
-%What is cineast, how does it work (feature modules, cottontail etc.)...
-
-%\subsection{Extraction Modules}
-%What, how
-
-%\subsection{Queries}
-%What, how, KNN, etc.
+In this chapter we discuss the relevant concepts used throughout this thesis and describe how they fit together into the high level system architecture of our
+application. First, it describes how our application makes use of a multimedia retrieval systems in order to manage a multimedia database and to be able to search such a database for certain 3D models.
+Then, it explains two representations of 3D models and why they are relevant to this thesis. Lastly, it describes how our application makes use of virtual reality and how our novel virtual reality 3D model retrieval system combines all these topics.
 
 \section{Multimedia Retrieval}
+\label{sec:multimedia_retrieval_concept}
 
 Multimedia retrieval has become an ever more important topic over the last decades. As the name implies, multimedia retrieval entails the retrieval of various different media such as text, images, video and audio but also
 3D models. The goal is to allow the user to find such media based on an example input or a subset of the desired result, i.e. retrieve them from some multimedia database.\\
@@ -21,15 +14,31 @@ The DBIS research group\footnote{\url{https://dbis.dmi.unibas.ch/}} is working o
 based frontend to enable users to build queries. Currently it supports queries for text, images, video, audio and 3D models.\\
 In order to run multimedia queries a multimedia database is required to store the data to compare media. Cineast currently supports the Cottontail DB column store database for multimedia retrieval which also being developed by the DBIS research group.\\
 The focus of this thesis is on 3D model retrieval which is also part of multimedia retrieval. Research in this area has so far focused on building 3D model queries from example images, sketches or common 3D model file formats.
-In order to create one of these 3D model files the user requires a seperate sculpting program and needs to learn how to use it.
+In order to create one of these 3D model files the user requires a seperate sculpting program and needs to learn how to use it.\\
+Multimedia retrieval systems commonly rely on the Vector Space Model [\todoMissing{Missing ref; \url{https://dl.acm.org/doi/10.1145/361219.361220}}] in order to compare media for similarity. To goal is to find an algorithm to convert the media into a high dimensional feature vector $D_i = (d_{i1}, d_{i2}, ..., d_{in})$, such that the feature vectors of similar media are as close to each other as possible and those of dissimilar media respectively as far away from each other as possible. How close two feature vectors are to each other is determined by a distance function $s(D_i, D_j)$. Retrieving a list of media similar to some input is then a matter of using a $k$-nearest neighbors search [\todoMissing{Missing ref; \url{https://www.cadmo.ethz.ch/education/lectures/FS18/SDBS/papers/IndykM-curse.pdf}}] algorithm to find the $k$ closest feature vectors to the input media's feature vector.\\
+For example to compare a 3D model for similarity one may use an algorithm that converts the 3D model into an n-dimensional real-valued feature vector $D_i$, such that the feature vectors of 3D models with a similar geometry or shape are close to each other. Then use $s(D_i, D_j) = \lVert D_i - D_j \rVert$, which corresponds to the L2 distance between $D_i$ and $D_j$, to obtain a metric for the similarity of two feature vectors, respectively their 3D models.
 
-%\section{UI Design}
-%Windows vs. using 3D space
+\section{REST API}
+\label{sec:rest_api_concept}
 
-%\section{Sculpting interactions}
-%One hand to grab, other to sculpt, rotating brush with trackpad, etc.
+In order for a multimedia retrieval system to become useful it needs to provide some interface through which other applications can access its functionality. This is what's commonly known as an application programming interface (API). One such type of APIs are REST APIs, an acronym for Representational State Transfer. These REST APIs aim to communicate between two programs via requests and responses over the HTTP web protocol. The following incomplete list should give an insight into how REST APIs operate - according to R. Fielding [\todoMissing{Missing ref; \url{https://www.ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm}}] REST APIs follow these and some more principles:
+\begin{itemize}
+	\item Client-Server: User interface concerns should be separated from data storage concerns.
+	\item Stateless: Communication must be stateless. All information required for a request to be understood must be included in said request.
+	\item Cache: Responses' data must be labeled whether the data can be cached on the client side or not. If it is chacheable the client may reuse the same data for future equivalent requests.
+	\item Uniform Interface: The REST API should form a uniform interface. Said interface should remain the same independent of the back-end implementation.
+	\item And several other principles.
+\end{itemize}
+Usually REST requests are exclusively executed by sending an HTTP \textit{GET}, \textit{PUT}, \textit{POST} or \textit{DELETE} request through certain server provided URLs.\\
+
+\section{3D Models}
+\label{sec:3D_models}
+
+Usually virtual 3D model consist of one or multiple polygon meshes. Formally, a polygon mesh consist of a list of vertices $\mathcal{V} = \{\mathcal{P}, ...\}$. Each vertex has at least a position $\mathcal{P} = (x, y, z)$, but can also contain other attributes such as a color. This list of vertices is then used to define the surface of the mesh. The polygons of choice to represent the mesh's surface are usually triangles, where each triplet of consecutive vertices of the mesh forms one triangle. Triangles are the primary choice for representing 3D model surfaces in computer graphics because they have some desirable properties like always being planar. In addition to that modern hardware is built mostly around rendering triangles and is thus very fast at it.\\
+However, such 3D models that consist of polygon meshes are restricted to representing surfaces. They cannot represent a volume, since there is no way to specify what's inside a mesh. Another way to represent 3D models, but in a volumetric way, is discussed in Section \ref{sec:voxels_concept}.
 
 \section{Voxels}
+\label{sec:voxels_concept}
 %What are voxels, purpose, hermite data, etc.
 
 Our application provides a 3D sculpting module and thus needs a suitable virtual representation of the sculptures. Usually 3D model formats only store the surface of a sculpture, but our application requires the sculptures to be
@@ -37,7 +46,8 @@ truly volumetric and not just an empty shell, so that when the user removes some
 The foundation of the sculpting module is thus based on voxels. In the most basic sense a voxel represents a value on a regular grid in 3D space [\todoMissing{Missing ref; Wikipedia}].
 The value contained in a voxel usually describes which material it is made of, but can also contain additional data, e.g. to describe the shape of the voxel.\\
 These voxels are very useful to represent volumetric structures, such as sculptures or terrain, since they fill the 3D space and each voxel represents one volume element. One can imagine voxels being like LEGO bricks with which
-the sculptures are built, or the analog to atoms on a much larger scale.
+the sculptures are built, or the analog to atoms on a much larger scale.\\
+Compared to polygon mesh based 3D models these voxels have the advantage of being able to define the inside of a 3D model. This however comes at a cost of higher memory usage, since not only the surface must be defined but also what's inside. Futhermore, current GPU hardware is lacking extensive hardware support for voxels and thus they are not the primary choice to represent 3D models. In the recent years however voxels have gained a lot of popularity in other areas of computer graphics, especially for lighting calculations such as global illumination [\todoMissing{Missing ref; https://dl.acm.org/doi/pdf/10.1145/1944745.1944763}] or ambient occlusion [\todoMissing{Missing ref; https://developer.nvidia.com/vxao-voxel-ambient-occlusion}].
 
 \subsection{Voxelization}
 
@@ -61,10 +71,8 @@ Fig. \ref{fig:voxelizer_example} depicts an example of a mesh that has been conv
 
 \subsection{Isosurface Polygonization}
 
-Since the voxels are just an internal volumetric representation an algorithm is required to convert them into something that a computer can display on the monitor, e.g. a polygonal 3D mesh. In general these kinds of algorithms are
-called isosurface polygonization algorithms, since originally
-they were conceived to convert implicit functions, or e.g.
-computed tomography (CT) density fields, into a polygonal surface. The word "isosurface" comes from the fact that the implicit function value or density is the same ("iso-", meaning equal) everywhere on the polygonal surface. There are some variants that do not directly work off of density fields but instead some intermediary representation like Hermite data which will be discussed in detail later on.
+Since the voxels are just an internal volumetric representation an algorithm is required to convert them into a representation that a computer can display on the monitor. Usually the representation of choice are meshes, as described in \ref{sec:3D_models}, since that's what modern GPU's are specialized in. In general these kinds of algorithms are called isosurface polygonization algorithms, since originally they were conceived to convert implicit functions, or e.g.
+computed tomography (CT) density fields, into a polygonal surface. The prefix "iso-" means equal, hence the word "isosurface" comes from the fact that the implicit function value or density is the same everywhere on the polygonal surface. There are some variants that do not directly work off of density fields but instead some intermediary representation like Hermite data which will be discussed in detail later on.
 
 \begin{figure}
 \centering
@@ -109,7 +117,7 @@ Constructive Solid Geometry (CSG) is a method to create geometric shapes by cons
 The three most common operations are the boolean union ($\cup$), difference ($-$) and intersection ($\cap$) operations are illustrated in Fig. \ref{fig:csg_operations}. With just
 those three simple tools and a couple of primitives, e.g. spheres, cubes, cylinders, etc., the user can easily create arbitrary shapes or sculptures.
 Additionally CSG need not be restricted to only boolean operations, but can also make use of smooth operations that blend two shapes together in a continuous
-manner. In the context of signed distance functions (see further below) these smooth operations correspond to the smooth minimum and maximum operations.\\
+manner. In the context of signed distance functions, which will be discussed in Section \ref{sec:signed_distance_functions}, these smooth operations correspond to the smooth minimum and maximum operations.\\
 The application developed for this thesis makes extensive use of CSG to enable the users to edit and shape their voxel based sculptures. The union ("add") and
 difference ("remove") operations are intuitive and easy to use. Additionally it also provides a "replace" operation that allows the user to replace solid materials inside
 a primitive with another material. Logically it is equivalent to $(A-B) \cup (B \cap A)$ where A is the existing sculpture and B is the primitive or bounds within
@@ -149,7 +157,7 @@ This is where virtual reality excels and why it is a crucial part of our applica
 the VR headset also provides a true sense of depth with its stereoscopic display and makes it easier to view the virtual sculpture from all sides because head movement is tracked accurately. When combined these advantages provide
 a more immersive experience and hopefully also a more intuitive human machine interface.
 
-\section{Architecture}
+\section{System Architecture}
 %How all components are connected to each other (cineast, feature module, cottontail, rest api, polygonizer, voxel storage, vr interaction controller, etc.)
 
 \begin{figure}
@@ -162,7 +170,7 @@ a more immersive experience and hopefully also a more intuitive human machine in
 
 To tie this all together Fig. \ref{fig:architecture} illustrates the high level architecture of our system. The frontend, i.e. our VR application running in the Unity
 engine, contains three main components relevant for the querying functionality: the VR interface, isosurface polygonizer and generated C\# Cineast API module.\\
-Through the VR interface the user can sculpt using voxels and CSG operations and start queries or view query results. On starting a query from the VR interface the entire sculpture is converted into a single mesh which is then sent to Cineast as an API request via the C\# Cineast API.\\
+Through the VR interface the user can sculpt using voxels and CSG operations and start queries or view query results. On starting a query from the VR interface the entire sculpture is converted into a single mesh which is then sent to Cineast as a REST API request via the C\# Cineast API.\\
 Cineast then tasks the feature extraction module to convert the mesh into a feature vector. This feature vector is then sent over to the Cottontail DB multimedia database to be
 compared with the feature vectors of other models. All models in that multimedia database that have a similar feature vector are then scored, ranked and their IDs are sent back to be received by the C\# Cineast API. The C\# Cineast API then uses the received IDs to download the respective model files and hands them over to the VR interface to be displayed.
 
