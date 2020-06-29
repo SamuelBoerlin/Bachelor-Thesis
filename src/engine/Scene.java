@@ -61,8 +61,8 @@ public class Scene {
 
 	private int displayListId = -1;
 
-	private String modelFile = "/models/dino3.obj";
-	private String textureFile = null;//"/models/penguin.png";
+	private String modelFile = "/models/penguin.obj";
+	private String textureFile = "/models/penguin.png";
 
 	private GLTexture texture = null;
 
@@ -346,14 +346,22 @@ public class Scene {
 			GL11.glEnd();
 
 			GL11.glColor4f(0, 1, 0, 1);
+			
+			float bw = this.estimateBandwidth(this.splineDeriv2(this.feature, 1.0f / sum));
 
+			float end = 0.5f / bw;
+			float start = -end;
+			float diff = end - start;
+			
+			int samples = (int)Math.ceil(diff * 100);
+			
 			GL11.glBegin(GL11.GL_LINE_STRIP);
-			for(int i = 0; i < (this.feature.length - 1) * subdivs; i++) {
-				float ix = i / (float)((this.feature.length - 1) * subdivs - 1);
+			for(int i = 0; i < samples; i++) {
+				float ix = i / (float)(samples - 1) * diff + start;
 
-				float height = (float)this.estimateDensity(this.feature, (int)sum, this.estimateBandwidth(this.splineDeriv2(this.feature, 1.0f / sum)), ix) * 150.0f;
+				float height = (float)this.estimateDensity(this.feature, (int)sum, bw, ix) * 150.0f;
 
-				float x = (i / (float)subdivs + 0.5f) * 11 + 100;
+				float x = ix * (this.feature.length - 1) * 11 + 100;
 				float y = 100;
 
 				GL11.glVertex2f(x, y + height);
@@ -411,6 +419,8 @@ public class Scene {
 		
 		int samples = (int)Math.ceil(diff * 100);
 		
+		double sum = 0;
+		
 		double dkl13 = 0.0;
 		for(int i = 0; i < samples - 1; i++) {
 			float x1 = i / (float)(samples - 1) * diff + start;
@@ -422,9 +432,13 @@ public class Scene {
 			double px = this.estimateDensity(feature1, sum1, bw1, mid);
 			double qx = this.estimateDensity(feature3, sum3, bw3, mid);
 			
+			sum += px * dx;
+			
 			dkl13 += px * divLog(px, qx, 0.0000001D) * dx;
 		}
 		
+		System.out.println("Sum: " + sum + " " + diff + " " + samples);
+
 		double dkl23 = 0.0;
 		for(int i = 0; i < samples - 1; i++) {
 			float x1 = i / (float)(samples - 1) * diff + start;
