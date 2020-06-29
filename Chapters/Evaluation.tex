@@ -28,15 +28,21 @@ and may not be optimal.\\
 On the other hand our ClusterD2+Color implementation performs similarly to Cineast's "Spherical Harmonics (Default)" feature module, whereas Y.-J. Liu et al.'s is suprisingly vastly better.
 So perhaps the discrepancy between our and Y.-J. Liu et al.'s results could be caused by a difference in the McGill 3D shape benchmark model dataset \cite{mcgill_shape_benchmark} or in the way the precision/recall plots are computed. Finally, there's also the possibility that the result in \cite{cluster_d2_color} is incorrect.
 
-\todoMissing{Query time?}
-
-\subsection{Voxel Polygonizer Performance}
-Time for an average chunk? Chunk size vs. time?
-
 \subsection{Voxelizer Performance}
-Before vs. after optimization. Plot tri count vs. time taken.
+
+\begin{figure}
+\centering
+\captionsetup{width=0.8\textwidth}
+\includegraphics[width=0.5\textwidth]{voxelizer_timings.png}
+\caption{Performance comparison between the old and new voxelizer implementation by means of the \cite{stanford_scan_repo} Stanford Armadillo mesh with varying levels of detail. All models were voxelized into a 64x64x64 voxel grid.}
+\label{fig:voxelizer_timings}
+\end{figure}
+
+The voxel grid resolution was greatly limited in the voxelizer of the precursor prototype, mentioned in Section \ref{sec:approach}, due to lack of performance. For this thesis the voxelizer was rewritten to make better use of Unity's Job System\footnote{\url{https://docs.unity3d.com/2018.3/Documentation/Manual/JobSystem.html}} and to scale better with large meshes using Alg. \ref{alg:assign_triangles} from Section \ref{sec:voxelizer}. From Fig. \ref{fig:voxelizer_timings} it becomes evident that the new voxelizer implementation indeed scales much better with an increasing number of triangles in terms of time taken and is also faster overall due to its better usage of the CPU's eight cores that it was run on.
 
 \section{User Evaluation}
+
+Our application was also tested and evaluated in the form of a user evaluation with the goal of collecting feedback and finding out whether our application is intuitive for new users. This section explains the structure of the user evaluation and its results.
 
 \subsection{Structure}
 
