@@ -29,7 +29,7 @@ namespace Voxel
             /// <param name="transform">Transform to be applied before rendering</param>
             /// <param name="uniformSetter">Sets the _SdfTransform and _SdfTransformInverseTranspose uniforms of the SDF</param>
             /// <param name="material">Material to render the SDF with. If null the default material is chosen by this renderer</param>
-            void Render(Matrix4x4 transform, UniformSetter uniformSetter, Material material = null);
+            void Render(Matrix4x4 transform, UniformSetter uniformSetter, BrushOperation operation = BrushOperation.Union, Material material = null);
         }
 
         private Dictionary<Type, ISdfRenderer> registry;
@@ -63,11 +63,12 @@ namespace Voxel
         /// <param name="position">Position where to render the SDF</param>
         /// <param name="rotation">Rotation to be applied before rendering</param>
         /// <param name="sdf">SDF to render</param>
+        /// <param name="operation">CSG operation</param>
         /// <param name="material">Material to render the SDF with. If null the material is chosen by the SDF renderer itself</param>
-        public void Render(Vector3 position, Quaternion rotation, ISdf sdf, Material material = null)
+        public void Render(Vector3 position, Quaternion rotation, ISdf sdf, BrushOperation operation = BrushOperation.Union, Material material = null)
         {
             var transform = Matrix4x4.TRS(position, rotation, Vector3.one);
-            Render(transform, sdf, material);
+            Render(transform, sdf, operation, material);
         }
 
         /// <summary>
@@ -75,8 +76,9 @@ namespace Voxel
         /// </summary>
         /// <param name="transform">Transform to be applied before rendering</param>
         /// <param name="sdf">SDF to render</param>
+        /// <param name="operation">CSG operation</param>
         /// <param name="material">Material to render the SDF with. If null the material is chosen by the SDF renderer itself</param>
-        public void Render(Matrix4x4 transform, ISdf sdf, Material material = null)
+        public void Render(Matrix4x4 transform, ISdf sdf, BrushOperation operation = BrushOperation.Union, Material material = null)
         {
             if (registry == null)
             {
@@ -125,7 +127,7 @@ namespace Voxel
                     properties.SetMatrix("_SdfTransformInverseTranspose", Matrix4x4.Transpose(Matrix4x4.Inverse(sdfTransform)));
                 };
 
-                renderer.Render(transform, uniformSetter, material);
+                renderer.Render(transform, uniformSetter, operation, material);
             }
         }
     }

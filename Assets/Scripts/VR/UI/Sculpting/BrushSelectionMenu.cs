@@ -83,7 +83,7 @@ public class BrushSelectionMenu : MonoBehaviour
 
                     if (brushPreviewHightlightMaterial != null && entry.Key.Hovered)
                     {
-                        VRSculpting.BrushRenderer.Render(renderTransform, renderSdf, brushPreviewHightlightMaterial);
+                        VRSculpting.BrushRenderer.Render(renderTransform, renderSdf, BrushOperation.Union, brushPreviewHightlightMaterial);
                     }
                     else
                     {

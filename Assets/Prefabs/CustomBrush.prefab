@@ -100,6 +100,12 @@ MonoBehaviour:
   renderSurface: 1
   renderPrimitives: 0
   surfaceMaterial: {fileID: 2100000, guid: 0b0ddcde58a077a4c928f729ca41abe7, type: 2}
+  surfaceUnionMaterial: {fileID: 2100000, guid: 0b0ddcde58a077a4c928f729ca41abe7,
+    type: 2}
+  surfaceDifferenceMaterial: {fileID: 2100000, guid: e2df7b969fd30364c967f6bf18d229b7,
+    type: 2}
+  surfaceReplaceMaterial: {fileID: 2100000, guid: 9a0953d0026bba8449bfc760e899d9ec,
+    type: 2}
   primitiveUnionMaterial: {fileID: 2100000, guid: e57c92bfbb4fdf34ba75b31679c8c5a6,
     type: 2}
   primitiveDifferenceMaterial: {fileID: 2100000, guid: 2292ab84a258ae94da66ef8ed7b56ee1,

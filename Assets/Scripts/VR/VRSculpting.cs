@@ -201,7 +201,13 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
         }
         set
         {
-            _brushColor = value;
+            var newColor = new Color32(
+                (byte)Mathf.Max(1, value.r * 255),
+                (byte)Mathf.Max(1, value.g * 255),
+                (byte)Mathf.Max(1, value.b * 255),
+                (byte)(value.a * 255)
+                );
+            _brushColor = newColor;
         }
     }
 
@@ -584,7 +590,7 @@ public class VRSculpting : MonoBehaviour, IBrushMaterialsProvider
 
         if (previewSdf != null && !IsPointerActive)
         {
-            _brushRenderer.Render(Matrix4x4.TRS(brushPosition, brushControllerRotation * BrushRotation, VoxelWorld.transform.localScale * BrushScale), previewSdf);
+            _brushRenderer.Render(Matrix4x4.TRS(brushPosition, brushControllerRotation * BrushRotation, VoxelWorld.transform.localScale * BrushScale), previewSdf, BrushOperation);
         }
 
         if (voxelizeAction != null && voxelizeAction.active && voxelizeAction.stateDown)

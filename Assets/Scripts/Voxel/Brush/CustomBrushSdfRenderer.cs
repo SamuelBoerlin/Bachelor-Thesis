@@ -43,6 +43,10 @@ namespace Voxel
         }
 
         [SerializeField] private Material surfaceMaterial;
+        [SerializeField] private Material surfaceUnionMaterial;
+        [SerializeField] private Material surfaceDifferenceMaterial;
+        [SerializeField] private Material surfaceReplaceMaterial;
+
         [SerializeField] private Material primitiveUnionMaterial;
         [SerializeField] private Material primitiveDifferenceMaterial;
 
@@ -92,7 +96,7 @@ namespace Voxel
             world.Update();
         }
 
-        public override void Render(Matrix4x4 transform, SdfShapeRenderHandler.UniformSetter uniformSetter, Material material = null)
+        public override void Render(Matrix4x4 transform, SdfShapeRenderHandler.UniformSetter uniformSetter, BrushOperation operation, Material material = null)
         {
             Material surfaceMaterial;
             Material primitiveUnionMaterial;
@@ -109,6 +113,28 @@ namespace Voxel
                 primitiveDifferenceMaterial = this.primitiveDifferenceMaterial;
             }
 
+            switch (operation)
+            {
+                case BrushOperation.Union:
+                    if (surfaceUnionMaterial != null)
+                    {
+                        surfaceMaterial = surfaceUnionMaterial;
+                    }
+                    break;
+                case BrushOperation.Difference:
+                    if (surfaceDifferenceMaterial != null)
+                    {
+                        surfaceMaterial = surfaceDifferenceMaterial;
+                    }
+                    break;
+                case BrushOperation.Replace:
+                    if (surfaceReplaceMaterial != null)
+                    {
+                        surfaceMaterial = surfaceReplaceMaterial;
+                    }
+                    break;
+            }
+
             if (RenderSurface)
             {
                 MaterialPropertyBlock properties = new MaterialPropertyBlock();
@@ -120,11 +146,13 @@ namespace Voxel
             {
                 foreach (var primitive in brush.Instance.Primitives)
                 {
-                    ISdf renderSdf = brush.Instance.Evaluator.GetRenderSdf(primitive);
-                    if (renderSdf != null && !brush.Instance.SdfType.IsAssignableFrom(renderSdf.GetType()))
+                    using (ISdf renderSdf = brush.Instance.Evaluator.GetRenderSdf(primitive))
                     {
-                        Material renderMaterial = primitive.operation == BrushOperation.Union ? primitiveUnionMaterial : primitiveDifferenceMaterial;
-                        sdfRenderer.Render(transform * (Matrix4x4)primitive.transform, renderSdf, renderMaterial);
+                        if (renderSdf != null && !brush.Instance.SdfType.IsAssignableFrom(renderSdf.GetType()))
+                        {
+                            Material renderMaterial = primitive.operation == BrushOperation.Union ? primitiveUnionMaterial : primitiveDifferenceMaterial;
+                            sdfRenderer.Render(transform * (Matrix4x4)primitive.transform, renderSdf, operation, renderMaterial);
+                        }
                     }
                 }
             }

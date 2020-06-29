@@ -43,5 +43,10 @@ public class HueSlider : HSVSliderBase
     protected override void OnSliderValueChanged(float value)
     {
         HSVManager.SetHue(value);
+
+        if(HSVManager.Saturation < 0.025f)
+        {
+            HSVManager.SetSaturation(1.0f);
+        }
     }
 }

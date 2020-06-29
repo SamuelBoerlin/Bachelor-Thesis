@@ -16,6 +16,30 @@ public class HSVManager : MonoBehaviour
 
     private float hue, saturation, value;
 
+    public float Hue
+    {
+        get
+        {
+            return hue;
+        }
+    }
+
+    public float Saturation
+    {
+        get
+        {
+            return saturation;
+        }
+    }
+
+    public float Value
+    {
+        get
+        {
+            return value;
+        }
+    }
+
     /// <summary>
     /// Current color
     /// </summary>

@@ -297,8 +297,10 @@ public class CustomBrushEditingMenu : MonoBehaviour
             {
                 foreach (var primitive in brush.Primitives)
                 {
-                    var renderSdf = brush.Evaluator.GetRenderSdf(primitive);
-                    VRSculpting.BrushRenderer.Render(Matrix4x4.TRS(customBrushCenter.position, Quaternion.identity, Vector3.one) * brushBaseTransform * (Matrix4x4)primitive.transform, renderSdf);
+                    using (var renderSdf = brush.Evaluator.GetRenderSdf(primitive))
+                    {
+                        VRSculpting.BrushRenderer.Render(Matrix4x4.TRS(customBrushCenter.position, Quaternion.identity, Vector3.one) * brushBaseTransform * (Matrix4x4)primitive.transform, renderSdf);
+                    }
                 }
             }
         }
@@ -318,7 +320,7 @@ public class CustomBrushEditingMenu : MonoBehaviour
 
                         if (primitivePreviewHightlightMaterial != null && entry.Key.Hovered)
                         {
-                            VRSculpting.BrushRenderer.Render(renderTransform, renderSdf, primitivePreviewHightlightMaterial);
+                            VRSculpting.BrushRenderer.Render(renderTransform, renderSdf, BrushOperation.Union, primitivePreviewHightlightMaterial);
                         }
                         else
                         {

@@ -1266,7 +1266,7 @@ PrefabInstance:
     - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
       propertyPath: placeSdf
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5467410061661521434, guid: dd20a34e6e85d8b46b7f7bd17d515ebc,
         type: 3}
@@ -1598,6 +1598,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Ground
       objectReference: {fileID: 0}
+    - target: {fileID: 2020779854245712510, guid: ad86fc32dcf349046912f9a1bb35f69b,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ad86fc32dcf349046912f9a1bb35f69b, type: 3}
 --- !u!114 &1881449113 stripped
@@ -1702,11 +1707,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: CustomBrush
-      objectReference: {fileID: 0}
-    - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
-        type: 3}
-      propertyPath: sdfRenderer
-      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6553592327101494711, guid: d302b0ca11d73e348999b7efd20932e6,
         type: 3}

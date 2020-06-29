@@ -14,6 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mesh: {fileID: 13562882237320842, guid: 4ae47614a2ce06841ac5b4165934f42d, type: 3}
   material: {fileID: 2100000, guid: 8a416e5dbb206d54888673a8f2c87a3c, type: 2}
+  unionMaterial: {fileID: 2100000, guid: 8a416e5dbb206d54888673a8f2c87a3c, type: 2}
+  differenceMaterial: {fileID: 2100000, guid: 53ee69a1f9e11b544b73cca518e3d47a, type: 2}
+  replaceMaterial: {fileID: 2100000, guid: d78c4fafe851e0c4fb88c91c4d8ec58c, type: 2}
   sdfType: 2
   translation: {x: 0, y: 10, z: 0}
   scale: {x: 1, y: 1, z: 1}

@@ -9,7 +9,7 @@ namespace Voxel
     /// </summary>
     public abstract class DynamicSdfShapeRenderer : MonoBehaviour, SdfShapeRenderHandler.ISdfRenderer
     {
-        public abstract void Render(Matrix4x4 transform, SdfShapeRenderHandler.UniformSetter uniformSetter, Material material = null);
+        public abstract void Render(Matrix4x4 transform, SdfShapeRenderHandler.UniformSetter uniformSetter, BrushOperation operation, Material material = null);
 
         public virtual Type SdfType()
         {

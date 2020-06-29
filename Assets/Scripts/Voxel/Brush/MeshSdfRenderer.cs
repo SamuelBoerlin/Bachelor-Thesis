@@ -12,6 +12,15 @@ namespace Voxel
         [SerializeField]
         private Material material = null;
 
+        [SerializeField]
+        private Material unionMaterial = null;
+
+        [SerializeField]
+        private Material differenceMaterial = null;
+
+        [SerializeField]
+        private Material replaceMaterial = null;
+
         public enum SdfTypes
         {
             Sphere,
@@ -29,11 +38,32 @@ namespace Voxel
         [SerializeField]
         private Vector3 scale = Vector3.one * 2;
 
-        public override void Render(Matrix4x4 transform, SdfShapeRenderHandler.UniformSetter uniformSetter, Material material = null)
+        public override void Render(Matrix4x4 transform, SdfShapeRenderHandler.UniformSetter uniformSetter, BrushOperation operation, Material material = null)
         {
             if (material == null)
             {
                 material = this.material;
+            }
+            switch (operation)
+            {
+                case BrushOperation.Union:
+                    if(unionMaterial != null)
+                    {
+                        material = unionMaterial;
+                    }
+                    break;
+                case BrushOperation.Difference:
+                    if (differenceMaterial != null)
+                    {
+                        material = differenceMaterial;
+                    }
+                    break;
+                case BrushOperation.Replace:
+                    if (replaceMaterial != null)
+                    {
+                        material = replaceMaterial;
+                    }
+                    break;
             }
             MaterialPropertyBlock properties = new MaterialPropertyBlock();
             uniformSetter(properties);
