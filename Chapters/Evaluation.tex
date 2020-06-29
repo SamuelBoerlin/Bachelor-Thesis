@@ -19,13 +19,13 @@ in future work.
 
 There are several ways to compare the performance and retrieval quality of different algorithms. One way to do so are precision/recall plots as shown in Fig. \ref{fig:precision_recall}. The larger the area under the
 curve the better the algorithm performs. Our precision/recall plots have been computed in the same way as described by Y.-J. Liu et al. \cite{cluster_d2_color} and also using the same model benchmark dataset.\\
-As can be seen in Fig. \ref{fig:precision_recall} our implementation of the ClusterD2+Color algorithm with both the Jensen-Shannon divergence distance metric, which Y.-J. Liu et al. used,
+As can be seen in Fig. \ref{fig:precision_recall}, our implementation of the ClusterD2+Color algorithm with both the Jensen-Shannon divergence distance metric, which Y.-J. Liu et al. used,
 and the $\chi^2$ distance metric perform significantly worse than that of the original authors of the algorithm. This begs the question whether our implementation is faulty. Visual inspection, using our feature
 extraction visualization tool, however shows no obvious errors. Both the shape and color feature samples are concentrated where one would expect and the cluster assignments also look sensible. The code that generates
 the histogram feature vector from the clustered samples is simple and short so we deem it unlikely that it contains any errors.\\
 One possible explanation could be the many parameters of the algorithm that can be tweaked. Several of these parameters were not specified by Y.-J. Liu et al. and thus had to be chosen and adjusted by us empirically
 and may not be optimal.\\
-On the other hand our ClusterD2+Color implementation performs similarly to Cineast's "Spherical Harmonics (Default)" feature module, whereas Y.-J. Liu et al.'s is suprisingly vastly better.
+On the other hand, our ClusterD2+Color implementation performs similarly to Cineast's "Spherical Harmonics (Default)" feature module, whereas Y.-J. Liu et al.'s is suprisingly vastly better.
 So perhaps the discrepancy between our and Y.-J. Liu et al.'s results could be caused by a difference in the McGill 3D shape benchmark model dataset \cite{mcgill_shape_benchmark} or in the way the precision/recall plots are computed. Finally, there's also the possibility that the result in \cite{cluster_d2_color} is incorrect.
 
 \subsection{Voxelizer Performance}
@@ -86,7 +86,7 @@ Deducing from the ratings listed in Fig. \ref{fig:user_evaluation_ratings} and t
 \label{table:user_evaluation_averages}
 \end{table}
 
-According to Table \ref{table:user_evaluation_averages} none of the practical tasks, 3 through 11, were rated 3 or higher on average. This means that, on average, they were all considered very easy, easy or somewhere between easy and neutral. Task 8, which had users create a custom brush shape using the custom brush editor, was clearly considered the most difficult, which can be attributed to its partially unintuitive user interface and performance issues. Task 10, which had the users voxelize a query result, was also considered a difficult task because the grip buttons of the VR controllers are difficult to find and uncomfortable use. Lastly task 7, which was about changing the texture/material of the brush, was also rated comparatively difficult because the participants had difficulty finding the correct button on the user interface.
+According to Table \ref{table:user_evaluation_averages} none of the practical tasks, 3 through 11, were rated 3 or higher on average. This means that, on average, they were all considered very easy, easy or somewhere between easy and neutral. Task 8, which had users create a custom brush shape using the custom brush editor, was clearly considered the most difficult, which can be attributed to its partially unintuitive user interface and performance issues. Task 10, which had the users voxelize a query result, was also considered a difficult task because the grip buttons of the VR controllers are difficult to find and uncomfortable use. Lastly, task 7, which was about changing the texture/material of the brush, was also rated comparatively difficult because the participants had difficulty finding the correct button on the user interface.
 
 \subsection{Feedback}
 \label{sec:feedback}
@@ -107,7 +107,7 @@ Feedback:
 	\item[--] P13: It was sometimes difficult to get the VPad [trackpad] to accept the direction I wanted (e.g. it showed query settings [menu] instead of brush [menu])
 \end{itemize}
 One participant did not rate this task because they found it unclear what to rate.\\
-As depicted in Fig. \ref{fig:controller_hints} the controller hints for the trackpad all point to the center of the trackpad. At this point in time the Unity SteamVR plugin does not provide a way to get them to point to the sides of the trackpad, but this problem could be fixed in the future since the source code of the scripts responsible for said feature can be fully edited.
+As depicted in Fig. \ref{fig:controller_hints} the controller hints for the trackpad all point to the center of the trackpad. At this point in time the Unity SteamVR plugin does not provide a way to get them to point to the sides of the trackpad, but this problem could be fixed in the future, since the source code of the scripts responsible for said feature can be fully edited.
 
 \subparagraph{Task 4} \hfill \\
 Description: "Select the sphere brush and place it the world to create a shape or simple sculpture using the 'Add' mode."\\
@@ -138,7 +138,7 @@ Feedback:
 	\item[--] P13: Request: Define groups [on the sculpture] and then a "colour entire group" option (e.g. all four legs of a stool)
 	\item[--] P14: Use other word than replace
 \end{enumerate}
-It was observed that a few users had trouble selecting a color because the saturation value is by default at 0, hence without changing that value the color of the preview square does not change at all. An improvement for this was implemented after the use evaluation. Now, when the saturation value is close to 0 and the user changes the hue, the saturation value is automatically set to 1.
+It was observed that a few users had trouble selecting a color because the saturation value is by default at 0, hence without changing that value the color of the preview square does not change at all. An improvement for this was implemented after the user evaluation. Now, when the saturation value is close to 0 and the user changes the hue, the saturation value is automatically set to 1.
 
 \subparagraph{Task 7} \hfill \\
 Description: "Select a brush and create a shape, then pick another material (i.e. texture) and change the material of a piece of your sculpture using the 'Replace' mode."\\
@@ -187,7 +187,7 @@ Feedback:
 	\item[--] P5: Grip feels very uncomfortable to me.
 	\item[--] P11: It's hard to figure out that you have to grab the item from very near, when sculptures can be grabbed from farther away
 \end{enumerate}
-Nearly all participants had trouble finding the correct button on the left VR controller. These grip buttons are intended to be pressed by squeezing ones hand or by pressing them with the pinky finger. However, unless one already knows these buttons they're very difficult to find since they don't feel or look like buttons. A solution for this is proposed in Section \ref{sec:future_work}.
+Nearly all participants had trouble finding the correct button on the left VR controller. These grip buttons are intended to be pressed by squeezing ones hand or by pressing them with the pinky finger. However, unless one already knows these buttons they're very difficult to find since they don't feel or look like buttons. A solution to this is proposed in Section \ref{sec:future_work}.
 
 \subparagraph{Task 11} \hfill \\
 Description: "Select a brush and create a shape, then use the query menu to run a similarity search. After that, pick one of the results and voxelize it. Using a brush, remove a piece of it and then run a similarity search for the modified sculpture."\\

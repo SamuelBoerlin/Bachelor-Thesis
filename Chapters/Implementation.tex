@@ -2,14 +2,14 @@
 
 This chapter goes more into detail about the concepts and architecture mentioned in Chapter \ref{chap:concepts_and_architecture} and how they
 are implemented in our application. Text \textsc{in this font} refers to code classes, methods or fields. Method parameter types are specified in the parentheses following the method name.\\
-The chapter starts out by elaborating the implementation details about the multimedia retrieval application Cineast and how it was extended to support model similarity queries that take 3D model color and texture into consideration. Furthermore, it explains how our VR sculpting application communicates with Cineast.\\
+The chapter starts out by elaborating the implementation details regarding the multimedia retrieval system Cineast and how it was extended to support model similarity queries that take 3D model color and texture into consideration. Furthermore, it explains how our VR sculpting application communicates with Cineast.\\
 Following that, it explains how voxels were used to implement the sculpting functionality, sculpture rendering and how the CMS algorithm was extended to support multi-material voxel volumes. In addition to that it presents an algorithm to
 convert 3D model meshes into a voxel representation and we propose a new lookup table based implementation of the CMS algorithm.\\
 Finally, it ties all these features together and describes how they were combined to form our VR sculpting application.
 
 \section{Cineast}
 
-Cineast is the multimedia retrieval backend of choice for our application. In order to implement the requirements of our application
+Cineast is the multimedia retrieval backend of choice for our application. In order to implement the requirements of our application,
 several changes had to be made to Cineast. However due to Cineast's modular structure most of the changes could be applied without having to
 modify the core code.
 
@@ -45,10 +45,10 @@ the feature extraction algorithm.
 Since our application allows the user to color their sculptures it makes sense that our similarity queries for 3D models also
 take color into account. Hence part of the color information must be contained in the feature vector, which will then be used
 to compare 3D models for similarity as described in Section \ref{sec:multimedia_retrieval_concept}.
-Currently, none of Cineast's feature extraction modules take the color of 3D models into consideration.\\
+Currently, none of Cineast's feature extraction modules take the color or texture of 3D models into consideration.\\
 The ClusterD2+Color algorithm \cite{cluster_d2_color}, which was used in our application,
 achieves this by creating random sample points on the 3D model's surface according to certain criteria and then
-use those sample points to compute a feature vector.\\
+using those sample points to compute a feature vector.\\
 Our feature module, \textsc{ClusterD2AndColorHistogram}, extends Cineast's \textsc{StagedFeatureModule} class which takes care of the
 querying base functionality, such as searching for similar feature vectors and sorting results by score or persisting an extracted feature vector.
 The \textsc{ClusterD2AndColorHistogram} class mostly takes care of extracting the ClusterD2+Color feature vector from a given input model.\\
@@ -118,7 +118,7 @@ the $I_{min}$ parameter we have observed that the algorithm would commonly stop 
 are computed and stored in an array. The values in this array are then normalized such that the lowest value in the array is mapped to zero and the highest value is mapped to one. Finally this array is then converted into a histogram with $20$ bins.\\
 Y.-J. Liu et al. \cite{cluster_d2_color} have also proposed a second method called ClusterAngle+Color which calculates the values for the histogram from the angle between triplets of samples that are each in different clusters. According
 to the authors this method results in a better similarity measure, however due to the $O(N^3)$ complexity we have unfortunately found it to be infeasible with the large number of samples generated from the user sculpted models in our application.\\
-In either case the result is a histogram which serves as 20-dimensional feature vector and in fact, since they are a geometric signature of the model, they can be used to compare models for similarity,
+In either case, the result is a histogram which serves as 20-dimensional feature vector and in fact, since they are a geometric signature of the model, they can be used to compare models for similarity,
 e.g. by using the $\chi^2$ distance metric, a commonly used distance metric to compare two histograms for similarity. The lower the $\chi^2$ distance the more similar the models. Conveniently Cineast and its multimedia retrieval
 database Cottontail DB offer an efficient k-nearest neighbors query for the $\chi^2$ distance metric.\\
 
@@ -132,8 +132,8 @@ database Cottontail DB offer an efficient k-nearest neighbors query for the $\ch
 
 Along with the $\chi^2$ distance metric the Jensen-Shannon divergence ($D_{JS}$) was implemented. This is the metric Y.-J. Liu et al. \cite{cluster_d2_color} chose for their implementation. In short, the $D_{JS}$ metric treats the histogram feature vector as an independent and identically-distributed sample of a random variable and thus first converts the histogram into a probability density function by using kernel density approximation with a gaussian kernel. The Jensen-Shannon divergence of the two probability density functions to compare is then computed and serves as a probabilistic measure ranging from 0 to 1 for how similar they are, so in a sense how likely it is that the two histograms were generated from the same model. Fig. \ref{fig:feature_penguin_histogram} depicts the histogram of a penguin model and its probability density function, along with some debug information of curves required for the $D_{JS}$ calculation.\\
 In our ClusterD2+Color implementation in Cineast $D_{JS}$ is currently significantly slower than $\chi^2$ because Cottontail DB does not natively support k-nearest neighbors queries for $D_{JS}$. Therefore Cineast must retrieve the feature vectors of all currently existing models in the database and compare all of them one by one to the input feature vector using $D_{JS}$.\\
-The exact reason why Y.-J. Liu et al. used the Jensen-Shannon divergence was not mentioned, other than the fact that for a given 3D model they "[...] regard its shape histogram as an independent and identically-distributed sample of a random variable [...]" and thus convert it to a probability density function which can be compared using $D_{JS}$. We speculate that $D_{JS}$ may be more robust to noise from the random sample generation than the $\chi^2$ distance metric due to the conversion to a smooth probability density function. However this may incur a slight general loss of accuracy due to the smoothing.\\
-Finally Cineast can run multiple features or distance metrics for a single query and then combine their scores by weights specified in Cineast's configuration. This can be useful to capture different kinds of feature types in a single similarity score.
+The exact reason why Y.-J. Liu et al. used the Jensen-Shannon divergence was not mentioned, other than the fact that for a given 3D model they "[...] regard its shape histogram as an independent and identically-distributed sample of a random variable [...]" \cite{cluster_d2_color} and thus convert it to a probability density function which can be compared using $D_{JS}$. We speculate that $D_{JS}$ may be more robust to noise from the random sample generation than the $\chi^2$ distance metric due to the conversion to a smooth probability density function. However this may incur a slight general loss of accuracy due to the smoothing.\\
+Finally, Cineast can run multiple features or distance metrics for a single query and then combine their scores by weights specified in Cineast's configuration. This can be useful to capture different kinds of feature types in a single similarity score.
 
 
 \subsection{C\# Cineast API}
@@ -232,6 +232,7 @@ var response = await Api.FindSegmentSimilarActionHandlerPOSTAsync(query);
 Listing \ref{lst:csharp_cineast_api_call} shows an excerpt from our code that sends Cineast a similarity query REST request by calling the Swagger Codegen generated C\# method \textsc{FindSegmentSimilarActionHandlerPOSTAsync} and using the generated classes \textsc{QueryTerm}, \textsc{QueryComponent}, \textsc{QueryConfig} and \textsc{SimilarityQuery}.
 
 \section{Hermite Data Voxels}
+\label{sec:hermite_data_voxels}
 
 \begin{figure}
 \centering
@@ -328,8 +329,8 @@ are available. Source: \cite{marching_squares}}
 \endminipage\hfill
 \end{figure}
 
-For our application we have decided to use the Cubical Marching Squares algorithm \cite{cubical_marching_squares} to polygonize our voxels. The reason for this choice was
-that CMS provides both primal and dual features. As such each cell can be polygonized independently but it can still also preserve sharp features well, e.g. the top of a voxel pyramid.\\
+For our application we have decided to use the Cubical Marching Squares algorithm \cite{cubical_marching_squares} to polygonize voxels. The reason for this choice was
+that CMS provides both primal and dual features. As such, each cell can be polygonized independently but it can still also preserve sharp features well, e.g. the top of a voxel pyramid.\\
 Our implementation of the CMS algorithm runs only on regular voxel grids and
 there is no adaptivity or level of detail. Therefore all future explanations on CMS are based on these two limitations.\\
 The first step of the CMS algorithm is to run the Marching Squares (MS) algorithm, the 2D counterpart of the MC algorithm, on each face of a voxel cell. Fig. \ref{fig:marching_squares_cases} gives an overview over the total 16 different MS cases for a single voxel cell face. If the normals of the Hermite data span an angle greater than the 2D sharp feature angle threshold then the straight line segments are replaced with two lines that connect the two edges and the intersection point of the normals' tangents. This allows CMS to preserve sharp features on the voxel cell faces. Furthermore this sharp feature helps CMS to resolve the ambiguous MS cases 5 and 10, because the two line segments must not overlap. With the two sharp features in cases 5 and 10 it is simple to check
@@ -587,7 +588,7 @@ Adapted from \url{https://corona-renderer.com/blog/wp-content/uploads/2017/04/Tr
 \label{fig:triplanar_texture_mapping}
 \end{figure}
 
-The voxel polygonizer already does most of the heavy lifting for the voxel rendering. Once the voxel polygonizer has converted the voxels into a triangle mesh the rendering is done using the typical mesh rasterization techniques, provided by Unity, and shaders. Shaders are GPU programs that determine how objects in the scene are rendered to the screen, e.g. by computing lighting or adding special effects. The voxel materials and their colors are packed into the 32 bit RGBA color attachment of the mesh vertices. The first three components, RGB, are used to store the voxel color, the fourth component A for the voxel material ID.\\
+The voxel polygonizer already does most of the heavy lifting for the voxel rendering. Once the voxel polygonizer has converted the voxels into a triangle mesh the rendering is done using the typical mesh rasterization techniques, provided by Unity, and shaders. Shaders are GPU programs that determine how objects in the scene are rendered to the screen, e.g. by computing lighting or adding special effects. The voxel materials and their colors are packed into the 32 bit RGBA color attachment of the mesh vertices. The first three components, RGB, are used to store the voxel color, the fourth component, A, for the voxel material ID.\\
 Since our voxel meshes are not UV mapped, i.e. they do not contain information about where the textures should be sampled, we have resorted to a tri-planar texture mapping shader to texture them. These kinds of shaders use the position of a mesh's pixels to determine where to sample a texture, without the need of any explicit UV mapping. In order to achieve a realistic looking texture
 mapping the tri-planar texture mapping shader projects an infinitely repeating texture from the X, Y and Z axes onto the mesh
 like depicted in Fig. \ref{fig:triplanar_texture_mapping}. The weight, i.e. how visible it is, of each texture projection is determined by the mesh's normals. For example the more a normal points along the X axis, the stronger the X axis texture projection is weighted, and the less the other two. The result of this is a mesh
@@ -746,7 +747,7 @@ This controller hints functionality is provided as a script in the SteamVR plugi
 \label{fig:editing_showcase}
 \end{figure}
 
-The most important tool available to the user is the brush. It is attached to the right controller as depicted in Fig. \ref{fig:editing_showcase} and displayed as a translucent preview of the brush's shape. Using a custom shader this brush preview shows the intersection between the brush and the sculpture. This feature has turned out to be an important addition, because without it it's quite difficult to tell where the brush intersects with the sculpture despite the stereoscopic display of the VR headset.\\
+The most important tool available to the user is the brush. It is attached to the right controller as depicted in Fig. \ref{fig:editing_showcase} and displayed as a translucent preview of the brush's shape. Using a custom shader, this brush preview shows the intersection between the brush and the sculpture. This feature has turned out to be an important addition, because without it it's quite difficult to tell where the brush intersects with the sculpture despite the stereoscopic display of the VR headset.\\
 By holding the brush button, which is by default the index finger trigger on the right controller, the user can drag the brush and continuously apply a brush stroke so long performance allows.\\
 The brush size can be changed by swiping up or down on the trackpad of the left controller. Similarly the brush can be rotated by swiping any direction on the trackpad of the right controller. Rotating the brush however takes some practice because the trackpad only provides two degrees of freedom whereas there are three rotation axes for the brush.\\
 Currently our application provides five brush types: cube, sphere, pyramid, cylinder and custom. These brush types are defined from SDF's, thus it is easy to add new brush types. Our VR application provides some Unity editor interfaces to enable a developer to easily add such new brushes to the application.
@@ -773,7 +774,7 @@ The brush material texture is changed by clicking on the color preview box which
 By default, the brush is fully attached to the right controller which means that it also rotates with the controller. If that is not desired then the user can toggle the
 "Fix Rotation" button. This disables the automatic rotation of the brush with the controller making it easier to for example to create straight lines with the brush.\\
 If the user has made a mistake it can be undone by clicking the "Undo" button. Currently up to ten edits can be undone. Edits that have been undone can be redone by clicking the "Redo" button, however only if the user has not edited the sculpture again since the undo.\\
-The brush selection menu in Fig. \ref{fig:gui_brush_select} lets the user select different brushes. It is arranged as a radial menu centered in front of the user's right controller. Like this the user quickly and conveniently select other brush types without having to move the controller much.
+The brush selection menu in Fig. \ref{fig:gui_brush_select} lets the user select different brushes. It is arranged as a radial menu centered in front of the user's right controller. Like this, the user can quickly and conveniently select other brush types without having to move the controller much.
 
 \subparagraph{Custom Brushes}
 
@@ -787,7 +788,7 @@ The brush selection menu in Fig. \ref{fig:gui_brush_select} lets the user select
 
 Our application currently only supports hard boolean CSG, meaning that union and difference operations often lead to sharp edges and corners. This is not always desirable, especially when the user wants to sculpt organic and
 smooth shapes. One solution to address this would be to implement a smoothing brush that smooths out sharp edges, e.g. by averaging the positions of the surface vertices and adjusting the normals. However doing this is not trivial
-because the surface vertices are constructed from the underlying voxels, hence the smoothing would instead have to happen in the voxel data instead. This also leads to several edge cases like when a voxel Hermite data intersection is moved
+because the surface vertices are constructed from the underlying voxels, hence the smoothing would instead have to happen in the voxel data. This also leads to several edge cases, like when a voxel Hermite data intersection is moved
 from one voxel to another care must be taken to also adjust the intersections on the other voxel edges such that it doesn't produce a hole in the mesh. The multi-material voxels also pose a problem because the smoothing brush should
 not disturb or even destroy the material transitions.\\
 To avoid all these troubles we have conceived a proof of concept custom brush that can be shaped by the application's user. As discussed previously SDF's can be smoothly blended together using the smooth minimum and maximum operators.
@@ -808,7 +809,7 @@ a rounded disc by combining one sphere primitive and smoothly subtracting two cu
 
 We have implemented a flexible system for VR user interfaces (UI) in Unity. Most of our menus are similar to what you would expect in a regular non-VR application. The reason for this is that most users will already be familiar with the typical window based UI's found in modern operating systems. Furthermore, such window based UI's can densely pack information and functionality while remaining organized and hierarchical, e.g., by using grouping background elements such as the color settings group in Fig. \ref{fig:gui_brush_properties} to group contextually similar components together.\\
 The UI's are controlled by the VR controller, which has a pointer and cursor attached to it. Since our application uses the SteamVR Plugin, we have designed our pointer and cursor to be similar to that of the SteamVR menu to maintain consistency. UI components can be interacted with by pressing the interaction button on the VR controllers which by default is bound to the index finger trigger on the right controller.\\
-New UI's can easily be created by creating a new empty object and then adding Unity's \textsc{Canvas} component. This turns the object into a UI canvas and the developer can add UI elements to the viewport specified in the \textsc{Canvas} component. Any UI element already available in Unity should work in VR out of the box. This is made possible by our \textsc{VRPointerInputModule} script, which extends Unity's \textsc{BaseInputModule} and thus replaces Unity's default keyboard and mouse based input controller with our VR pointer input controller. Once a new UI is finished it is converted into a Unity prefab and then registered in order to become usable by the user. This is done in the Unity editor in the \textsc{VRSculpting} component on the player object under the "Menu Entries" section. Within this section, depicted in Fig. \ref{fig:adding_menus}, the developer can add a new entry, then set the prefab field to point to the UI prefab, set which controller button should open the UI, whether it is toggled and where it should appear when opened.
+New UI's can easily be created by creating a new empty object and then adding Unity's \textsc{Canvas} component. This turns the object into a UI canvas and the developer can add UI elements to the viewport specified in the \textsc{Canvas} component. Any UI element already available in Unity should work in VR out of the box. This is made possible by our \textsc{VRPointerInputModule} script, which extends Unity's \textsc{BaseInputModule} and thus replaces Unity's default keyboard and mouse based input controller with our VR pointer input controller. Once a new UI is finished, it is converted into a Unity prefab and then registered in order to become usable by the user. This is done in the Unity editor in the \textsc{VRSculpting} component on the player object under the "Menu Entries" section. Within this section, depicted in Fig. \ref{fig:adding_menus}, the developer can add a new entry, then set the prefab field to point to the UI prefab, set which controller button should open the UI, whether it is toggled and where it should appear when opened.
 
 \subsection{Similarity Query}
 
