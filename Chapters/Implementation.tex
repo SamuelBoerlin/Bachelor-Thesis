@@ -120,7 +120,7 @@ Y.-J. Liu et al. \cite{cluster_d2_color} have also proposed a second method call
 to the authors this method results in a better similarity measure, however due to the $O(N^3)$ complexity we have unfortunately found it to be infeasible with the large number of samples generated from the user sculpted models in our application.\\
 In either case the result is a histogram which serves as 20-dimensional feature vector and in fact, since they are a geometric signature of the model, they can be used to compare models for similarity,
 e.g. by using the $\chi^2$ distance metric, a commonly used distance metric to compare two histograms for similarity. The lower the $\chi^2$ distance the more similar the models. Conveniently Cineast and its multimedia retrieval
-database Cottontail DB\footnote{\url{https://github.com/vitrivr/cottontaildb}} offer an efficient k-nearest neighbors query for the $\chi^2$ distance metric.\\
+database Cottontail DB offer an efficient k-nearest neighbors query for the $\chi^2$ distance metric.\\
 
 \begin{figure}
 \centering

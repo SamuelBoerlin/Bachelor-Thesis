@@ -12,7 +12,7 @@ Multimedia retrieval has become an ever more important topic over the last decad
 3D models. The goal is to allow the user to find such media based on an example input or a subset of the desired result, i.e. retrieve them from some multimedia database.\\
 The DBIS research group \cite{dbis_group} is working on such a system called Cineast \cite{cineast}. Cineast provides the backend functionality for multimedia retrieval queries and Vitrivr NG provides a web
 based frontend to enable users to build queries. Currently it supports queries for text, images, video, audio and 3D models.\\
-In order to run multimedia queries a multimedia database is required to store the data to compare media. Cineast currently supports the Cottontail DB column store database for multimedia retrieval which also being developed by the DBIS research group.\\
+In order to run multimedia queries a multimedia database is required to store the data to compare media. Cineast currently supports the Cottontail DB \cite{cottontaildb} column store database for multimedia retrieval which also being developed by the DBIS research group.\\
 The focus of this thesis is on 3D model retrieval which is also part of multimedia retrieval. Research in this area has so far focused on building 3D model queries from example images, sketches or common 3D model file formats.
 In order to create one of these 3D model files the user requires a seperate sculpting program and needs to learn how to use it.\\
 Multimedia retrieval systems commonly rely on the Vector Space Model \cite{vector_space_model:1975} in order to compare media for similarity. To goal is to find an algorithm to convert the media into a high dimensional feature vector $D_i = (d_{i1}, d_{i2}, ..., d_{in})$, such that the feature vectors of similar media are as close to each other as possible and those of dissimilar media respectively as far away from each other as possible. How close two feature vectors are to each other is determined by a distance function $s(D_i, D_j)$. Retrieving a list of media similar to some input is then a matter of using a $k$-nearest neighbors search \cite{k_nearest_neighbors:2000} algorithm to find the $k$ closest feature vectors to the input media's feature vector.\\
@@ -83,7 +83,7 @@ computed tomography (CT) density fields, into a polygonal surface. The prefix "i
 
 %Method for converting voxels into meshes, some common algorithms as examples
 
-The two main groups of isosurface polygonization alrogithms are the primal, e.g. \cite{marching_cubes,transvoxel}, and dual, e.g. \cite{surface_nets,dual_contouring}, contouring algorithms.
+The two main groups of isosurface polygonization algorithms are the primal, e.g. \cite{marching_cubes,transvoxel}, and dual, e.g. \cite{surface_nets,dual_contouring}, contouring algorithms.
 Most of these algorithms cannot polygonize a single voxel by itself, but instead require a cell consisting of eight voxels, usually arranged in the form
 of a cube. Primal and dual contouring algorithms differ in that the primal variants place polygon vertices somewhere on the cell's edges and the dual variants
 place them not on the edges but somewhere within the cell's volume. Therefore dual contouring algorithms have the advantage that they can more reliably polygonize

@@ -132,8 +132,7 @@ Feedback:
 	\item[--] P13: Request: Define groups [on the sculpture] and then a "colour entire group" option (e.g. all four legs of a stool)
 	\item[--] P14: Use other word than replace
 \end{enumerate}
-It was observed that a few users had trouble selecting a color because the saturation value is by default at 0, hence without changing that value the color of the preview square does not change at all.
-The default saturation value should instead be changed to 1 so that changing the hue is immediately reflected in the preview square.
+It was observed that a few users had trouble selecting a color because the saturation value is by default at 0, hence without changing that value the color of the preview square does not change at all. An improvement for this was implemented after the use evaluation. Now, when the saturation value is close to 0 and the user changes the hue, the saturation value is automatically set to 1.
 
 \subparagraph{Task 7} \hfill \\
 Description: "Select a brush and create a shape, then pick another material (i.e. texture) and change the material of a piece of your sculpture using the 'Replace' mode."\\
@@ -148,7 +147,7 @@ Feedback:
 	\item[--] P13: Bug/inconvenient: it remembers the color selected $\rightarrow$ unexpected color of material + unclear where to select material.
 	\item[--] P14: Difficult to find
 \end{enumerate}
-It is evident from the comments and ratings that the texture/material selection button was difficult to find for many users. One reason for this is that the default texture is a marble texture that is almost entirely white and thus it is easily missed that the color/texture preview square also shows a texture. This problem can be addressed by labeling the color/texture preview square like a regular button.
+It is evident from the comments and ratings that the texture/material selection button was difficult to find for many users. One reason for this is that the default texture is a marble texture that is almost entirely white and thus it is easily missed that the color/texture preview square also shows a texture. This problem was addressed by labeling the color/texture preview square like a regular button in a revision after the user evaluation took palce.
 
 \subparagraph{Task 8} \hfill \\
 Description: "Create your own brush (with at least two primitives) using the custom brush editor and then use your own brush to create a shape."\\
@@ -208,4 +207,4 @@ Feedback:
 	\item[--] P14: Better manual to know where the textures are. Voxelizing is a little tricky.
 \end{enumerate}
 
-Overall a lot of useful feedback was provided. Several interesting ideas have been brought up and are mentioned later in Section \ref{sec:future_work}.
+The suggestion of P1, changing the color of the brush depending on the brush mode, was implemented after the user evaluation. In the union mode the brushes remain the default blue color, in remove mode they become red and in replace mode green. Overall a lot of useful feedback was provided. Several interesting ideas have been brought up and are mentioned later in Section \ref{sec:future_work}.
