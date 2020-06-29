@@ -284,8 +284,8 @@ Other data structures however need not necessarily store all voxel values on a r
 in that case it is beneficial to use a more advanced data structure that can store voxel values more memory efficiently.\\
 The most common method to store voxels in memory is to split the voxels into fixed size blocks or chunks. Within each chunk the voxels are stored in an array. The chunks are stored seperately in a sparse data structure, e.g. a hash map,
 where they can be accessed by their position. This gives a good trade-off between memory usage and access speed, because often voxel accesses happen within the same chunks and hence the hash map lookups can usually be cached. Instead of multi-dimensonal arrays for the chunk voxel storage we use one contiguous linear array per chunk to avoid having to dereference multiple pointers for a single access. The index into this linear array can be directly computed from a given X, Y and Z position within the chunk by the following formula: $index(x, y, z) = x * N * N + y * N + z$, where $N$ is the chunk size.
-Our implementation uses a chunk size of $N=32$. Voxels on the faces towards the positive X, Y and Z axes are padding voxels that always mirror the state of the neighbour voxel in the respective neighbour chunk.
-These padding voxels allow the voxel polygonizer to run faster since it entirely removes the need to query neighbour chunks during meshing. This method is described by \cite{voxel_acceleration} in more detail.
+Our implementation uses a chunk size of $N=32$. Voxels on the faces towards the positive X, Y and Z axes are padding voxels that always mirror the state of the neighbor voxel in the respective neighbor chunk.
+These padding voxels allow the voxel polygonizer to run faster since it entirely removes the need to query neighbor chunks during meshing. This method is described by \cite{voxel_acceleration} in more detail.
 
 \subparagraph{Memory Consumption}
 
@@ -507,7 +507,7 @@ In total the proposed lookup table based CMS algorithm primarily requires the fo
 	
 \end{itemize}
 
-For further details about the proposed lookup table CMS algorithm please refer to our lookup table tool and sample implementation written in Java.\todoMissing{Clean up and link somewhere}
+For further details about the proposed lookup table CMS algorithm please refer to our lookup table tool and the sample implementation, both in the same repository, written in Java. The sample implementation demonstrates how the lookup tables may be used.
 
 
 \subsection{CSG Operations on a Voxel Grid}
