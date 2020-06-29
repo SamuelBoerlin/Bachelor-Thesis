@@ -3,25 +3,25 @@
 
 In this chapter we discuss the relevant concepts used throughout this thesis and describe how they fit together into the high level system architecture of our
 application. First, it describes how our application makes use of a multimedia retrieval systems in order to manage a multimedia database and to be able to search such a database for certain 3D models.
-Then, it explains two representations of 3D models and why they are relevant to this thesis. Lastly, it describes how our application makes use of virtual reality and how our novel virtual reality 3D model retrieval system combines all these topics.
+Then, it explains two representations of 3D models and why they are relevant to this thesis. Lastly, it describes how our application makes use of virtual reality and how our virtual reality sculpting and 3D model retrieval system combines all these topics.
 
 \section{Multimedia Retrieval}
 \label{sec:multimedia_retrieval_concept}
 
 Multimedia retrieval has become an ever more important topic over the last decades. As the name implies, multimedia retrieval entails the retrieval of various different media such as text, images, video and audio but also
 3D models. The goal is to allow the user to find such media based on an example input or a subset of the desired result, i.e. retrieve them from some multimedia database.\\
-The DBIS research group\footnote{\url{https://dbis.dmi.unibas.ch/}} is working on such a system called Cineast. Cineast provides the backend functionality for multimedia retrieval queries and Vitrivr NG provides a web
+The DBIS research group \cite{dbis_group} is working on such a system called Cineast \cite{cineast}. Cineast provides the backend functionality for multimedia retrieval queries and Vitrivr NG provides a web
 based frontend to enable users to build queries. Currently it supports queries for text, images, video, audio and 3D models.\\
 In order to run multimedia queries a multimedia database is required to store the data to compare media. Cineast currently supports the Cottontail DB column store database for multimedia retrieval which also being developed by the DBIS research group.\\
 The focus of this thesis is on 3D model retrieval which is also part of multimedia retrieval. Research in this area has so far focused on building 3D model queries from example images, sketches or common 3D model file formats.
 In order to create one of these 3D model files the user requires a seperate sculpting program and needs to learn how to use it.\\
-Multimedia retrieval systems commonly rely on the Vector Space Model [\todoMissing{Missing ref; \url{https://dl.acm.org/doi/10.1145/361219.361220}}] in order to compare media for similarity. To goal is to find an algorithm to convert the media into a high dimensional feature vector $D_i = (d_{i1}, d_{i2}, ..., d_{in})$, such that the feature vectors of similar media are as close to each other as possible and those of dissimilar media respectively as far away from each other as possible. How close two feature vectors are to each other is determined by a distance function $s(D_i, D_j)$. Retrieving a list of media similar to some input is then a matter of using a $k$-nearest neighbors search [\todoMissing{Missing ref; \url{https://www.cadmo.ethz.ch/education/lectures/FS18/SDBS/papers/IndykM-curse.pdf}}] algorithm to find the $k$ closest feature vectors to the input media's feature vector.\\
+Multimedia retrieval systems commonly rely on the Vector Space Model \cite{vector_space_model:1975} in order to compare media for similarity. To goal is to find an algorithm to convert the media into a high dimensional feature vector $D_i = (d_{i1}, d_{i2}, ..., d_{in})$, such that the feature vectors of similar media are as close to each other as possible and those of dissimilar media respectively as far away from each other as possible. How close two feature vectors are to each other is determined by a distance function $s(D_i, D_j)$. Retrieving a list of media similar to some input is then a matter of using a $k$-nearest neighbors search \cite{k_nearest_neighbors:2000} algorithm to find the $k$ closest feature vectors to the input media's feature vector.\\
 For example to compare a 3D model for similarity one may use an algorithm that converts the 3D model into an n-dimensional real-valued feature vector $D_i$, such that the feature vectors of 3D models with a similar geometry or shape are close to each other. Then use $s(D_i, D_j) = \lVert D_i - D_j \rVert$, which corresponds to the L2 distance between $D_i$ and $D_j$, to obtain a metric for the similarity of two feature vectors, respectively their 3D models.
 
 \section{REST API}
 \label{sec:rest_api_concept}
 
-In order for a multimedia retrieval system to become useful it needs to provide some interface through which other applications can access its functionality. This is what's commonly known as an application programming interface (API). One such type of APIs are REST APIs, an acronym for Representational State Transfer. These REST APIs aim to communicate between two programs via requests and responses over the HTTP web protocol. The following incomplete list should give an insight into how REST APIs operate - according to R. Fielding [\todoMissing{Missing ref; \url{https://www.ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm}}] REST APIs follow these and some more principles:
+In order for a multimedia retrieval system to become useful it needs to provide some interface through which other applications can access its functionality. This is what's commonly known as an application programming interface (API). One such type of APIs are REST APIs, an acronym for Representational State Transfer. These REST APIs aim to communicate between two programs via requests and responses over the HTTP web protocol. The following incomplete list should give an insight into how REST APIs operate - according to R. Fielding \cite{rest_api:2000} REST APIs follow these and some more principles:
 \begin{itemize}
 	\item Client-Server: User interface concerns should be separated from data storage concerns.
 	\item Stateless: Communication must be stateless. All information required for a request to be understood must be included in said request.
@@ -43,11 +43,11 @@ However, such 3D models that consist of polygon meshes are restricted to represe
 
 Our application provides a 3D sculpting module and thus needs a suitable virtual representation of the sculptures. Usually 3D model formats only store the surface of a sculpture, but our application requires the sculptures to be
 truly volumetric and not just an empty shell, so that when the user removes some material from the sculpture they should be able to see the material filling the inside of the sculpture.\\
-The foundation of the sculpting module is thus based on voxels. In the most basic sense a voxel represents a value on a regular grid in 3D space [\todoMissing{Missing ref; Wikipedia}].
+The foundation of the sculpting module is thus based on voxels. In the most basic sense a voxel represents a value on a regular grid in 3D space \cite{voxels}.
 The value contained in a voxel usually describes which material it is made of, but can also contain additional data, e.g. to describe the shape of the voxel.\\
 These voxels are very useful to represent volumetric structures, such as sculptures or terrain, since they fill the 3D space and each voxel represents one volume element. One can imagine voxels being like LEGO bricks with which
 the sculptures are built, or the analog to atoms on a much larger scale.\\
-Compared to polygon mesh based 3D models these voxels have the advantage of being able to define the inside of a 3D model. This however comes at a cost of higher memory usage, since not only the surface must be defined but also what's inside. Futhermore, current GPU hardware is lacking extensive hardware support for voxels and thus they are not the primary choice to represent 3D models. In the recent years however voxels have gained a lot of popularity in other areas of computer graphics, especially for lighting calculations such as global illumination [\todoMissing{Missing ref; https://dl.acm.org/doi/pdf/10.1145/1944745.1944763}] or ambient occlusion [\todoMissing{Missing ref; https://developer.nvidia.com/vxao-voxel-ambient-occlusion}].
+Compared to polygon mesh based 3D models these voxels have the advantage of being able to define the inside of a 3D model. This however comes at a cost of higher memory usage, since not only the surface must be defined but also what's inside. Futhermore, current GPU hardware is lacking extensive hardware support for voxels and thus they are not the primary choice to represent 3D models. In the recent years however voxels have gained a lot of popularity in other areas of computer graphics, especially for lighting calculations such as global illumination \cite{voxel_global_illumination} or ambient occlusion \cite{voxel_ambient_occlusion}.
 
 \subsection{Voxelization}
 
@@ -57,10 +57,9 @@ Compared to polygon mesh based 3D models these voxels have the advantage of bein
 \centering
 \captionsetup{width=0.8\textwidth}
 \includegraphics[width=0.75\textwidth]{voxelizer_example_transparent_3.png}
-\caption{The Stanford Armadillo mesh\protect\footnotemark  (left) and its voxel representation at a resolution of 128x128x128 voxels (right).}
+\caption{The Stanford Armadillo mesh \cite{stanford_scan_repo} (left) and its voxel representation at a resolution of 128x128x128 voxels (right).}
 \label{fig:voxelizer_example}
 \end{figure}
-\footnotetext{\url{http://graphics.stanford.edu/data/3Dscanrep/}}
 
 An important part of multimedial retrieval is the ability to take query results and reuse them to formulate a new, refined, query. In the context of this thesis multimedia retrieval
 is only concerned with polygonal meshes. To facilitate the modification of such polygonal meshes our application includes a voxelizer module. The voxelizer takes a polygonal
@@ -84,21 +83,21 @@ computed tomography (CT) density fields, into a polygonal surface. The prefix "i
 
 %Method for converting voxels into meshes, some common algorithms as examples
 
-The two main groups of isosurface polygonization alrogithms are the primal (\todoMissing{Missing ref; MC etc.}) and dual (\todoMissing{Missing ref; DC, CMS, etc.}) contouring algorithms.
+The two main groups of isosurface polygonization alrogithms are the primal, e.g. \cite{marching_cubes,transvoxel}, and dual, e.g. \cite{surface_nets,dual_contouring}, contouring algorithms.
 Most of these algorithms cannot polygonize a single voxel by itself, but instead require a cell consisting of eight voxels, usually arranged in the form
 of a cube. Primal and dual contouring algorithms differ in that the primal variants place polygon vertices somewhere on the cell's edges and the dual variants
 place them not on the edges but somewhere within the cell's volume. Therefore dual contouring algorithms have the advantage that they can more reliably polygonize
 surfaces with sharp features, such as e.g. the corners of a cube. Primal contouring algorithms can also polygonize sharp features in certain cases, however only
 if said sharp feature lies exactly on a cell's edge. Fig. \ref{fig:polygonized_cube_voxel_cell} depicts a polygonized voxel cell where the sharp feature lies within
 the voxel cell.\\
-Marching Cubes [\todoMissing{Missing ref}] (MC), a primal contouring algorithm, checks whether the material at each corner of the voxel cell is filled or empty and then 
+Marching Cubes \cite{marching_cubes} (MC), a primal contouring algorithm, checks whether the material at each corner of the voxel cell is filled or empty and then 
 packs all 8 resulting booleans into a single 8 bit integer. That integer is then used to index into a lookup table that contains which cell edges are to be connected to
 each other to form polygons. Vertex positions can either lie on the middle of their respective cell edge or if the voxel contains a density value the vertex position
 can be smoothly linearly interpolated.\\
-Dual Contouring [\todoMissing{Missing ref}] (DC) uses another approach. A valid voxel cell always contains either no edge with a material, or at least three edges with a material change. If a voxel cell
+Dual Contouring \cite{dual_contouring} (DC) uses another approach. A valid voxel cell always contains either no edge with a material, or at least three edges with a material change. If a voxel cell
 does contain edges with a material change then Dual Contouring finds the sharp feature that minimizes the squared distance between the sharp feature and all planes spanned
 by the normals at the edges with the material changes. In a second pass the generated vertices are then connected between neighboring voxel cells to form polygons.\\
-Cubical Marching Squares [\todoMissing{CMS}] (CMS) makes use of both primal and dual contouring features. Much like MC it places vertices on voxel cell edges. However it can also place vertices
+Cubical Marching Squares \cite{cubical_marching_squares} (CMS) makes use of both primal and dual contouring features. Much like MC it places vertices on voxel cell edges. However it can also place vertices
 on voxel cell faces and within the voxel cell volume, like dual contouring algorithms do. This gives it the advantage that each cell can be polygonized individually while still being able to
 reliably polygonize surfaces with sharp features. This algorithm is described in more detail in Section \ref{sec:cms}.
 
@@ -108,10 +107,9 @@ reliably polygonize surfaces with sharp features. This algorithm is described in
 \centering
 \captionsetup{width=0.8\textwidth}
 \includegraphics[width=0.6\textwidth]{csg_operations.png}
-\caption{Boolean union (left), difference (middle) and intersection (right) of a cube and sphere primitive. Adapted from Wikipedia\protect\footnotemark.}
+\caption{Boolean union (left), difference (middle) and intersection (right) of a cube and sphere primitive. Adapted from \url{https://en.wikipedia.org/w/index.php?title=Constructive_solid_geometry&oldid=962220829}}
 \label{fig:csg_operations}
 \end{figure}
-\footnotetext{\url{https://en.wikipedia.org/wiki/Constructive_solid_geometry}}
 
 Constructive Solid Geometry (CSG) is a method to create geometric shapes by constructing them from primitives and a few operations.
 The three most common operations are the boolean union ($\cup$), difference ($-$) and intersection ($\cap$) operations are illustrated in Fig. \ref{fig:csg_operations}. With just
@@ -135,9 +133,9 @@ which solid materials should be replaced with B's material.
 \end{figure}
 
 Signed distance functions (SDF) are mathematical formulas that describe the signed distance between a point and the surface of a certain shape. For points inside the shape the
-signed distance is negative. For example it is trivial to derive the signed distance function $f(x,y,z) = \sqrt{x^2 + y^2 + z^2} - r$ of a sphere at $(0, 0, 0)$ from the implicit formula of the sphere's surface, $x^2 + y^2 + z^2 - r^2 = 0$. There exist readily available formulas for SDFs of various shapes, e.g. Inigo Quilez' collection of such functions\footnote{\url{https://iquilezles.org/www/articles/distfunctions/distfunctions.htm}}.\\
+signed distance is negative. For example it is trivial to derive the signed distance function $f(x,y,z) = \sqrt{x^2 + y^2 + z^2} - r$ of a sphere at $(0, 0, 0)$ from the implicit formula of the sphere's surface, $x^2 + y^2 + z^2 - r^2 = 0$. There exist readily available formulas for SDFs of various shapes, e.g. Inigo Quilez' collection of such functions \cite{sdf_collection}.\\
 SDFs are well suited as a representation of CSG primitives because one can approximate their union and difference by taking the minumum, respectively maximum, of two SDFs. This approach generally works
-well and can produce the exact union or difference, however in certain cases it can result in an incorrect approximation, especially for the difference and intersection operations like illustrated in Fig. \ref{fig:sdf_difference}.
+well and can produce the exact union or difference, however in certain cases it can result in an incorrect approximation, especially for the difference and intersection operations as illustrated in Fig. \ref{fig:sdf_difference} and for the inside of union'd SDF's.
 For the purposes of this application the SDFs need not be exact, hence we have decided to use SDFs as the representation of our CSG primitives. Additionally since the domain and range are the same for all SDFs, namely
 $f\colon \mathbb{R}^3 \mapsto \mathbb{R}$, they can all be treated exactly the same besides their formulas and can be encapsulated as a simple method in code.
 
@@ -148,7 +146,6 @@ $f\colon \mathbb{R}^3 \mapsto \mathbb{R}$, they can all be treated exactly the s
 %What is VR, use cases
 
 Virtual reality (VR) applications and hardware aim to immerse the user into a virtual scene or application as much as possible. This is achieved by the use of a headset with an integrated display that the user wears, whereby all the user can see is the content shown on the integrated display. Furthermore, these headsets track the user's head position and rotation so that it can be precisely reflected in the virtual scene. Another large portion of the immersion also comes from the fact that the integrated display is stereoscopic, i.e. it can trick the user's eyes into seeing the depth of the virtual scene by showing a seperate and slightly offset image of the scene to each eye. In addition to the headset there are also VR controllers that are, similarly to the headset, tracked in 3D space and reflected in the virtual scene. The user can hold these and then precisely control the position of their virtual hands and even use them to manipulate objects in the virtual scene.\\
-%Similarly to the "Rubber hand illusion" first described by Botvinick and Cohen [\todoMissing{Missing ref}]
 Current 3D sculpting applications usually have a steep learning curve. This comes from the fact that keyboards and computer mice, which serve as the primary human to machine interface, are not intuitive for
 sculpting. Modifying parts of a physical clay sculpture by hand is much more intuitive for a human than doing it virtually with a keyboard and mouse, because there is no direct mapping between these actions
 and the movement of a mouse or the buttons of a keyboard. There are companies that produce hardware specifically made to alleviate some of these issues, e.g. 3Dconnexion\footnote{\url{https://www.3dconnexion.de/}}, but the issue

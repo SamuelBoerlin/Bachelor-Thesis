@@ -13,13 +13,12 @@ in future work.
 \centering
 \captionsetup{width=0.8\textwidth}
 \includegraphics[width=0.5\textwidth]{precision_recall_chisqr_jsd_sh_liu.png}
-\caption{Precision/recall plots comparing the performance of Y.-J. Liu et al.'s (pink) and our implementation (blue, orange) of the ClusterD2+Color algorithm using the McGill 3D shape benchmark and Cineast's "Spherical Harmonics (Default)" feature module (green). The random scoring baseline is calculated as the average of $\frac{P}{P+N}$ over all classes where $P$ is the number of positives and $N$ the number of negatives.}
+\caption{Precision/recall plots comparing the performance of Y.-J. Liu et al.'s (pink) and our implementation (blue, orange) of the ClusterD2+Color algorithm using the McGill 3D shape benchmark \cite{mcgill_shape_benchmark} and Cineast's "Spherical Harmonics (Default)" feature module (green). The random scoring baseline is calculated as the average of $\frac{P}{P+N}$ over all classes where $P$ is the number of positives and $N$ the number of negatives.}
 \label{fig:precision_recall}
 \end{figure}
-\todoMissing{Missing ref; McGill 3D shape benchmark}
 
 There are several ways to compare the performance and retrieval quality of different algorithms. One way to do so are precision/recall plots as shown in Fig. \ref{fig:precision_recall}. The larger the area under the
-curve the better the algorithm performs. Our precision/recall plots have been computed in the same way as described by Y.-J. Liu et al. \todoMissing{Missing ref} and also using the same model benchmark dataset.\\
+curve the better the algorithm performs. Our precision/recall plots have been computed in the same way as described by Y.-J. Liu et al. \cite{cluster_d2_color} and also using the same model benchmark dataset.\\
 As can be seen in Fig. \ref{fig:precision_recall} our implementation of the ClusterD2+Color algorithm with both the Jensen-Shannon divergence distance metric, which Y.-J. Liu et al. used,
 and the $\chi^2$ distance metric perform significantly worse than that of the original authors of the algorithm. This begs the question whether our implementation is faulty. Visual inspection, using our feature
 extraction visualization tool, however shows no obvious errors. Both the shape and color feature samples are concentrated where one would expect and the cluster assignments also look sensible. The code that generates
@@ -27,7 +26,7 @@ the histogram feature vector from the clustered samples is simple and short so w
 One possible explanation could be the many parameters of the algorithm that can be tweaked. Several of these parameters were not specified by Y.-J. Liu et al. and thus had to be chosen and adjusted by us empirically
 and may not be optimal.\\
 On the other hand our ClusterD2+Color implementation performs similarly to Cineast's "Spherical Harmonics (Default)" feature module, whereas Y.-J. Liu et al.'s is suprisingly vastly better.
-So perhaps the discrepancy between our and Y.-J. Liu et al.'s results could be caused by a difference in the McGill 3D shape benchmark [\todoMissing{Missing ref}] model dataset or in the way the precision/recall plots are computed. Finally, there's also the possibility that the result in [\todoMissing{Missing ref}] is incorrect.
+So perhaps the discrepancy between our and Y.-J. Liu et al.'s results could be caused by a difference in the McGill 3D shape benchmark model dataset \cite{mcgill_shape_benchmark} or in the way the precision/recall plots are computed. Finally, there's also the possibility that the result in \cite{cluster_d2_color} is incorrect.
 
 \todoMissing{Query time?}
 
@@ -55,8 +54,6 @@ In total our user evaluation had 14 participants. Nine of which claim to be mode
 This sample size is not large or diverse enough to produce a statistically significant result, however it still allowed us to collect valuable feedback and identify shortcomings in the user interface design or tools of our VR sculpting application.
 
 \subsection{Results Overview}
-
-\todoMissing{Results}
 
 \begin{figure}
 \centering

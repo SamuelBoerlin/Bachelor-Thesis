@@ -28,14 +28,14 @@ path is persisted in the database as metadatum with the domain "TEXTURE" and key
 \textsc{ModelSegmenter} then uses that method to persist the mesh's texture file path metadatum. This metadatum can later be used by clients to download the model's texture.\\
 A similar change was required in the \textsc{ModelQueryContainer}. Model data is being sent to Cineast over its REST API, described in Section \ref{sec:rest_api}, in the form of a custom string based model format. This format however does not support vertex colors which are required for color sensitive queries. For this reason a new \textsc{ColorMeshParser} class was added that uses a similar format but also supports vertex colors. Based on the prepended MIME type, an identifier used to describe the format of data, the \textsc{ModelQueryContainer} can decide which parser to use. Like this the API remains backwards compatible with the model format that does not contain vertex color data.\\
 Throughout the course of development of this thesis Cineast's REST API was partially rewritten to use the Javalin\footnote{https://javalin.io/} web framework instead of Spark\footnote{http://sparkjava.com/} and SparkSwagger\footnote{https://github.com/manusant/spark-swagger}. Javalin makes great use of Cineast's already built-in JSON serialization structure using Jackson\footnote{https://github.com/FasterXML/jackson}. This enables Javalin, in combination with its OpenAPI plugin,
-to generate an OpenAPI specification [\todoMissing{Missing ref; \url{https://swagger.io/specification/}}] that describes Cineast's REST API in a standardized way. An excerpt of this OpenAPI specification is shown in Listing \ref{lst:openapi_spec} of Section \ref{sec:rest_api}. Since Javalin's OpenAPI plugin makes use of Jackson, it is capable of more reliably creating the specifications for JSON data structures than SparkSwagger, especially for subclasses of superclasses with generic types.
+to generate an OpenAPI specification \cite{openapi} that describes Cineast's REST API in a standardized way. An excerpt of this OpenAPI specification is shown in Listing \ref{lst:openapi_spec} of Section \ref{sec:rest_api}. Since Javalin's OpenAPI plugin makes use of Jackson, it is capable of more reliably creating the specifications for JSON data structures than SparkSwagger, especially for subclasses of superclasses with generic types.
 
 \subsection{Model Formats}
 
-The current implementation supports the Wavefront OBJ [\todoMissing{Missing ref}] format as it is comparatively
+The current implementation supports the Wavefront OBJ format \cite{wavefront_obj} as it is comparatively
 simple to parse. However, the feature extraction algorithm is agnostic to the original 3D model format and only requires
 a 3D mesh consisting of triangles and vertices that contain the following attributes: position and texture coordinates or vertex colors.
-Because of Cineast's [\todoMissing{Missing ref}] modular nature it is possible to add parsers for other 3D model formats, or
+Because of Cineast's modular nature it is possible to add parsers for other 3D model formats, or
 to extend the currently existing parsers to also read the aforementioned vertex attributes, without having to alter
 the feature extraction algorithm.
 
@@ -46,7 +46,7 @@ Since our application allows the user to color their sculptures it makes sense t
 take color into account. Hence part of the color information must be contained in the feature vector, which will then be used
 to compare 3D models for similarity as described in Section \ref{sec:multimedia_retrieval_concept}.
 Currently, none of Cineast's feature extraction modules take the color of 3D models into consideration.\\
-The ClusterD2+Color algorithm described by [\todoMissing{Missing ref}], which was used in our application,
+The ClusterD2+Color algorithm \cite{cluster_d2_color}, which was used in our application,
 achieves this by creating random sample points on the 3D model's surface according to certain criteria and then
 use those sample points to compute a feature vector.\\
 Our feature module, \textsc{ClusterD2AndColorHistogram}, extends Cineast's \textsc{StagedFeatureModule} class which takes care of the
@@ -56,8 +56,7 @@ In order to obtain the data required to construct a feature vector the algorithm
 
 \subparagraph{Sample Generation}
 
-Many isosurface polygonization algorithms, such as the non-adaptive CMS [\todoMissing{Introduce abbr before}]
-implementation used in this application, can produce highly tessellated meshes. On the other hand meshes exported by
+Many isosurface polygonization algorithms, such as the non-adaptive CMS implementation used in this application, can produce highly tessellated meshes. On the other hand meshes exported by
 3D modeling software are often optimized to have large triangles where the surface has little detail, and small triangles where
 the surface is more detailed. Hence it is important that the sample point generation is mostly independent of the triangle sizes
 of the mesh, so that meshes of varying levels of tessellation can be compared for similarity effectively.
@@ -65,7 +64,7 @@ The ClusterD2+Color algorithm achieves this by making the sampling directly prop
 has a higher chance to be positioned on a large triangle, and a smaller chance to be positioned on a small triangle.
 Before any sample points are generated the model is first scaled such that its total surface area equals 100.
 After generating a certain number of samples, the result is a collection of samples that are uniformly distributed on the mesh's surface. The number of samples
-is determined by a function of the integral of the absolute Gaussian curvature over the model's surface as described in [\todoMissing{Missing ref}].
+is determined by a function of the integral of the absolute Gaussian curvature over the model's surface as described in \cite{cluster_d2_color}.
 
 \begin{figure}
 \centering
@@ -78,10 +77,10 @@ and their cluster assignments (white circles and lines). The picture on the righ
 
 \subparagraph{Shape Sample Selection}
 
-These samples should convey relevant information about the geometric shape. Previous work done by [\todoMissing{Missing ref; Lee,C.H.,Varshney,A.,Jacobs,D.:Meshsaliency.In:ACMSIGGRAPH’05, pp. 659–666 (2005)}] has
-shown that mean curvature is a good indication for visual saliency and thus for comparing geometric shapes for similarity. The mean curvature of the mesh vertices is computed using Taubin's method [\todoMissing{Missing ref}].
+These samples should convey relevant information about the geometric shape. Previous work done by C. H. Lee et al. \cite{mesh_saliency} has
+shown that mean curvature is a good indication for visual saliency and thus for comparing geometric shapes for similarity. The mean curvature of the mesh vertices is computed using Taubin's method \cite{taubin_method}.
 Our implementation of the ClusterD2+Color algorithm computes the mean curvature of each vertex and stores it as a vertex attribute. This mean curvature attribute is then smoothed over the mesh's surface
-by a Laplacian smoothing approximation described by [\todoMissing{Missing ref; Implicit Fairing of Irregular Meshes using Diffusion and Curvature Flow}], resulting in a curvature map.
+by a Laplacian smoothing approximation described in \cite{implicit_fairing}, resulting in a curvature map.
 In particular, our implementation sets $\lambda = 8$ and, to satisfy the stability criterion $\lambda dt \leq 1$, $dt = \frac{1}{8}$, i.e. equivalently it applies small smoothings with $\lambda = 1$, $dt = 1$ a total of eight times for one
 full smoothing operation. This is repeated multiple times to create three smoothed curvature maps $C^1$ through $C^3$. Each curvature map $C^i$ has been smoothed $i$ times.
 
@@ -93,7 +92,7 @@ full smoothing operation. This is repeated multiple times to create three smooth
 \label{fig:laplacian_smoothing_artefacts}
 \end{figure}
 
-As opposed to [\todoMissing{Missing ref}] we use
+As opposed to \cite{cluster_d2_color} we use
 $C^1$ as the baseline curvature map instead of $C^0$, because certain non-manifold models exhibit significant artefacts in $C^0$ as illustrated in Fig. \ref{fig:laplacian_smoothing_artefacts}. A mesh is considered non-manifold when it has unconnected vertices or edges that are touching. Lastly each shape sample calculates its $D = D^2 \oplus D^3$ value, where $D^i = C^i - C^{i-1}$ is the difference-of-Laplacian space, as depicted in Fig. \ref{fig:feature_penguin}, and only the samples with the top 10\% highest $D$ values are kept. Indeed the remaining top
 10\% $D$ value shape samples in Fig. \ref{fig:feature_penguin} are concentrated to the relevant features of the penguin model, namely its arms, feet and beak.
 
@@ -101,8 +100,8 @@ $C^1$ as the baseline curvature map instead of $C^0$, because certain non-manifo
 
 The color samples' purpose is to allow the algorithm to distinguish between models that have the same geometric shape but differ in
 color or texture. This is achieved by only selecting those samples that lie on significant color transitions. As described by
-Y.-J. Liu et al. [\todoMissing{Missing ref}], all generated samples extract the mesh's color at their position and then transform
-the color to the CIE-LAB color space [\todoMissing{Missing ref}], which aims to provide a perceptually uniform color space, i.e. same distances in CIE-LAB color space correspond to the same amount of perceptual difference.
+Y.-J. Liu et al. \cite{cluster_d2_color}, all generated samples extract the mesh's color at their position and then transform
+the color to the CIE-LAB color space \cite{cie_color_space}, which aims to provide a perceptually uniform color space, i.e. same distances in CIE-LAB color space correspond to the same amount of perceptual difference.
 The resulting three CIE-LAB coordinates, $L^*$, $a^*$ and $b^*$ are then quantized into 6 ($L^*$), respectively 4 ($a^*$) and 4 ($b^*$) integer values. These three, now quantized, coordinates are combined into a single color code integer, such that each of those color codes corresponds to a unique combination of the quantized coordinates. Perceptually similar colors are thus mapped to the same color code and dissimilar colors are mapped to different color codes.\\
 Lastly the algorithm only selects those samples as color samples of which less than $80\%$ of the neighboring samples' color codes are the same. In our implementation the neighborhood range is defined as a function of the model's mean edge length, or if less than 5 samples are found within said range then it chooses the 5 nearest samples as the neighborhood. In Fig. \ref{fig:feature_penguin} the
 color samples are selected mostly along the transition between the white, black and beige hair of the penguin
@@ -113,11 +112,11 @@ color samples are selected mostly along the transition between the white, black 
 The selected shape and color samples now need to be reduced into an N-dimensional feature vector. ClusterD2+Color algorithm achieves this by first clustering nearby samples together and then
 creating a histogram from the euclidean distances, i.e. L2 norm, between all samples that are not in the same cluster.\\
 More specifically, the samples are clustered together using a modified
-ISODATA algorithm described in [\todoMissing{Missing ref}]. In our implementation we set $P_n = 5\%$ \textit{of the total number of sample points}, $P_s = 2 * E$, $P_c = 10 * E$, $I = 100$ with $E =$ \textit{mean edge length of the model}.
+ISODATA algorithm described in \cite{cluster_d2_color}. In our implementation we set $P_n = 5\%$ \textit{of the total number of sample points}, $P_s = 2 * E$, $P_c = 10 * E$, $I = 100$ with $E =$ \textit{mean edge length of the model}.
 Additionally we introduce two new parameters: $I_{min} = 10$, the minimum number of iterations, and $I_{nc} = 200$, the total maximum number of iterations after which the algorithm is stopped if no convergence is happening. Without
 the $I_{min}$ parameter we have observed that the algorithm would commonly stop too early with inadequate cluster assignments. Then, once the samples are clustered together, the euclidian distances between all samples in different clusters
 are computed and stored in an array. The values in this array are then normalized such that the lowest value in the array is mapped to zero and the highest value is mapped to one. Finally this array is then converted into a histogram with $20$ bins.\\
-Y.-J. Liu et al. [\todoMissing{Missing ref}] have also proposed a second method called ClusterAngle+Color which calculates the values for the histogram from the angle between triplets of samples that are each in different clusters. According
+Y.-J. Liu et al. \cite{cluster_d2_color} have also proposed a second method called ClusterAngle+Color which calculates the values for the histogram from the angle between triplets of samples that are each in different clusters. According
 to the authors this method results in a better similarity measure, however due to the $O(N^3)$ complexity we have unfortunately found it to be infeasible with the large number of samples generated from the user sculpted models in our application.\\
 In either case the result is a histogram which serves as 20-dimensional feature vector and in fact, since they are a geometric signature of the model, they can be used to compare models for similarity,
 e.g. by using the $\chi^2$ distance metric, a commonly used distance metric to compare two histograms for similarity. The lower the $\chi^2$ distance the more similar the models. Conveniently Cineast and its multimedia retrieval
@@ -131,7 +130,7 @@ database Cottontail DB\footnote{\url{https://github.com/vitrivr/cottontaildb}} o
 \label{fig:feature_penguin_histogram}
 \end{figure}
 
-Along with the $\chi^2$ distance metric the Jensen-Shannon divergence ($D_{JS}$) was implemented. This is the metric Y.-J. Liu et al. [\todoMissing{Missing ref}] chose for their implementation. In short, the $D_{JS}$ metric treats the histogram feature vector as an independent and identically-distributed sample of a random variable and thus first converts the histogram into a probability density function by using kernel density approximation with a gaussian kernel. The Jensen-Shannon divergence of the two probability density functions to compare is then computed and serves as a probabilistic measure ranging from 0 to 1 for how similar they are, so in a sense how likely it is that the two histograms were generated from the same model. Fig. \ref{fig:feature_penguin_histogram} depicts the histogram of a penguin model and its probability density function, along with some debug information of curves required for the $D_{JS}$ calculation.\\
+Along with the $\chi^2$ distance metric the Jensen-Shannon divergence ($D_{JS}$) was implemented. This is the metric Y.-J. Liu et al. \cite{cluster_d2_color} chose for their implementation. In short, the $D_{JS}$ metric treats the histogram feature vector as an independent and identically-distributed sample of a random variable and thus first converts the histogram into a probability density function by using kernel density approximation with a gaussian kernel. The Jensen-Shannon divergence of the two probability density functions to compare is then computed and serves as a probabilistic measure ranging from 0 to 1 for how similar they are, so in a sense how likely it is that the two histograms were generated from the same model. Fig. \ref{fig:feature_penguin_histogram} depicts the histogram of a penguin model and its probability density function, along with some debug information of curves required for the $D_{JS}$ calculation.\\
 In our ClusterD2+Color implementation in Cineast $D_{JS}$ is currently significantly slower than $\chi^2$ because Cottontail DB does not natively support k-nearest neighbors queries for $D_{JS}$. Therefore Cineast must retrieve the feature vectors of all currently existing models in the database and compare all of them one by one to the input feature vector using $D_{JS}$.\\
 The exact reason why Y.-J. Liu et al. used the Jensen-Shannon divergence was not mentioned, other than the fact that for a given 3D model they "[...] regard its shape histogram as an independent and identically-distributed sample of a random variable [...]" and thus convert it to a probability density function which can be compared using $D_{JS}$. We speculate that $D_{JS}$ may be more robust to noise from the random sample generation than the $\chi^2$ distance metric due to the conversion to a smooth probability density function. However this may incur a slight general loss of accuracy due to the smoothing.\\
 Finally Cineast can run multiple features or distance metrics for a single query and then combine their scores by weights specified in Cineast's configuration. This can be useful to capture different kinds of feature types in a single similarity score.
@@ -234,10 +233,6 @@ Listing \ref{lst:csharp_cineast_api_call} shows an excerpt from our code that se
 
 \section{Hermite Data Voxels}
 
-%The foundation of the sculpting feature is based on voxels. In the most basic sense a voxel represents a value on a regular grid
-%in 3D space [\todoMissing{Missing ref; Wikipedia}]. These voxels are very useful to represent volumetric structures, such as sculptures
-%or terrain, since they fill the 3D space and each voxel represents one volume element.
-
 \begin{figure}
 \centering
 \captionsetup{width=0.8\textwidth}
@@ -250,7 +245,7 @@ the intersection points and normals one voxel can take various shapes (gray area
 Since voxels are an abstract representation of volumes they can be visualized in various ways depending on the data the voxel contains.
 Originally a voxel consisted of a single attribute, a color or binary solid/non-solid, in which case the voxel can be visualized for example by cubes, spheres or splats.
 More sophisticated voxels can contain additional attributes such as normals or texture coordinates and thus can have a different look based on these attributes.\\
-In particular, our application uses voxels that consist of a 32 bit material ID plus Hermite data [\todoMissing{Missing ref; Dual Contouring}]. Hermite data, first used for voxels by [\todoMissing{Missing ref; Dual Contouring}],
+In particular, our application uses voxels that consist of a 32 bit material ID plus Hermite data \cite{dual_contouring}. Hermite data, first used for voxels in \cite{dual_contouring},
 consists of the following attributes: exact intersection points and normals. This allows the voxel to take on various shapes much like MC, but with more precision since the exact intersection points are stored explicitly and
 sharp features can be constructed from the stored normals. Fig. \ref{fig:hermite_data} illustrates the Hermite data and how it can represent diverse shapes. When arranged in a grid these Hermite data voxels form closed surfaces
 like in Fig. \ref{fig:voxel_scene}.
@@ -267,11 +262,10 @@ the mesh is constructed by combining the partial surfaces of al voxel cells. Col
 
 \subsection{Voxel Storage}
 
-\todoMissing{Missing ref; Fig in Paper} %See below
 \begin{figure}[!htb]
 \minipage{0.49\textwidth}
 \includegraphics[width=\linewidth]{quantized_hermite_data.png}
-\caption{Quantized Hermite data structure. Top: a normal's component magnitudes are packed into 13 bits plus 3 bits for the signs. One normal thus fits into two bytes. Bottom: the entire quantized Hermite data object. $x,y,z_{dist}$ refer to the intersection points. Adapted from [XXX].}
+\caption{Quantized Hermite data structure. Top: a normal's component magnitudes are packed into 13 bits plus 3 bits for the signs. One normal thus fits into two bytes. Bottom: the entire quantized Hermite data object. $x,y,z_{dist}$ refer to the intersection points. Adapted from \cite{quantized_hermite_data}, pages 18 and 20.}
 \label{fig:quantized_hermite_data}
 \endminipage\hfill
 \minipage{0.49\textwidth}
@@ -291,13 +285,13 @@ in that case it is beneficial to use a more advanced data structure that can sto
 The most common method to store voxels in memory is to split the voxels into fixed size blocks or chunks. Within each chunk the voxels are stored in an array. The chunks are stored seperately in a sparse data structure, e.g. a hash map,
 where they can be accessed by their position. This gives a good trade-off between memory usage and access speed, because often voxel accesses happen within the same chunks and hence the hash map lookups can usually be cached. Instead of multi-dimensonal arrays for the chunk voxel storage we use one contiguous linear array per chunk to avoid having to dereference multiple pointers for a single access. The index into this linear array can be directly computed from a given X, Y and Z position within the chunk by the following formula: $index(x, y, z) = x * N * N + y * N + z$, where $N$ is the chunk size.
 Our implementation uses a chunk size of $N=32$. Voxels on the faces towards the positive X, Y and Z axes are padding voxels that always mirror the state of the neighbour voxel in the respective neighbour chunk.
-These padding voxels allow the voxel polygonizer to run faster since it entirely removes the need to query neighbour chunks during meshing. This method is described by [\todoMissing{Missing ref; A refined data addressing and processing scheme to accelerate volume raycasting}] in more detail.
+These padding voxels allow the voxel polygonizer to run faster since it entirely removes the need to query neighbour chunks during meshing. This method is described by \cite{voxel_acceleration} in more detail.
 
 \subparagraph{Memory Consumption}
 
 The voxels in this application consist of a 32 bit material ID plus Hermite data. Therefore the size of a single voxel in memory is: 4 (material) + $3*3*4$ (three normals, each with three 32 bit float components) + $3*4$ (three intersection points) = 52 bytes in total. Considering that a single chunk contains $32 * 32 * 32 = 32768$ voxels, hence consumes roughly 1.7MB, and one scene can contain many of these chunks,
 the main memory will be exhausted rather quickly.
-To remedy this issue the Hermite data compression scheme described by [\todoMissing{Missing ref; Fast and Adaptive Polygon Conversion By Means Of Sparse Volumes}] was used.
+To remedy this issue the Hermite data compression scheme described in \cite{quantized_hermite_data} was used.
 This quantized Hermite data compression is lossy since it relies on quantizing the floating point values into small integers that are then packed together using bitwise operations. The errors introduced by the compression are
 negligible: the exact intersection points remain accurate to a $\frac{1}{1024}$th, respectively less than 0.1\%, of the voxel's edge length. Similarly the maximum error in a normalized normal's component is $\frac{1}{1024}$.
 The effective size of the quantized Hermite data is 12 bytes, two of which are struct alignment padding, i.e. only 23\% of the uncompressed size. Fig. \ref{fig:quantized_hermite_data} illustrates the quantized Hermite data
@@ -309,7 +303,7 @@ When a program accesses a piece of memory from main memory the CPU loads the sur
 If the program then accesses a nearby address again the CPU can read the value from the cache which is a lot faster than reading it from main memory. This is called a cache hit. On the other hand if the program accesses an address too far away from the previous access or not cached then the CPU will have to read the value from main memory instead, ergo a cache miss. Hence by optimizing for cache hits a program's speed can be improved if it is memory bound. The most
 common access pattern for our voxel storage is to read eight neighbor voxels as a voxel cell for polygonization.
 For simplicity's sake we will consider a 2D instead of 3D array: if we use simple linear indexing as illustrated in Fig. \ref{fig:indexing_order} to read the voxel cell (1, 2, 5, 6) there will be a large address difference between the voxels
-on the first and second row. With large arrays this will often lead to cache misses. By instead using Z-Order indexing, also known as Morton indexing, spacially nearby voxels are much more likely to be nearby to each other in the address space, increasing the chance for cache hits. However, such indexing schemes usually have a larger overhead due to the calculation of the index. To compute the Z-Order indices parts of the Libmorton library\footnote{\url{https://github.com/Forceflow/libmorton}} were used and ported to C\#. Unfortunately in our case using Z-Order indexing has made no significant difference.\todoMissing{Validate this}
+on the first and second row. With large arrays this will often lead to cache misses. By instead using Z-Order indexing, also known as Morton indexing, spacially nearby voxels are much more likely to be nearby to each other in the address space, increasing the chance for cache hits. However, such indexing schemes usually have a larger overhead due to the calculation of the index. To compute the Z-Order indices parts of the Libmorton library\footnote{\url{https://github.com/Forceflow/libmorton}} were used and ported to C\#. Unfortunately in our case using Z-Order indexing has made no significant difference.
 
 
 \subsection{Cubical Marching Squares}
@@ -324,19 +318,17 @@ on the first and second row. With large arrays this will often lead to cache mis
 \vspace*{10mm}
 \caption{All marching squares cases. Red lines indicate an ambiguous case,
 i.e. either pair of lines is valid if only the corner values of the cell
-are available. Source: [XXX]\protect\footnotemark}
+are available. Source: \cite{marching_squares}}
 \label{fig:marching_squares_cases}
 \endminipage\hfill
 \minipage{0.49\textwidth}
 \includegraphics[width=\linewidth]{cms_visualization.png}
-\caption{Cubical Marching Squares voxel cell components (a, d), their Marching Squares cell faces (b, e) and their triangulations (c, f). Source: [XXX]}
+\caption{Cubical Marching Squares voxel cell components (a, d), their Marching Squares cell faces (b, e) and their triangulations (c, f). Source: \cite{cubical_marching_squares}, page 3}
 \label{fig:cms_visualization}
 \endminipage\hfill
 \end{figure}
-\todoMissing{Missing ref; CMS}
-\footnotetext{http://users.polytech.unice.fr/~lingrand/MarchingCubes/accueil.html}
 
-For our application we have decided to use the Cubical Marching Squares algorithm by [\todoMissing{Missing ref; CMS}] to polygonize our voxels. The reason for this choice was
+For our application we have decided to use the Cubical Marching Squares algorithm \cite{cubical_marching_squares} to polygonize our voxels. The reason for this choice was
 that CMS provides both primal and dual features. As such each cell can be polygonized independently but it can still also preserve sharp features well, e.g. the top of a voxel pyramid.\\
 Our implementation of the CMS algorithm runs only on regular voxel grids and
 there is no adaptivity or level of detail. Therefore all future explanations on CMS are based on these two limitations.\\
@@ -419,9 +411,9 @@ Since our application only uses regular voxel grids the modification was made to
 in a similar manner.
 
 Additionally to the \textsc{GenerateSegment} modification the \textsc{DetectSharpFeature} implementation also requires a change. The transitions generated in \textsc{DetectMaterialTransition}, which are added to
-$f.list$, and their normals must be included in the linear system of equations to be solved ([\todoMissing{CMS and Kobbelt et al.}]) for the sharp feature detection,
-as suggested in [\todoMissing{Missing ref; DC paper}]. This causes the sharp feature to be placed where one would expect the material transition to occur on the surface, as illustrated in Fig. \ref{fig:cms_multi_material}.
-This of course means that the multi-material CMS algorithm must always generate a sharp feature when material transitions are present, even if the sharp feature conditions/heuristics described by [\todoMissing{Kobbelt et al.}] are not met.
+$f.list$, and their normals must be included in the linear system of equations to be solved \cite{cubical_marching_squares} for the sharp feature detection,
+as suggested in \cite{dual_contouring}. This causes the sharp feature to be placed where one would expect the material transition to occur on the surface, as illustrated in Fig. \ref{fig:cms_multi_material}.
+This of course means that the multi-material CMS algorithm must always generate a sharp feature when material transitions are present, even if the sharp feature conditions/heuristics described by Kobbelt et al. \cite{kobbelt_sharp_features} , which are used in CMS, are not met.
 
 \subsubsection{Lookup Table Based Implementation}
 
@@ -595,10 +587,9 @@ This binary search can be optimized by using the values returned by the SDF for 
 \captionsetup{width=0.8\textwidth}
 \includegraphics[width=0.4\textwidth]{triplanar_texture_mapping.png}
 \caption{Tri-planar texture mapping of a mesh. Note how the hillsides of the terrain are rocky and the top is grassy.
-Adapted from Corona Renderer\protect\footnotemark.}
+Adapted from \url{https://corona-renderer.com/blog/wp-content/uploads/2017/04/Triplanar_01.jpg}}
 \label{fig:triplanar_texture_mapping}
 \end{figure}
-\footnotetext{\url{https://corona-renderer.com/blog/wp-content/uploads/2017/04/Triplanar_01.jpg}}
 
 The voxel polygonizer already does most of the heavy lifting for the voxel rendering. Once the voxel polygonizer has converted the voxels into a triangle mesh the rendering is done using the typical mesh rasterization techniques, provided by Unity, and shaders. Shaders are GPU programs that determine how objects in the scene are rendered to the screen, e.g. by computing lighting or adding special effects. The voxel materials and their colors are packed into the 32 bit RGBA color attachment of the mesh vertices. The first three components, RGB, are used to store the voxel color, the fourth component A for the voxel material ID.\\
 Since our voxel meshes are not UV mapped, i.e. they do not contain information about where the textures should be sampled, we have resorted to a tri-planar texture mapping shader to texture them. These kinds of shaders use the position of a mesh's pixels to determine where to sample a texture, without the need of any explicit UV mapping. In order to achieve a realistic looking texture

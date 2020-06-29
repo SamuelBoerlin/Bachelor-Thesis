@@ -23,7 +23,9 @@
 \usepackage{mdframed}
 \usepackage{hhline}
 
-\usepackage[top=5mm,includehead,headheight=45pt,headsep=0.3cm]{geometry}
+\usepackage[top=5mm,includehead,headheight=45pt,headsep=0.3cm]{geometry} 
+%\usepackage[top=5mm,includehead,headheight=45pt,
+%             left=1.5cm,bottom=2cm,right=1.5cm,headsep=0.3cm]{geometry} 
 
 
 %% ----------------------------------------------------------------
